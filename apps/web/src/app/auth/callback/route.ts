@@ -26,7 +26,7 @@ export async function GET(request: Request) {
         message: error.message,
         status: error.status,
         name: error.name,
-        extra: (error as Record<string, unknown>),
+        extra: error as unknown as Record<string, unknown>,
       });
       const userMsg = error.message?.includes('unexpected_failure')
         ? 'Login failed. Check Supabase Dashboard > Logs > Auth for details.'

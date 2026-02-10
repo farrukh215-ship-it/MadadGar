@@ -62,8 +62,10 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  const all = [...postItems, ...productItems, ...saleItems].sort(
-    (a, b) => new Date((b.created_at as string) ?? 0).getTime() - new Date((a.created_at as string) ?? 0).getTime()
+  type ItemWithDate = { created_at?: string | number | null };
+  const combined = [...postItems, ...productItems, ...saleItems] as ItemWithDate[];
+  const all = combined.sort(
+    (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
   );
 
   return Response.json({ items: all.slice(0, limit * 2) });
