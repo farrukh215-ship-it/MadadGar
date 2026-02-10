@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Env and secrets
+.env
+.env.local
+.env.*.local
+password.txt
+
+# Next.js
+.next/
+.next-dev/
+out/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Build and cache
+*.tsbuildinfo
+.turbo/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Debug
+npm-debug.log*
+.pnpm-debug.log*

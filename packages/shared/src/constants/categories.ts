@@ -1,0 +1,33 @@
+export const CATEGORY_SLUGS = [
+  'mechanic',
+  'electrician',
+  'plumber',
+  'ac-technician',
+  'cook',
+  'driver',
+  'cleaner',
+  'carpenter',
+  'painter',
+  'generator-tech',
+  'welder',
+  'mobile-repair',
+  'computer-it',
+  'emergency-helper',
+] as const;
+
+export const CATEGORY_ICONS: Record<string, string> = {
+  mechanic: '🔧',
+  electrician: '⚡',
+  plumber: '🔩',
+  'ac-technician': '❄️',
+  cook: '👨‍🍳',
+  driver: '🚗',
+  cleaner: '🧹',
+  carpenter: '🪚',
+  painter: '🎨',
+  'generator-tech': '🔌',
+  welder: '🔥',
+  'mobile-repair': '📱',
+  'computer-it': '💻',
+  'emergency-helper': '🚨',
+};

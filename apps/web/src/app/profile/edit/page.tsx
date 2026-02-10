@@ -1,0 +1,179 @@
+'use client';
+
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
+import { CoverCropModal } from '@/components/CoverCropModal';
+
+export default function EditProfilePage() {
+  const router = useRouter();
+  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null } | null>(null);
+  const [displayName, setDisplayName] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (!u) {
+        router.push('/login?next=/profile/edit');
+        return;
+      }
+      setUser(u);
+      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url').eq('user_id', u.id).single();
+      setProfile(p ?? null);
+      setDisplayName(p?.display_name || '');
+      setLoading(false);
+    })();
+  }, [router]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      let avatarUrl = profile?.avatar_url ?? null;
+      let coverUrl = profile?.cover_url ?? null;
+
+      if (avatarFile) {
+        const fd = new FormData();
+        fd.append('file', avatarFile);
+        fd.append('bucket', 'profile-images');
+        const r = await fetch('/api/storage/upload', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.url) avatarUrl = d.url;
+      }
+      if (coverFile) {
+        const fd = new FormData();
+        fd.append('file', coverFile);
+        fd.append('bucket', 'profile-images');
+        const r = await fetch('/api/storage/upload', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.url) coverUrl = d.url;
+      }
+
+      const res = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ display_name: displayName, avatar_url: avatarUrl, cover_url: coverUrl }),
+      });
+      if (res.ok) {
+        router.push('/profile');
+        router.refresh();
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#f8faf9] flex items-center justify-center">
+        <div className="inline-block w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      </main>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f8faf9]">
+      <header className="sticky top-0 z-40 bg-white border-b border-stone-200 px-4 py-3">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <Link href="/profile" className="text-brand-600 font-medium">Cancel</Link>
+          <h1 className="font-semibold text-stone-900">Edit Profile</h1>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="text-brand-600 font-semibold disabled:opacity-50"
+          >
+            {saving ? '...' : 'Save'}
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Display name</label>
+          <input
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+            placeholder="Your name"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Profile photo</label>
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-stone-200 flex items-center justify-center">
+              {avatarFile ? (
+                <img src={URL.createObjectURL(avatarFile)} alt="" className="w-full h-full object-cover" />
+              ) : profile?.avatar_url ? (
+                <Image src={profile.avatar_url} alt="" width={80} height={80} className="object-cover w-full h-full" unoptimized />
+              ) : (
+                <span className="text-3xl">👤</span>
+              )}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
+              className="text-sm"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Cover photo</label>
+          <div className="relative aspect-[3/1] rounded-xl overflow-hidden bg-stone-200">
+            {coverFile ? (
+              <img src={URL.createObjectURL(coverFile)} alt="" className="w-full h-full object-cover" />
+            ) : profile?.cover_url ? (
+              <Image src={profile.cover_url} alt="" fill className="object-cover" unoptimized sizes="600px" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center text-white/50">
+                No cover
+              </div>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-stone-500">Cover crop karke adjust kar sakte hain</p>
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                const url = URL.createObjectURL(file);
+                setCoverCropSrc(url);
+              }
+            }}
+            className="mt-2 text-sm"
+          />
+          {coverCropSrc && (
+            <CoverCropModal
+              imageSrc={coverCropSrc}
+              onComplete={async (blob) => {
+                setCoverFile(new File([blob], 'cover.jpg', { type: 'image/jpeg' }));
+                URL.revokeObjectURL(coverCropSrc);
+                setCoverCropSrc(null);
+              }}
+              onCancel={() => {
+                URL.revokeObjectURL(coverCropSrc);
+                setCoverCropSrc(null);
+                if (coverInputRef.current) coverInputRef.current.value = '';
+              }}
+            />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
