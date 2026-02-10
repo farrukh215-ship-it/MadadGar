@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
       body: JSON.stringify({ p_lat: lat, p_lng: lng, p_radius: 100000, p_limit: limit }),
     }).then((r) => r.json()).catch(() => []),
-    supabase.from('products').select('id, name, price_min, price_max, images, link_url, created_at, category_id').order('created_at', { ascending: false }).limit(limit),
+    supabase.from('products').select('id, name, price_min, price_max, images, link_url, created_at, category_id, author_id').order('created_at', { ascending: false }).limit(limit),
     supabase.from('sale_listings').select('id, title, price, images, area_text, phone, created_at, category_id, author_id').order('created_at', { ascending: false }).limit(limit),
   ]);
 

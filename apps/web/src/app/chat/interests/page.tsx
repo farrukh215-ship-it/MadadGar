@@ -58,6 +58,7 @@ export default function InterestedPeoplePage() {
   const [usersByInterest, setUsersByInterest] = useState<Record<string, ChatUser[]>>({});
   const [loadingUsers, setLoadingUsers] = useState<string | null>(null);
   const [startingChat, setStartingChat] = useState<string | null>(null);
+  const [online, setOnline] = useState<Record<string, boolean>>({});
 
   const loadData = useCallback(async () => {
     try {
@@ -84,6 +85,10 @@ export default function InterestedPeoplePage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    fetch('/api/presence', { method: 'POST' }).catch(() => {});
+  }, []);
 
   const toggleInterest = async (slug: string) => {
     setLimitError(null);
@@ -125,8 +130,15 @@ export default function InterestedPeoplePage() {
     try {
       const res = await fetch(`/api/interests/${slug}/users`);
       const data = await res.json();
-      setUsersByInterest((prev) => ({ ...prev, [slug]: data.users ?? [] }));
+      const users = data.users ?? [];
+      setUsersByInterest((prev) => ({ ...prev, [slug]: users }));
       setExpandedSlug((s) => (s === slug ? null : slug));
+      const ids = users.map((u: ChatUser) => u.id).filter(Boolean);
+      if (ids.length > 0) {
+        const presRes = await fetch(`/api/presence?ids=${ids.join(',')}`);
+        const presData = await presRes.json();
+        setOnline((prev) => ({ ...prev, ...(presData.online ?? {}) }));
+      }
     } catch {
       setUsersByInterest((prev) => ({ ...prev, [slug]: [] }));
     } finally {
@@ -286,6 +298,12 @@ export default function InterestedPeoplePage() {
                                         ) : (
                                           <span className="flex items-center justify-center w-full h-full text-lg">👤</span>
                                         )}
+                                        {online[u.id] && (
+                                          <span
+                                            className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white"
+                                            title="Online"
+                                          />
+                                        )}
                                         {u.is_premium && (
                                           <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center text-[10px] text-white">★</span>
                                         )}
@@ -368,6 +386,10 @@ export default function InterestedPeoplePage() {
             <li className="flex items-center gap-3">
               <span className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700 text-xs font-bold shadow-sm">★</span>
               Premium interests offer extra visibility and features
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px]">●</span>
+              Green dot = user is online (active in last 5 min)
             </li>
           </ul>
         </div>
