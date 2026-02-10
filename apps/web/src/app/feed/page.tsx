@@ -346,7 +346,7 @@ export default function FeedPage() {
                           if (itemType === 'product') {
                             return (
                               <Link key={item.id} href={`/products/${item.id}`} className="block group">
-                                <article className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg border border-slate-100 hover:border-slate-200/80 transition-all duration-200 h-full flex flex-col">
+                                <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-slate-100/80 hover:border-slate-200 h-full flex flex-col">
                                   <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden min-h-[72px]">
                                     {hasImage ? (
                                       <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
@@ -370,7 +370,7 @@ export default function FeedPage() {
                           if (itemType === 'sale') {
                             return (
                               <Link key={item.id} href={`/sale/${item.id}`} className="block group">
-                                <article className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg border border-slate-100 hover:border-slate-200/80 transition-all duration-200 h-full flex flex-col">
+                                <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-slate-100/80 hover:border-slate-200 h-full flex flex-col">
                                   <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden min-h-[72px]">
                                     {hasImage ? (
                                       <>
@@ -403,7 +403,7 @@ export default function FeedPage() {
                           return (
                             <article
                               key={item.id}
-                              className={`rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col bg-white border border-slate-100 hover:border-slate-200/80 ${
+                              className={`rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-slate-100/80 hover:border-slate-200 ${
                                 isEmergency ? 'ring-1 ring-red-200' : ''
                               }`}
                             >
