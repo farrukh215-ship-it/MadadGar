@@ -30,3 +30,32 @@ export async function GET(
     author_name: profile?.display_name ?? 'User',
   });
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { data: existing } = await supabase.from('sale_listings').select('author_id').eq('id', id).single();
+  if (!existing || existing.author_id !== user.id) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const updates: Record<string, unknown> = {};
+  if (body.title !== undefined) updates.title = String(body.title).trim();
+  if (body.category_id !== undefined) updates.category_id = body.category_id;
+  if (body.price !== undefined) updates.price = parseFloat(body.price);
+  if (body.description !== undefined) updates.description = body.description ?? null;
+  if (body.area_text !== undefined) updates.area_text = body.area_text ?? null;
+  if (body.phone !== undefined) updates.phone = body.phone ?? null;
+  if (Array.isArray(body.images)) updates.images = body.images.slice(0, 5);
+
+  const { data, error } = await supabase.from('sale_listings').update(updates).eq('id', id).select('id').single();
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ listing: data });
+}

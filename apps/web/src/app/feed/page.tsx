@@ -67,7 +67,6 @@ const FOOD_SLUGS = ['cook', 'fast-foods', 'desi-foods', 'biryani', 'chinese', 'b
 const CATEGORY_TO_FILTER: Record<string, SidebarFilter> = {
   'trusted-helpers': 'trusted-helpers',
   'food-points': 'food-points',
-  'products': 'top-products',
   'used-products': 'sale',
 };
 
@@ -139,12 +138,6 @@ export default function FeedPage() {
         if (id !== fetchIdRef.current) return;
         const newItems = data.items ?? [];
         setItems((prev) => (newItems.length > 0 ? newItems : prev));
-      } else if (sidebarFilter === 'top-products') {
-        const res = await fetch('/api/products');
-        const data = await res.json();
-        if (id !== fetchIdRef.current) return;
-        const prods = (data.items ?? []).map((p: Record<string, unknown>) => ({ ...p, item_type: 'product' }));
-        setItems((prev) => (prods.length > 0 ? prods : prev));
       } else if (sidebarFilter === 'sale') {
         const res = await fetch('/api/sale');
         const data = await res.json();
@@ -186,8 +179,6 @@ export default function FeedPage() {
       if (itemType !== 'post' || isFoodPost) return false;
     } else if (sidebarFilter === 'food-points') {
       if (itemType !== 'post' || !isFoodPost) return false;
-    } else if (sidebarFilter === 'top-products') {
-      if (itemType !== 'product') return false;
     } else if (sidebarFilter === 'sale') {
       if (itemType !== 'sale') return false;
     } else if (sidebarFilter === 'nearby') {

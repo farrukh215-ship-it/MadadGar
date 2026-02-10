@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { FeedHeader } from '@/components/FeedHeader';
+import { createClient } from '@/lib/supabase/client';
 
 const PRODUCT_ICONS: Record<string, string> = {
   'smart-watches': '⌚', mobiles: '📱', laptops: '💻', headphones: '🎧', tablets: '📱',
@@ -14,6 +15,7 @@ const PRODUCT_ICONS: Record<string, string> = {
 
 type ProductDetail = {
   id: string;
+  author_id?: string;
   name: string;
   price_min?: number;
   price_max?: number;
@@ -29,8 +31,17 @@ export default function ProductDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [item, setItem] = useState<ProductDetail | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
+    })();
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -136,8 +147,17 @@ export default function ProductDetailPage() {
               </a>
             )}
 
-            <Link href="/products/add" className="block py-3 rounded-xl border-2 border-dashed border-brand-300 text-brand-600 text-center font-medium hover:bg-brand-50 transition">
-              + Add your own product
+            {currentUserId && item.author_id === currentUserId && (
+              <Link
+                href={`/products/${id}/edit`}
+                className="block w-full py-3 rounded-xl border-2 border-brand-300 text-brand-600 text-center font-medium hover:bg-brand-50 transition"
+              >
+                ✏️ Edit Product
+              </Link>
+            )}
+
+            <Link href="/sale/add" className="block py-3 rounded-xl border-2 border-dashed border-stone-200 text-stone-600 text-center font-medium hover:bg-stone-50 transition">
+              + Sell used item (OLX style)
             </Link>
           </div>
         </div>

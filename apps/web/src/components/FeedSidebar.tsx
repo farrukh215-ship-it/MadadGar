@@ -8,7 +8,6 @@ export type SidebarFilter =
   | 'all'
   | 'trusted-helpers'
   | 'food-points'
-  | 'top-products'
   | 'sale'
   | 'nearby'
   | 'top-rated'
@@ -19,7 +18,6 @@ const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string; label: string; href?: st
   { id: 'all', icon: '📌', label: 'Saved', href: '/saved' },
   { id: 'trusted-helpers', icon: '🔧', label: 'Trusted Helpers' },
   { id: 'food-points', icon: '🍽️', label: 'Food Points' },
-  { id: 'top-products', icon: '📦', label: 'Top Products', href: '/products' },
   { id: 'sale', icon: '📦', label: 'Used Products', href: '/sale' },
   { id: 'nearby', icon: '📍', label: 'Nearby' },
   { id: 'top-rated', icon: '⭐', label: 'Top Rated' },

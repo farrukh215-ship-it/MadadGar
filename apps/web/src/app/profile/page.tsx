@@ -58,6 +58,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<{ display_name?: string; avatar_url?: string | null; cover_url?: string | null; trust_score?: number; worker_skill?: string | null; verified?: boolean } | null>(null);
   const [recommendations, setRecommendations] = useState<RecItem[]>([]);
   const [posts, setPosts] = useState<RecItem[]>([]);
+  const [sales, setSales] = useState<{ id: string; title: string; price: number; images?: string[]; category_name?: string; category_slug?: string; created_at: string }[]>([]);
+  const [products, setProducts] = useState<{ id: string; name: string; price_min?: number; price_max?: number; images?: string[]; category_name?: string; category_slug?: string; created_at: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -71,17 +73,23 @@ export default function ProfilePage() {
         const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, trust_score, worker_skill, verified').eq('user_id', u.id).single();
         setProfile(p ?? null);
         try {
-          const [recRes, postsRes] = await Promise.all([
+          const [recRes, postsRes, listingsRes] = await Promise.all([
             fetch(`/api/profile/${u.id}/recommendations`),
             fetch(`/api/profile/${u.id}/posts`),
+            fetch('/api/profile/my-listings'),
           ]);
           const recData = await recRes.json();
           const postsData = await postsRes.json();
+          const listingsData = await listingsRes.json();
           setRecommendations(recData.items ?? []);
           setPosts(postsData.items ?? []);
+          setSales(listingsData.sales ?? []);
+          setProducts(listingsData.products ?? []);
         } catch {
           setRecommendations([]);
           setPosts([]);
+          setSales([]);
+          setProducts([]);
         }
       } else {
         setUser(null);
@@ -265,6 +273,66 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+
+        {/* Used Items & Products */}
+        {(sales.length > 0 || products.length > 0) && (
+          <section className="mb-6">
+            <h2 className="text-lg font-semibold text-brand-900 flex items-center gap-2 mb-4">
+              <span>📦</span>
+              Meri Used Items & Products
+            </h2>
+            <div className="space-y-4">
+              {sales.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-stone-600 mb-2">Used Items</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {sales.map((s) => (
+                      <Link
+                        key={s.id}
+                        href={`/sale/${s.id}`}
+                        className="block p-3 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-md transition"
+                      >
+                        <div className="aspect-square rounded-lg bg-stone-100 overflow-hidden mb-2">
+                          {s.images?.[0] ? (
+                            <Image src={s.images[0]} alt="" width={120} height={120} className="w-full h-full object-cover" unoptimized />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-2xl">💰</div>
+                          )}
+                        </div>
+                        <p className="font-medium text-stone-900 text-sm line-clamp-1">{s.title}</p>
+                        <p className="text-brand-600 font-bold text-xs">Rs {s.price?.toLocaleString()}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {products.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-stone-600 mb-2">Products</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {products.map((p) => (
+                      <Link
+                        key={p.id}
+                        href={`/products/${p.id}`}
+                        className="block p-3 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-md transition"
+                      >
+                        <div className="aspect-square rounded-lg bg-stone-100 overflow-hidden mb-2">
+                          {p.images?.[0] ? (
+                            <Image src={p.images[0]} alt="" width={120} height={120} className="w-full h-full object-cover" unoptimized />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-2xl">📦</div>
+                          )}
+                        </div>
+                        <p className="font-medium text-stone-900 text-sm line-clamp-1">{p.name}</p>
+                        <p className="text-brand-600 font-bold text-xs">Rs {(p.price_min ?? 0).toLocaleString()}+</p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
           <h2 className="text-lg font-semibold text-brand-900 flex items-center gap-2">
