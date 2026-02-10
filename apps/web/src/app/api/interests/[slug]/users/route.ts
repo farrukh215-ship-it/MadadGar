@@ -27,19 +27,25 @@ export async function GET(
     return Response.json({ users: [], interest: null });
   }
 
-  const [{ data: profiles }, premiumRes] = await Promise.all([
-    supabase.from('profiles').select('user_id, display_name, avatar_url').in('user_id', userIds),
-    supabase
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('user_id, display_name, avatar_url')
+    .in('user_id', userIds);
+
+  let premiumRows: { user_id: string }[] = [];
+  try {
+    const { data } = await supabase
       .from('subscriptions')
       .select('user_id')
       .in('user_id', userIds)
       .eq('plan', 'premium')
-      .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`)
-      .then((r) => r.data ?? [])
-      .catch(() => [] as { user_id: string }[]),
-  ]);
+      .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`);
+    premiumRows = (data ?? []) as { user_id: string }[];
+  } catch {
+    premiumRows = [];
+  }
 
-  const premiumIds = new Set((premiumRes as { user_id: string }[]).map((r) => r.user_id));
+  const premiumIds = new Set(premiumRows.map((r) => r.user_id));
   const usersList = (profiles ?? []).map((p) => ({
     id: p.user_id,
     display_name: p.display_name || 'User',
