@@ -245,7 +245,7 @@ export default function FeedPage() {
           open={sidebarOpen}
         />
 
-        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6">
+        <main className="flex-1 min-w-0 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 lg:pb-6">
           <div className="max-w-6xl mx-auto">
             {(isCategoryView || isSubcategoryView) && (
               <Link
@@ -256,9 +256,9 @@ export default function FeedPage() {
                 {isSubcategoryView ? 'Back to category' : 'Back to main feed'}
               </Link>
             )}
-            <div className="relative mb-8">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="relative mb-5">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </span>
@@ -267,7 +267,7 @@ export default function FeedPage() {
                 placeholder="Search helpers, food, products..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white/90 backdrop-blur border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 outline-none transition-all placeholder:text-slate-400 text-slate-700"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 outline-none transition-all placeholder:text-slate-400 text-slate-700 text-sm"
               />
             </div>
 
@@ -288,7 +288,7 @@ export default function FeedPage() {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-8">
+              <div className="space-y-5">
                 {categoryOrder.map((categoryName) => {
                   const categoryItems = grouped[categoryName] ?? [];
                   const showAllInSection = isCategoryView || isSubcategoryView;
@@ -307,149 +307,142 @@ export default function FeedPage() {
 
                   return (
                     <section key={categoryName} className="animate-slide-up">
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between mb-2.5">
                         {headingHref ? (
                           <Link
                             href={headingHref}
-                            className="group/head flex items-center gap-2.5 tracking-tight"
+                            className="group/head flex items-center gap-2 tracking-tight"
                           >
-                            <span className="w-9 h-9 rounded-xl bg-white shadow-card flex items-center justify-center text-lg border border-slate-100 group-hover/head:border-brand-200 transition-colors">
+                            <span className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center text-sm border border-slate-100 group-hover/head:border-brand-200 transition-colors">
                               {catIcon}
                             </span>
-                            <div>
-                              <h2 className="text-base font-bold text-slate-800 group-hover/head:text-brand-600 transition-colors">
-                                {categoryName}
-                              </h2>
-                              <span className="text-xs text-slate-500 group-hover/head:text-brand-600 transition-colors">
-                                click to view all
-                              </span>
-                            </div>
+                            <h2 className="text-sm font-bold text-slate-800 group-hover/head:text-brand-600 transition-colors">
+                              {categoryName}
+                            </h2>
+                            <span className="text-[10px] text-slate-400 group-hover/head:text-brand-500 ml-0.5">View all →</span>
                           </Link>
                         ) : (
-                          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2.5 tracking-tight">
-                            <span className="w-9 h-9 rounded-xl bg-white shadow-card flex items-center justify-center text-lg border border-slate-100">
+                          <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2 tracking-tight">
+                            <span className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center text-sm border border-slate-100">
                               {catIcon}
                             </span>
                             {categoryName}
                           </h2>
                         )}
                         {hasMore && !showAllInSection && headingHref && (
-                          <Link href={headingHref} className="text-sm font-semibold text-brand-600 hover:text-brand-700">
+                          <Link href={headingHref} className="text-xs font-semibold text-brand-600 hover:text-brand-700">
                             View all
                           </Link>
                         )}
                       </div>
-                      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                      <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         {displayItems.map((item) => {
                           const itemType = item.item_type ?? 'post';
                           const slug = (item.category_name ?? item.category_slug ?? '').toLowerCase().replace(/\s+/g, '-');
                           const postIcon = CATEGORY_ICONS[slug] ?? (['cook', 'fast', 'desi', 'biryani', 'chinese', 'bbq', 'sweet', 'food'].some((k) => slug.includes(k)) ? '🍽️' : '🔧');
                           const hasImage = !!item.images?.[0];
 
-                          // Product
+                          // Product — OLX-style compact
                           if (itemType === 'product') {
                             return (
                               <Link key={item.id} href={`/products/${item.id}`} className="block group">
-                                <article className="bg-white rounded-2xl overflow-hidden shadow-premium hover:shadow-premium-hover border border-slate-100/80 hover:border-slate-200/90 transition-all duration-300 h-full flex flex-col">
-                                  <div className="aspect-square bg-slate-50 relative overflow-hidden min-h-[140px]">
+                                <article className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg border border-slate-100 hover:border-slate-200/80 transition-all duration-200 h-full flex flex-col">
+                                  <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden min-h-[72px]">
                                     {hasImage ? (
-                                      <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                                      <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
                                     ) : (
                                       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-50">
-                                        <span className="text-4xl opacity-60">📦</span>
-                                        <span className="absolute bottom-2 left-2 right-2 text-center text-xs font-medium text-slate-500">{item.category_name}</span>
+                                        <span className="text-2xl opacity-60">📦</span>
+                                        <span className="absolute bottom-1 left-1 right-1 text-center text-[10px] font-medium text-slate-500 truncate">{item.category_name}</span>
                                       </div>
                                     )}
                                   </div>
-                                  <div className="p-3 flex-1 flex flex-col">
-                                    <h3 className="font-semibold text-slate-900 text-sm line-clamp-2">{item.name}</h3>
-                                    <p className="text-brand-600 font-bold mt-1 text-sm">Rs {item.price_min != null ? item.price_min.toLocaleString() : '0'} – {item.price_max ? item.price_max.toLocaleString() : '—'}</p>
-                                    <p className="text-xs text-brand-600 font-medium mt-1">View →</p>
+                                  <div className="p-2 flex-1 flex flex-col min-h-0">
+                                    <h3 className="font-semibold text-slate-900 text-xs line-clamp-1">{item.name}</h3>
+                                    <p className="text-brand-600 font-bold mt-0.5 text-xs">Rs {item.price_min != null ? item.price_min.toLocaleString() : '0'}+</p>
                                   </div>
                                 </article>
                               </Link>
                             );
                           }
 
-                          // Sale
+                          // Sale — OLX-style compact
                           if (itemType === 'sale') {
                             return (
                               <Link key={item.id} href={`/sale/${item.id}`} className="block group">
-                                <article className="bg-white rounded-2xl overflow-hidden shadow-premium hover:shadow-premium-hover border border-slate-100/80 hover:border-slate-200/90 transition-all duration-300 h-full flex flex-col">
-                                  <div className="aspect-square bg-slate-50 relative overflow-hidden min-h-[140px]">
+                                <article className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg border border-slate-100 hover:border-slate-200/80 transition-all duration-200 h-full flex flex-col">
+                                  <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden min-h-[72px]">
                                     {hasImage ? (
                                       <>
-                                        <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                                        <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
                                         {item.images && item.images.length > 1 && (
-                                          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg bg-black/50 text-white text-xs font-medium">{item.images.length} photos</span>
+                                          <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-white text-[10px] font-medium">{item.images.length}</span>
                                         )}
                                       </>
                                     ) : (
                                       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-amber-50 to-slate-50">
-                                        <span className="text-4xl opacity-60">💰</span>
-                                        <span className="absolute bottom-2 left-2 right-2 text-center text-xs font-medium text-slate-500">{item.category_name || 'Used'}</span>
+                                        <span className="text-2xl opacity-60">💰</span>
+                                        <span className="absolute bottom-1 left-1 right-1 text-center text-[10px] font-medium text-slate-500 truncate">{item.category_name || 'Used'}</span>
                                       </div>
                                     )}
                                   </div>
-                                  <div className="p-3 flex-1 flex flex-col">
-                                    <h3 className="font-semibold text-slate-900 text-sm line-clamp-2">{item.title}</h3>
-                                    <p className="text-brand-600 font-bold mt-1 text-sm">Rs {item.price?.toLocaleString()}</p>
-                                    {item.area_text && <p className="text-xs text-slate-500 mt-0.5">📍 {item.area_text}</p>}
-                                    <p className="text-xs text-brand-600 font-medium mt-1">View →</p>
+                                  <div className="p-2 flex-1 flex flex-col min-h-0">
+                                    <h3 className="font-semibold text-slate-900 text-xs line-clamp-1">{item.title}</h3>
+                                    <p className="text-brand-600 font-bold mt-0.5 text-xs">Rs {item.price?.toLocaleString()}</p>
+                                    {item.area_text && <p className="text-[10px] text-slate-500 mt-0.5 truncate">📍 {item.area_text}</p>}
                                   </div>
                                 </article>
                               </Link>
                             );
                           }
 
-                          // Post — compact card (same size as Used Products)
+                          // Post — OLX-style compact box
                           const isEmergency = item.category_name?.toLowerCase().includes('emergency');
                           const isFoodPost = FOOD_SLUGS.some((s) => slug.includes(s)) || [item.category_name, item.worker_name, item.area_text, item.reason].join(' ').toLowerCase().includes('food');
 
                           return (
                             <article
                               key={item.id}
-                              className={`rounded-2xl overflow-hidden shadow-premium hover:shadow-premium-hover transition-all duration-300 h-full flex flex-col bg-white border border-slate-100/80 hover:border-slate-200/90 ${
-                                isEmergency ? 'ring-1 ring-red-100' : ''
+                              className={`rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col bg-white border border-slate-100 hover:border-slate-200/80 ${
+                                isEmergency ? 'ring-1 ring-red-200' : ''
                               }`}
                             >
-                              <Link href={`/post/${item.id}`} className="flex-1 flex flex-col block group">
-                                <div className="aspect-square bg-slate-50 relative overflow-hidden min-h-[140px]">
+                              <Link href={`/post/${item.id}`} className="flex-1 flex flex-col block group min-h-0">
+                                <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden min-h-[72px]">
                                   {hasImage ? (
                                     <>
-                                      <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
-                                      <div className="absolute top-1.5 left-1.5 flex gap-1">
+                                      <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
+                                      <div className="absolute top-1 left-1 flex gap-0.5">
                                         {item.post_type === 'recommendation' ? (
-                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100/95 text-amber-800">👍</span>
+                                          <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-amber-100/95 text-amber-800">👍</span>
                                         ) : (
-                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand-100/95 text-brand-800">🔧</span>
+                                          <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-brand-100/95 text-brand-800">🔧</span>
                                         )}
-                                        {item.avg_rating != null && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-black/40 text-white">⭐ {item.avg_rating}</span>}
+                                        {item.avg_rating != null && <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-black/40 text-white">⭐{item.avg_rating}</span>}
                                       </div>
                                       {formatDistance(item.distance_m) && (
-                                        <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] bg-black/40 text-white">{formatDistance(item.distance_m)}</span>
+                                        <span className="absolute bottom-1 right-1 px-1 py-0.5 rounded text-[9px] bg-black/40 text-white">{formatDistance(item.distance_m)}</span>
                                       )}
                                     </>
                                   ) : (
                                     <div className={`absolute inset-0 flex flex-col items-center justify-center ${isEmergency ? 'bg-red-50/80' : isFoodPost ? 'bg-gradient-to-br from-violet-100 to-violet-50' : 'bg-gradient-to-br from-teal-50 to-emerald-50'}`}>
-                                      <span className="text-4xl opacity-80">{postIcon}</span>
-                                      <span className="mt-1 text-xs font-semibold text-slate-600">{item.category_name}</span>
+                                      <span className="text-2xl opacity-80">{postIcon}</span>
+                                      <span className="mt-0.5 text-[10px] font-semibold text-slate-600 truncate max-w-full px-1">{item.category_name}</span>
                                     </div>
                                   )}
                                 </div>
-                                <div className="p-3 flex-1 flex flex-col">
-                                  <h3 className="font-semibold text-slate-900 text-sm line-clamp-2">{item.worker_name || 'Helper'} — {item.category_name}</h3>
-                                  {(item.reason || item.relation_tag) && <p className="text-xs text-slate-600 line-clamp-2 mt-0.5">{item.reason ?? item.relation_tag}</p>}
-                                  <div className="mt-2 flex gap-2 text-[10px] text-slate-500">
+                                <div className="p-2 flex-1 flex flex-col min-h-0">
+                                  <h3 className="font-semibold text-slate-900 text-xs line-clamp-1">{item.worker_name || 'Helper'} — {item.category_name}</h3>
+                                  {(item.reason || item.relation_tag) && <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{item.reason ?? item.relation_tag}</p>}
+                                  <div className="mt-1 flex gap-1.5 text-[9px] text-slate-500">
                                     <span>👍 {item.like_count ?? item.madad_count ?? 0}</span>
                                     {(item.reviews_count ?? 0) > 0 && <span>⭐ {item.reviews_count}</span>}
                                   </div>
-                                  <p className="text-xs text-brand-600 font-medium mt-1">View post →</p>
                                 </div>
                               </Link>
-                              <div className="px-3 pb-3" onClick={(e) => e.stopPropagation()}>
-                                <a href={`tel:${item.phone}`} className="block w-full py-2 rounded-xl bg-brand-600 text-white text-center text-xs font-semibold hover:bg-brand-700 shadow-premium-brand hover:shadow-premium-brand-hover transition-all flex items-center justify-center gap-1">
-                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                              <div className="px-2 pb-2 pt-0" onClick={(e) => e.stopPropagation()}>
+                                <a href={`tel:${item.phone}`} className="block w-full py-1.5 rounded-lg bg-brand-600 text-white text-center text-[11px] font-semibold hover:bg-brand-700 transition-all flex items-center justify-center gap-1">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                                   Call
                                 </a>
                               </div>
