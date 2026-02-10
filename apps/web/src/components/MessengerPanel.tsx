@@ -16,6 +16,7 @@ type ChatUser = {
   id: string;
   display_name: string;
   avatar_url: string | null;
+  interests?: { name: string; icon: string }[];
 };
 
 export function MessengerPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -89,7 +90,10 @@ export function MessengerPanel({ open, onClose }: { open: boolean; onClose: () =
         aria-label="Messenger"
       >
         <div className="flex items-center justify-between p-4 border-b border-stone-200 bg-brand-600 text-white">
-          <h2 className="font-semibold text-lg">Messenger</h2>
+          <div>
+            <h2 className="font-semibold text-lg">Messenger</h2>
+            <p className="text-sm text-brand-100">Chat</p>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -156,7 +160,7 @@ export function MessengerPanel({ open, onClose }: { open: boolean; onClose: () =
                         type="button"
                         onClick={() => startChat(u.id)}
                         disabled={startingWith === u.id}
-                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-stone-50 transition text-left disabled:opacity-50"
+                        className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-stone-50 transition text-left disabled:opacity-50"
                       >
                         <div className="relative w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center shrink-0 overflow-hidden">
                           {u.avatar_url ? (
@@ -171,9 +175,17 @@ export function MessengerPanel({ open, onClose }: { open: boolean; onClose: () =
                             />
                           )}
                         </div>
-                        <span className="font-medium text-stone-900 text-sm truncate">{u.display_name}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-stone-900 text-sm truncate block">{u.display_name}</span>
+                          {u.interests && u.interests.length > 0 && (
+                            <p className="text-xs text-stone-500 mt-0.5 truncate" title={u.interests.map((i) => `${i.icon} ${i.name}`).join(', ')}>
+                              {u.interests.slice(0, 3).map((i) => `${i.icon} ${i.name}`).join(' · ')}
+                              {u.interests.length > 3 && ` +${u.interests.length - 3}`}
+                            </p>
+                          )}
+                        </div>
                         {startingWith === u.id && (
-                          <span className="text-xs text-stone-500">...</span>
+                          <span className="text-xs text-stone-500 shrink-0">...</span>
                         )}
                       </button>
                     ))}

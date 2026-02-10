@@ -67,12 +67,20 @@ export default function ChatListPage() {
             <p className="text-sm text-stone-500 mt-1">
               Start by tapping Chat on any helper in the feed
             </p>
-            <Link
-              href="/feed"
-              className="mt-6 inline-block px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition"
-            >
-              Browse helpers
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+              <Link
+                href="/chat/interests"
+                className="inline-block px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition"
+              >
+                Interested People
+              </Link>
+              <Link
+                href="/feed"
+                className="inline-block px-6 py-3 rounded-xl bg-stone-200 text-stone-700 font-semibold hover:bg-stone-300 transition"
+              >
+                Browse helpers
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-1">

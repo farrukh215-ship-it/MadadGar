@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CoverCropModal } from '@/components/CoverCropModal';
+
+type Interest = { slug: string; name: string; icon: string; parent_group: string };
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -16,7 +18,26 @@ export default function EditProfilePage() {
   const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [myInterests, setMyInterests] = useState<Set<string>>(new Set());
+  const [allInterests, setAllInterests] = useState<Interest[]>([]);
   const coverInputRef = useRef<HTMLInputElement>(null);
+
+  const loadInterests = useCallback(async () => {
+    try {
+      const [interestsRes, myRes] = await Promise.all([fetch('/api/interests'), fetch('/api/interests/my')]);
+      if (interestsRes.ok) {
+        const data = await interestsRes.json();
+        const flat = ((data.interests ?? []) as { group: string; interests: Interest[] }[]).flatMap((g) => g.interests ?? []);
+        setAllInterests(flat);
+      }
+      if (myRes.ok) {
+        const data = await myRes.json();
+        setMyInterests(new Set(data.interests ?? []));
+      }
+    } catch {
+      setAllInterests([]);
+    }
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -31,9 +52,33 @@ export default function EditProfilePage() {
       const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url').eq('user_id', u.id).single();
       setProfile(p ?? null);
       setDisplayName(p?.display_name || '');
+      loadInterests();
       setLoading(false);
     })();
-  }, [router]);
+  }, [router, loadInterests]);
+
+  const toggleInterest = async (slug: string) => {
+    const has = myInterests.has(slug);
+    try {
+      if (has) {
+        await fetch(`/api/interests/my?slug=${encodeURIComponent(slug)}`, { method: 'DELETE' });
+        setMyInterests((prev) => {
+          const next = new Set(prev);
+          next.delete(slug);
+          return next;
+        });
+      } else {
+        await fetch('/api/interests/my', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ interest_slug: slug }),
+        });
+        setMyInterests((prev) => new Set([...prev, slug]));
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -127,6 +172,32 @@ export default function EditProfilePage() {
               onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
               className="text-sm"
             />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Interests</label>
+          <p className="text-xs text-stone-500 mb-2">
+            Add interests to connect with like-minded people. You can also manage them from{' '}
+            <Link href="/chat/interests" className="text-brand-600 font-medium hover:underline">Interested People</Link>.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {allInterests.slice(0, 20).map((int) => {
+              const has = myInterests.has(int.slug);
+              return (
+                <button
+                  key={int.slug}
+                  type="button"
+                  onClick={() => toggleInterest(int.slug)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                    has ? 'bg-brand-600 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  }`}
+                >
+                  <span>{int.icon}</span>
+                  {int.name}
+                </button>
+              );
+            })}
           </div>
         </div>
 

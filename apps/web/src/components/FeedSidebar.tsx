@@ -16,6 +16,7 @@ export type SidebarFilter =
 const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string; label: string; href?: string }[] = [
   { id: 'all', icon: '🌟', label: 'All Madadgar' },
   { id: 'all', icon: '📌', label: 'Saved', href: '/saved' },
+  { id: 'all', icon: '💬', label: 'Interested People', href: '/chat/interests' },
   { id: 'trusted-helpers', icon: '🔧', label: 'Trusted Helpers' },
   { id: 'food-points', icon: '🍽️', label: 'Food Points' },
   { id: 'sale', icon: '📦', label: 'Used Products', href: '/sale' },

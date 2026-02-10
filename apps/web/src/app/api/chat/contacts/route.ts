@@ -23,10 +23,29 @@ export async function GET() {
     .select('user_id, display_name, avatar_url')
     .in('user_id', contactIds);
 
+  const { data: interestRows } = await supabase
+    .from('user_interests')
+    .select('user_id, interest_slug')
+    .in('user_id', contactIds);
+
+  const { data: interestNames } = await supabase
+    .from('interest_categories')
+    .select('slug, name, icon');
+
+  const nameMap = Object.fromEntries((interestNames ?? []).map((c) => [c.slug, { name: c.name, icon: c.icon }]));
+  const interestsByUser = (interestRows ?? []).reduce<Record<string, { name: string; icon: string }[]>>((acc, r) => {
+    const info = nameMap[r.interest_slug];
+    if (!info) return acc;
+    if (!acc[r.user_id]) acc[r.user_id] = [];
+    acc[r.user_id].push(info);
+    return acc;
+  }, {});
+
   const users = (profiles ?? []).map((p) => ({
     id: p.user_id,
     display_name: p.display_name || 'User',
     avatar_url: p.avatar_url ?? null,
+    interests: interestsByUser[p.user_id] ?? [],
   }));
 
   return Response.json({ users });
