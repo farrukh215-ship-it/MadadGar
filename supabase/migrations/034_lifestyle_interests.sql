@@ -1,14 +1,16 @@
 -- Replace interests with normal lifestyle interests (hobbies, sports, TV, etc.)
 -- 12 interests per tanah (group)
 
--- Update parent_group constraint to allow lifestyle groups
+-- Step 1: Drop old constraint
 ALTER TABLE public.interest_categories DROP CONSTRAINT IF EXISTS interest_categories_parent_group_check;
-ALTER TABLE public.interest_categories ADD CONSTRAINT interest_categories_parent_group_check
-  CHECK (parent_group IN ('hobbies', 'sports', 'entertainment', 'food-dining', 'travel', 'technology', 'lifestyle'));
 
--- Clear old interests (user_interests will cascade or we keep user data but remove orphan refs - slugs will change so delete user_interests for old slugs)
+-- Step 2: Clear old data BEFORE adding new constraint (old rows have parent_group like trusted-helpers, food-points)
 DELETE FROM public.user_interests;
 DELETE FROM public.interest_categories;
+
+-- Step 3: Add new constraint (table is now empty, no violation)
+ALTER TABLE public.interest_categories ADD CONSTRAINT interest_categories_parent_group_check
+  CHECK (parent_group IN ('hobbies', 'sports', 'entertainment', 'food-dining', 'travel', 'technology', 'lifestyle'));
 
 -- Seed: Hobbies (12)
 INSERT INTO public.interest_categories (slug, name, icon, parent_group, sort_order, is_premium, premium_description) VALUES
