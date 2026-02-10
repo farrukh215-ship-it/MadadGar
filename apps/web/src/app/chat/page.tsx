@@ -70,7 +70,7 @@ export default function ChatListPage() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
               <Link
                 href="/chat/interests"
-                className="inline-block px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition"
+                className="inline-block px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 shadow-premium-brand hover:shadow-premium-brand-hover transition-all"
               >
                 Interested People
               </Link>

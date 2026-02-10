@@ -20,7 +20,7 @@ export async function GET() {
     return acc;
   }, {});
 
-  const groupOrder = ['trusted-helpers', 'food-points', 'products', 'sale', 'general'];
+  const groupOrder = ['hobbies', 'sports', 'entertainment', 'food-dining', 'travel', 'technology', 'lifestyle'];
   const ordered = groupOrder
     .filter((g) => grouped[g]?.length)
     .map((g) => ({ group: g, interests: grouped[g] }));

@@ -13,10 +13,10 @@ export type SidebarFilter =
   | 'top-rated'
   | 'verified';
 
-const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string; label: string; href?: string }[] = [
+const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string; label: string; href?: string; badge?: string }[] = [
   { id: 'all', icon: '🌟', label: 'All Madadgar' },
   { id: 'all', icon: '📌', label: 'Saved', href: '/saved' },
-  { id: 'all', icon: '💬', label: 'Interested People', href: '/chat/interests' },
+  { id: 'all', icon: '💬', label: 'Interested People', href: '/chat/interests', badge: 'UCP' },
   { id: 'trusted-helpers', icon: '🔧', label: 'Trusted Helpers' },
   { id: 'food-points', icon: '🍽️', label: 'Food Points' },
   { id: 'sale', icon: '📦', label: 'Used Products', href: '/sale' },
@@ -103,6 +103,9 @@ export function FeedSidebar({
                       >
                         <span className="text-xl drop-shadow-sm">{item.icon}</span>
                         {item.label}
+                        {item.badge && (
+                          <span className="ml-auto px-2 py-0.5 rounded-md text-[10px] font-bold bg-brand-600 text-white">{item.badge}</span>
+                        )}
                       </Link>
                     </li>
                   );

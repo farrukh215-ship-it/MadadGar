@@ -27,16 +27,26 @@ export async function GET(
     return Response.json({ users: [], interest: null });
   }
 
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('user_id, display_name, avatar_url')
-    .in('user_id', userIds);
+  const [{ data: profiles }, premiumRes] = await Promise.all([
+    supabase.from('profiles').select('user_id, display_name, avatar_url').in('user_id', userIds),
+    supabase
+      .from('subscriptions')
+      .select('user_id')
+      .in('user_id', userIds)
+      .eq('plan', 'premium')
+      .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`)
+      .then((r) => r.data ?? [])
+      .catch(() => [] as { user_id: string }[]),
+  ]);
 
-  const users = (profiles ?? []).map((p) => ({
+  const premiumIds = new Set((premiumRes as { user_id: string }[]).map((r) => r.user_id));
+  const usersList = (profiles ?? []).map((p) => ({
     id: p.user_id,
     display_name: p.display_name || 'User',
     avatar_url: p.avatar_url ?? null,
+    is_premium: premiumIds.has(p.user_id),
   }));
+  usersList.sort((a, b) => (b.is_premium ? 1 : 0) - (a.is_premium ? 1 : 0));
 
   const { data: interest } = await supabase
     .from('interest_categories')
@@ -44,5 +54,5 @@ export async function GET(
     .eq('slug', slug)
     .single();
 
-  return Response.json({ users, interest });
+  return Response.json({ users: usersList, interest });
 }
