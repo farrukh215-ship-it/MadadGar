@@ -13,10 +13,8 @@ type UserInfo = {
 };
 
 export function FeedHeader({
-  onMessengerClick,
   onMenuClick,
 }: {
-  onMessengerClick?: () => void;
   onMenuClick?: () => void;
 }) {
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -66,7 +64,7 @@ export function FeedHeader({
 
   return (
     <header className="sticky top-0 z-40 bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900 text-white shadow-[0_4px_24px_-4px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.08)_inset] backdrop-blur-xl border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 lg:h-16">
           <div className="flex items-center gap-3">
             {onMenuClick && (
@@ -78,18 +76,6 @@ export function FeedHeader({
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            )}
-            {onMessengerClick && (
-              <button
-                type="button"
-                onClick={onMessengerClick}
-                className="p-2 rounded-lg hover:bg-white/10 transition flex-shrink-0"
-                aria-label="Messenger"
-              >
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.12 7.16L3 22l4.24-1.17A9.7 9.7 0 0012 21.4c5.64 0 10-4.13 10-9.7S17.64 2 12 2zm0 17.4c-1.8 0-3.5-.5-4.9-1.4l-.35-.2-2.54.7.68-2.45-.2-.35A7.9 7.9 0 014 11.7C4 7.24 7.58 4 12 4s8 3.24 8 7.7-3.58 7.7-8 7.7z" />
                 </svg>
               </button>
             )}
@@ -115,10 +101,11 @@ export function FeedHeader({
               Create
             </Link>
             <NotificationsDropdown />
-            <Link href="/chat" className="p-2 rounded-lg hover:bg-white/10 transition">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <Link href="/chat" className="flex flex-col items-center gap-0.5 p-1.5 rounded-xl hover:bg-white/10 transition flex-shrink-0 group">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
+              <span className="text-[10px] sm:text-xs font-medium text-white/90 group-hover:text-white">Chat</span>
             </Link>
             <Link href="/profile" className="flex flex-col items-center gap-0.5 p-1.5 rounded-xl hover:bg-white/10 transition flex-shrink-0 group">
               <div className="relative ring-2 ring-white/20 group-hover:ring-white/40 rounded-full transition shadow-lg">

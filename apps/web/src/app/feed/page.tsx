@@ -3,32 +3,49 @@
 import { useEffect, useState, useRef, useCallback, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { UtensilsCrossed, Beef, Cookie, Soup, Flame, Wrench, Zap, Droplets, Snowflake, Car, Sparkles, Hammer, Plug, Smartphone, Laptop, AlertCircle, Package, ShoppingBag, Search } from 'lucide-react';
 import { FeedHeader } from '@/components/FeedHeader';
 import { FeedSidebar, type SidebarFilter } from '@/components/FeedSidebar';
-import { MessengerPanel } from '@/components/MessengerPanel';
 
-const CATEGORY_ICONS: Record<string, string> = {
-  mechanic: '🔧',
-  electrician: '⚡',
-  plumber: '🔩',
-  'ac-technician': '❄️',
-  cook: '👨‍🍳',
-  'fast-foods': '🍔',
-  'desi-foods': '🍛',
-  biryani: '🍚',
-  chinese: '🥡',
-  bbq: '🍖',
-  sweets: '🍰',
-  driver: '🚗',
-  cleaner: '🧹',
-  carpenter: '🪚',
-  painter: '🎨',
-  'generator-tech': '🔌',
-  welder: '🔥',
-  'mobile-repair': '📱',
-  'computer-it': '💻',
-  'emergency-helper': '🚨',
+const CATEGORY_ICONS: Record<string, { Icon: React.ComponentType<{ className?: string }>; gradient: string; iconColor: string }> = {
+  mechanic: { Icon: Wrench, gradient: 'from-amber-100 to-amber-50', iconColor: 'text-amber-600' },
+  electrician: { Icon: Zap, gradient: 'from-yellow-100 to-amber-50', iconColor: 'text-amber-600' },
+  plumber: { Icon: Droplets, gradient: 'from-blue-100 to-cyan-50', iconColor: 'text-blue-600' },
+  'ac-technician': { Icon: Snowflake, gradient: 'from-cyan-100 to-blue-50', iconColor: 'text-cyan-600' },
+  cook: { Icon: UtensilsCrossed, gradient: 'from-orange-100 to-amber-50', iconColor: 'text-orange-600' },
+  'fast-foods': { Icon: UtensilsCrossed, gradient: 'from-red-100 to-orange-50', iconColor: 'text-red-600' },
+  'desi-foods': { Icon: UtensilsCrossed, gradient: 'from-amber-100 to-yellow-50', iconColor: 'text-amber-700' },
+  biryani: { Icon: Soup, gradient: 'from-rose-100 to-orange-50', iconColor: 'text-rose-600' },
+  chinese: { Icon: Soup, gradient: 'from-amber-100 to-orange-50', iconColor: 'text-amber-600' },
+  bbq: { Icon: Beef, gradient: 'from-orange-100 to-rose-50', iconColor: 'text-orange-600' },
+  sweets: { Icon: Cookie, gradient: 'from-pink-100 to-rose-50', iconColor: 'text-pink-600' },
+  driver: { Icon: Car, gradient: 'from-slate-100 to-slate-50', iconColor: 'text-slate-600' },
+  cleaner: { Icon: Sparkles, gradient: 'from-teal-100 to-emerald-50', iconColor: 'text-teal-600' },
+  carpenter: { Icon: Hammer, gradient: 'from-amber-100 to-amber-50', iconColor: 'text-amber-700' },
+  painter: { Icon: Sparkles, gradient: 'from-indigo-100 to-violet-50', iconColor: 'text-indigo-600' },
+  'generator-tech': { Icon: Plug, gradient: 'from-yellow-100 to-amber-50', iconColor: 'text-amber-600' },
+  welder: { Icon: Flame, gradient: 'from-orange-100 to-red-50', iconColor: 'text-orange-600' },
+  'mobile-repair': { Icon: Smartphone, gradient: 'from-slate-100 to-slate-50', iconColor: 'text-slate-600' },
+  'computer-it': { Icon: Laptop, gradient: 'from-blue-100 to-indigo-50', iconColor: 'text-blue-600' },
+  'emergency-helper': { Icon: AlertCircle, gradient: 'from-red-100 to-rose-50', iconColor: 'text-red-600' },
+  products: { Icon: Package, gradient: 'from-indigo-100 to-blue-50', iconColor: 'text-indigo-600' },
+  'used-products': { Icon: ShoppingBag, gradient: 'from-amber-100 to-orange-50', iconColor: 'text-amber-600' },
 };
+
+function CategoryIcon({ slug, size = 'md', className = '' }: { slug: string; size?: 'sm' | 'md' | 'lg'; className?: string }) {
+  const foodSlugs = ['cook', 'fast-foods', 'desi-foods', 'biryani', 'chinese', 'bbq', 'sweets'];
+  const match = Object.keys(CATEGORY_ICONS).find((k) => slug.includes(k)) || (foodSlugs.some((k) => slug.includes(k)) ? 'cook' : 'mechanic');
+  const config = CATEGORY_ICONS[match] ?? CATEGORY_ICONS.mechanic;
+  const { Icon, gradient, iconColor } = config;
+  const wrapperClass = size === 'sm' ? 'w-8 h-8' : size === 'lg' ? 'w-14 h-14' : 'w-10 h-10';
+  const iconClass = size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-7 h-7' : 'w-5 h-5';
+  return (
+    <div className={`rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-inner border border-white/60 ${wrapperClass} ${className}`}>
+      <Icon className={`${iconClass} ${iconColor}`} />
+    </div>
+  );
+}
+
 
 type FeedItem = {
   id: string;
@@ -96,7 +113,6 @@ export default function FeedPage() {
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [search, setSearch] = useState('');
-  const [messengerOpen, setMessengerOpen] = useState(false);
   const [startingChat, setStartingChat] = useState<string | null>(null);
   const fetchIdRef = useRef(0);
   const router = useRouter();
@@ -118,7 +134,6 @@ export default function FeedPage() {
         return;
       }
       if (data.thread?.id) {
-        setMessengerOpen(false);
         router.push(`/chat/${data.thread.id}`);
       }
     } finally {
@@ -249,11 +264,7 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/60">
-      <FeedHeader
-        onMessengerClick={() => setMessengerOpen(true)}
-        onMenuClick={() => setSidebarOpen(true)}
-      />
-      <MessengerPanel open={messengerOpen} onClose={() => setMessengerOpen(false)} />
+      <FeedHeader onMenuClick={() => setSidebarOpen(true)} />
 
       <div className="flex">
         <FeedSidebar
@@ -298,7 +309,9 @@ export default function FeedPage() {
               </div>
             ) : filteredItems.length === 0 ? (
               <div className="py-20 text-center bg-white rounded-2xl border border-slate-200/80 shadow-premium">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center text-3xl mb-4">🔍</div>
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center mb-4 border border-brand-100">
+                  <Search className="w-8 h-8 text-brand-600" strokeWidth={2} />
+                </div>
                 <p className="text-slate-600 font-medium">No posts nearby</p>
                 <p className="mt-1 text-slate-500 text-sm">Be the first to share a trusted helper!</p>
                 <Link href="/post" className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 shadow-premium-brand transition-all hover:shadow-premium-brand-hover">
@@ -331,8 +344,8 @@ export default function FeedPage() {
                             href={headingHref}
                             className="group/head flex items-center gap-2.5 tracking-tight"
                           >
-                            <span className="w-8 h-8 rounded-xl bg-white shadow-premium flex items-center justify-center text-base border border-slate-100 group-hover/head:border-brand-200 group-hover/head:shadow-premium-brand transition-all duration-200">
-                              {catIcon}
+                            <span className="group-hover/head:shadow-premium-brand transition-all duration-200">
+                              <CategoryIcon slug={catSlug} size="sm" className="shadow-premium border border-slate-100 group-hover/head:border-brand-200" />
                             </span>
                             <h2 className="text-base font-bold text-slate-800 group-hover/head:text-brand-600 transition-colors">
                               {categoryName}
@@ -341,9 +354,7 @@ export default function FeedPage() {
                           </Link>
                         ) : (
                           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2.5 tracking-tight">
-                            <span className="w-8 h-8 rounded-xl bg-white shadow-premium flex items-center justify-center text-base border border-slate-100">
-                              {catIcon}
-                            </span>
+                            <CategoryIcon slug={catSlug} size="sm" className="shadow-premium border border-slate-100" />
                             {categoryName}
                           </h2>
                         )}
@@ -357,7 +368,6 @@ export default function FeedPage() {
                         {displayItems.map((item) => {
                           const itemType = item.item_type ?? 'post';
                           const slug = (item.category_name ?? item.category_slug ?? '').toLowerCase().replace(/\s+/g, '-');
-                          const postIcon = CATEGORY_ICONS[slug] ?? (['cook', 'fast', 'desi', 'biryani', 'chinese', 'bbq', 'sweet', 'food'].some((k) => slug.includes(k)) ? '🍽️' : '🔧');
                           const hasImage = !!item.images?.[0];
 
                           // Product — OLX-style compact
@@ -370,8 +380,8 @@ export default function FeedPage() {
                                       {hasImage ? (
                                         <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
                                       ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-50">
-                                          <span className="text-2xl opacity-60">📦</span>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-50">
+                                          <CategoryIcon slug="products" size="lg" className="shadow-md" />
                                           <span className="absolute bottom-1 left-1 right-1 text-center text-[10px] font-medium text-slate-500 truncate">{item.category_name}</span>
                                         </div>
                                       )}
@@ -414,8 +424,8 @@ export default function FeedPage() {
                                           )}
                                         </>
                                       ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-amber-50 to-slate-50">
-                                          <span className="text-2xl opacity-60">💰</span>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50">
+                                          <CategoryIcon slug="used-products" size="lg" className="shadow-md" />
                                           <span className="absolute bottom-1 left-1 right-1 text-center text-[10px] font-medium text-slate-500 truncate">{item.category_name || 'Used'}</span>
                                         </div>
                                       )}
@@ -469,9 +479,9 @@ export default function FeedPage() {
                                         )}
                                       </>
                                     ) : (
-                                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-violet-100 to-violet-50">
-                                        <span className="text-2xl opacity-80">{postIcon}</span>
-                                        <span className="mt-0.5 text-[10px] font-semibold text-slate-600 truncate max-w-full px-1">{item.category_name}</span>
+                                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-violet-100/80 to-violet-50/80">
+                                        <CategoryIcon slug={slug} size="lg" className="shadow-md" />
+                                        <span className="mt-1.5 text-[10px] font-semibold text-slate-600 truncate max-w-full px-1">{item.category_name}</span>
                                       </div>
                                     )}
                                   </div>
@@ -515,9 +525,9 @@ export default function FeedPage() {
                                       )}
                                     </>
                                   ) : (
-                                    <div className={`absolute inset-0 flex flex-col items-center justify-center ${isEmergency ? 'bg-red-50/80' : 'bg-gradient-to-br from-teal-50 to-emerald-50'}`}>
-                                      <span className="text-2xl opacity-80">{postIcon}</span>
-                                      <span className="mt-0.5 text-[10px] font-semibold text-slate-600 truncate max-w-full px-1">{item.category_name}</span>
+                                    <div className={`absolute inset-0 flex flex-col items-center justify-center ${isEmergency ? 'bg-red-50/80' : 'bg-gradient-to-br from-teal-50/80 to-emerald-50/80'}`}>
+                                      <CategoryIcon slug={slug} size="lg" className="shadow-md" />
+                                      <span className="mt-1.5 text-[10px] font-semibold text-slate-600 truncate max-w-full px-1">{item.category_name}</span>
                                     </div>
                                   )}
                                 </div>
