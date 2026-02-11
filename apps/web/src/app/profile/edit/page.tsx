@@ -12,12 +12,13 @@ type Interest = { slug: string; name: string; icon: string; parent_group: string
 export default function EditProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string } | null>(null);
-  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null; date_of_birth?: string | null; bio?: string | null; notification_sound?: string | null; about_visibility?: 'public' | 'private' } | null>(null);
+  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null; date_of_birth?: string | null; marital_status?: string | null; bio?: string | null; notification_sound?: string | null; about_visibility?: 'public' | 'private' } | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [gender, setGender] = useState<string>('');
   const [dateOfBirth, setDateOfBirth] = useState<string>('');
   const [bio, setBio] = useState<string>('');
   const [notificationSound, setNotificationSound] = useState<string>('default');
+  const [maritalStatus, setMaritalStatus] = useState<string>('');
   const [aboutVisibility, setAboutVisibility] = useState<'public' | 'private'>('public');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -57,11 +58,12 @@ export default function EditProfilePage() {
         return;
       }
       setUser(u);
-      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, bio, notification_sound, about_visibility').eq('user_id', u.id).single();
+      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, marital_status, bio, notification_sound, about_visibility').eq('user_id', u.id).single();
       setProfile(p ?? null);
       setDisplayName(p?.display_name || '');
       setGender((p as { gender?: string })?.gender ?? '');
       setDateOfBirth((p as { date_of_birth?: string })?.date_of_birth?.split('T')[0] ?? '');
+      setMaritalStatus((p as { marital_status?: string })?.marital_status ?? '');
       setBio((p as { bio?: string })?.bio ?? '');
       setNotificationSound((p as { notification_sound?: string })?.notification_sound ?? 'default');
       setAboutVisibility(((p as { about_visibility?: 'public' | 'private' })?.about_visibility) ?? 'public');
@@ -126,6 +128,7 @@ export default function EditProfilePage() {
           cover_url: coverUrl,
           gender: gender || undefined,
           date_of_birth: dateOfBirth || undefined,
+          marital_status: maritalStatus || undefined,
           bio: bio || undefined,
           notification_sound: notificationSound,
           about_visibility: aboutVisibility,
@@ -200,6 +203,23 @@ export default function EditProfilePage() {
             className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
           />
           <p className="text-xs text-stone-500 mt-1">Age will be shown to people you chat with</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Marital status</label>
+          <select
+            value={maritalStatus}
+            onChange={(e) => setMaritalStatus(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white"
+          >
+            <option value="">Not set</option>
+            <option value="single">Single</option>
+            <option value="married">Married</option>
+            <option value="divorced">Divorced</option>
+            <option value="widowed">Widowed</option>
+            <option value="prefer_not_to_say">Prefer not to say</option>
+          </select>
+          <p className="text-xs text-stone-500 mt-1">Shown with age & gender in chat</p>
         </div>
 
         <div>

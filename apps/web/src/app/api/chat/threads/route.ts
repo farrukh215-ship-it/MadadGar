@@ -54,7 +54,7 @@ export async function GET() {
   const directThreadIds = (threads ?? []).filter((t) => !t.post_id).map((t) => t.id);
   let directTitles: Record<string, string> = {};
   let otherUserByThread: Record<string, string> = {};
-  let otherUserProfile: Record<string, { display_name: string; gender: string | null; age: number | null }> = {};
+  let otherUserProfile: Record<string, { display_name: string; gender: string | null; age: number | null; marital_status: string | null }> = {};
   let unreadByThread: Record<string, number> = {};
   if (directThreadIds.length > 0) {
     const { data: participants } = await supabase
@@ -65,7 +65,7 @@ export async function GET() {
     if (otherIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('user_id, display_name, gender, date_of_birth')
+        .select('user_id, display_name, gender, date_of_birth, marital_status')
         .in('user_id', otherIds);
       for (const p of participants ?? []) {
         if (p.user_id !== user.id) {
@@ -79,6 +79,7 @@ export async function GET() {
             display_name: profile?.display_name || 'User',
             gender: (profile as { gender?: string }).gender ?? null,
             age: age != null && age >= 0 && age <= 120 ? age : null,
+            marital_status: (profile as { marital_status?: string }).marital_status ?? null,
           };
         }
       }
@@ -140,7 +141,7 @@ export async function GET() {
     last_message: lastPreview || null,
     is_friend: !!otherId && friendIds.has(otherId),
     friend_request_sent: !!otherId && pendingSentIds.has(otherId),
-    other_user: profile ? { id: otherId, display_name: profile.display_name, gender: profile.gender, age: profile.age } : null,
+    other_user: profile ? { id: otherId, display_name: profile.display_name, gender: profile.gender, age: profile.age, marital_status: profile.marital_status } : null,
   };
   });
 

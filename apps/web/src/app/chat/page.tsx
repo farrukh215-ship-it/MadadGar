@@ -15,8 +15,14 @@ type Thread = {
   last_message?: string | null;
   is_friend?: boolean;
   friend_request_sent?: boolean;
-  other_user?: { id: string; display_name: string; gender: string | null; age: number | null } | null;
+  other_user?: { id: string; display_name: string; gender: string | null; age: number | null; marital_status?: string | null } | null;
 };
+
+function formatMaritalStatus(s: string | null | undefined): string {
+  if (!s) return '';
+  const m: Record<string, string> = { single: 'Single', married: 'Married', divorced: 'Divorced', widowed: 'Widowed', prefer_not_to_say: 'Prefer not to say' };
+  return m[s] ?? s;
+}
 
 function formatLastSeen(iso: string): string {
   const d = new Date(iso);
@@ -136,6 +142,8 @@ export default function ChatListPage() {
                 if (ou.age != null) meta.push(`${ou.age} yrs`);
                 if (online) meta.push('Online');
                 else if (lastSeen) meta.push(`Last seen ${formatLastSeen(lastSeen)}`);
+                const ms = formatMaritalStatus(ou.marital_status);
+                if (ms) meta.push(`(${ms})`);
               }
               return (
                 <Link

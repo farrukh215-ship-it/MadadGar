@@ -2,6 +2,12 @@
 
 import { useEffect, useState, useRef } from 'react';
 
+function formatMaritalStatus(s: string | null | undefined): string {
+  if (!s) return '';
+  const m: Record<string, string> = { single: 'Single', married: 'Married', divorced: 'Divorced', widowed: 'Widowed', prefer_not_to_say: 'Prefer not to say' };
+  return m[s] ?? s;
+}
+
 function formatLastSeen(iso: string): string {
   const d = new Date(iso);
   const now = Date.now();
@@ -35,7 +41,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
-  const [otherUser, setOtherUser] = useState<{ id: string; display_name: string; avatar_url: string | null; gender?: string | null; age?: number | null; bio?: string | null } | null>(null);
+  const [otherUser, setOtherUser] = useState<{ id: string; display_name: string; avatar_url: string | null; gender?: string | null; age?: number | null; marital_status?: string | null; bio?: string | null } | null>(null);
   const [online, setOnline] = useState(false);
   const [lastSeenAt, setLastSeenAt] = useState<string | null>(null);
   const [friendStatus, setFriendStatus] = useState<'none' | 'friends' | 'pending_sent' | 'pending_received' | 'self' | null>(null);
@@ -336,6 +342,7 @@ export default function ChatScreen() {
                     {otherUser.age != null && `${otherUser.age} yrs`}
                     {(otherUser.gender || otherUser.age != null) && (online || lastSeenAt) && ' • '}
                     {online ? 'Online' : lastSeenAt ? `Last seen ${formatLastSeen(lastSeenAt)}` : 'Offline'}
+                    {formatMaritalStatus(otherUser.marital_status) && ` (${formatMaritalStatus(otherUser.marital_status)})`}
                   </p>
                 </div>
               </div>

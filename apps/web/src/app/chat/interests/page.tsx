@@ -26,10 +26,17 @@ type ChatUser = {
   avatar_url: string | null;
   gender?: string | null;
   age?: number | null;
+  marital_status?: string | null;
   is_premium?: boolean;
   shared_count?: number;
   distance_km?: number;
 };
+
+function formatMaritalStatus(s: string | null | undefined): string {
+  if (!s) return '';
+  const m: Record<string, string> = { single: 'Single', married: 'Married', divorced: 'Divorced', widowed: 'Widowed', prefer_not_to_say: 'Prefer not to say' };
+  return m[s] ?? s;
+}
 
 function AvatarIcon({ gender, avatarUrl }: { gender?: string | null; avatarUrl?: string | null }) {
   if (avatarUrl) return null;
@@ -500,6 +507,7 @@ export default function InterestedPeoplePage() {
                                             (u.shared_count ?? 0) > 0
                                               ? `${u.shared_count} shared interests`
                                               : null,
+                                            formatMaritalStatus(u.marital_status) ? `(${formatMaritalStatus(u.marital_status)})` : null,
                                           ]
                                             .filter(Boolean)
                                             .join(' • ') || '—'}
@@ -684,7 +692,14 @@ export default function InterestedPeoplePage() {
                             )}
                           </span>
                           <span className="text-xs text-stone-500">
-                            {u.shared_count ?? 0} shared interests
+                            {[
+                              u.gender === 'female' ? 'Female' : u.gender === 'male' ? 'Male' : null,
+                              u.age != null ? `${u.age} yrs` : null,
+                              formatMaritalStatus(u.marital_status) ? `(${formatMaritalStatus(u.marital_status)})` : null,
+                              `${u.shared_count ?? 0} shared interests`,
+                            ]
+                              .filter(Boolean)
+                              .join(' • ')}
                           </span>
                         </div>
                       </div>

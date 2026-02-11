@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { avatar_url, cover_url, display_name, gender, date_of_birth, bio, notification_sound, about_visibility, lat, lng } = body as {
+  const { avatar_url, cover_url, display_name, gender, date_of_birth, bio, notification_sound, about_visibility, marital_status, lat, lng } = body as {
     avatar_url?: string;
     cover_url?: string | null;
     display_name?: string;
@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
     bio?: string | null;
     notification_sound?: string;
     about_visibility?: 'public' | 'private';
+    marital_status?: string;
     lat?: number;
     lng?: number;
   };
@@ -34,6 +35,8 @@ export async function POST(request: NextRequest) {
   if (typeof bio === 'string') updates.bio = bio.trim().slice(0, 500) || null;
   if (typeof notification_sound === 'string' && ['default', 'chime', 'bell', 'pop', 'ding'].includes(notification_sound)) updates.notification_sound = notification_sound;
   if (typeof about_visibility === 'string' && ['public', 'private'].includes(about_visibility)) updates.about_visibility = about_visibility;
+  if (typeof marital_status === 'string' && ['single', 'married', 'divorced', 'widowed', 'prefer_not_to_say'].includes(marital_status)) updates.marital_status = marital_status;
+  else if (marital_status === null || marital_status === '') updates.marital_status = null;
 
   const { error } = await supabase
     .from('profiles')

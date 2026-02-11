@@ -30,7 +30,7 @@ export async function GET(
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('user_id, display_name, avatar_url, gender, date_of_birth, bio')
+    .select('user_id, display_name, avatar_url, gender, date_of_birth, marital_status, bio')
     .eq('user_id', otherId)
     .single();
 
@@ -49,6 +49,7 @@ export async function GET(
       avatar_url: profile.avatar_url,
       gender: (profile as { gender?: string }).gender ?? null,
       age: age != null && age >= 0 && age <= 120 ? age : null,
+      marital_status: (profile as { marital_status?: string }).marital_status ?? null,
       bio: (profile as { bio?: string }).bio ?? null,
     } : null,
     title: profile?.display_name || 'Chat',

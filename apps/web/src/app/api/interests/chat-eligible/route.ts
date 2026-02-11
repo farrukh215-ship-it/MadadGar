@@ -42,7 +42,7 @@ export async function GET(_request: NextRequest) {
 
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('user_id, display_name, avatar_url, gender')
+    .select('user_id, display_name, avatar_url, gender, date_of_birth, marital_status')
     .in('user_id', eligibleIds);
 
   let premiumRows: { user_id: string }[] = [];
@@ -67,14 +67,21 @@ export async function GET(_request: NextRequest) {
     sharedCounts.set(uid, n);
   }
 
-  const usersList = (profiles ?? []).map((p) => ({
-    id: p.user_id,
-    display_name: p.display_name || 'User',
-    avatar_url: p.avatar_url ?? null,
-    gender: (p as { gender?: string }).gender ?? null,
-    is_premium: premiumIds.has(p.user_id),
-    shared_count: sharedCounts.get(p.user_id) ?? 0,
-  }));
+  const now = new Date();
+  const usersList = (profiles ?? []).map((p) => {
+    const dob = (p as { date_of_birth?: string }).date_of_birth;
+    const age = dob ? Math.floor((now.getTime() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
+    return {
+      id: p.user_id,
+      display_name: p.display_name || 'User',
+      avatar_url: p.avatar_url ?? null,
+      gender: (p as { gender?: string }).gender ?? null,
+      age: age != null && age >= 0 && age <= 120 ? age : null,
+      marital_status: (p as { marital_status?: string }).marital_status ?? null,
+      is_premium: premiumIds.has(p.user_id),
+      shared_count: sharedCounts.get(p.user_id) ?? 0,
+    };
+  });
   usersList.sort((a, b) => (b.shared_count - a.shared_count) || ((b.is_premium ? 1 : 0) - (a.is_premium ? 1 : 0)));
 
   return Response.json({ users: usersList });
