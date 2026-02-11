@@ -11,6 +11,8 @@ type Thread = {
   updated_at: string;
   post_id: string | null;
   title: string;
+  unread_count?: number;
+  last_message?: string | null;
 };
 
 export default function ChatListPage() {
@@ -43,13 +45,20 @@ export default function ChatListPage() {
     <div className="min-h-screen bg-[#f8faf9]">
       <header className="sticky top-0 z-40 bg-brand-800 text-white shadow-lg">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
             <Link href="/feed" className="flex items-center gap-2">
               <Image src="/logo.png" alt="Madadgar" width={28} height={28} className="rounded" />
               <span className="font-bold">Madadgar</span>
             </Link>
             <h1 className="text-lg font-semibold">Chats</h1>
-            <div className="w-20" />
+            <div className="flex items-center gap-3">
+              <Link href="/chat/friends" className="text-sm text-brand-200 hover:text-white font-medium">
+                Friends
+              </Link>
+              <Link href="/chat/interests" className="text-sm text-brand-200 hover:text-white font-medium">
+                Interests
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -68,12 +77,20 @@ export default function ChatListPage() {
               Start by tapping Chat on any helper in the feed
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+              <div className="flex flex-wrap gap-3 justify-center">
               <Link
                 href="/chat/interests"
                 className="inline-block px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 shadow-premium-brand hover:shadow-premium-brand-hover transition-all"
               >
                 Interested People
               </Link>
+              <Link
+                href="/chat/friends"
+                className="inline-block px-6 py-3 rounded-xl bg-stone-200 text-stone-700 font-semibold hover:bg-stone-300 transition"
+              >
+                Friends
+              </Link>
+            </div>
               <Link
                 href="/feed"
                 className="inline-block px-6 py-3 rounded-xl bg-stone-200 text-stone-700 font-semibold hover:bg-stone-300 transition"
@@ -91,12 +108,20 @@ export default function ChatListPage() {
                 className="block p-4 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-sm transition"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center text-xl">
+                  <div className="relative w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center text-xl shrink-0">
                     💬
+                    {(t.unread_count ?? 0) > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                        {t.unread_count! > 99 ? '99+' : t.unread_count}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-brand-900 truncate">{t.title}</p>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-sm text-stone-600 truncate mt-0.5">
+                      {t.last_message || 'No messages yet'}
+                    </p>
+                    <p className="text-xs text-stone-500 mt-0.5">
                       {t.updated_at
                         ? new Date(t.updated_at).toLocaleDateString('en-PK', {
                             day: 'numeric',

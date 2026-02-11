@@ -53,6 +53,7 @@ export async function GET() {
 
   const directThreadIds = (threads ?? []).filter((t) => !t.post_id).map((t) => t.id);
   let directTitles: Record<string, string> = {};
+  let unreadByThread: Record<string, number> = {};
   if (directThreadIds.length > 0) {
     const { data: participants } = await supabase
       .from('chat_participants')
@@ -72,15 +73,47 @@ export async function GET() {
       }
     }
   }
+  const { data: unreadRows } = await supabase
+    .from('messages')
+    .select('thread_id')
+    .in('thread_id', threadIds)
+    .neq('sender_id', user.id)
+    .is('read_at', null);
+  for (const r of unreadRows ?? []) {
+    unreadByThread[r.thread_id] = (unreadByThread[r.thread_id] ?? 0) + 1;
+  }
 
-  const enriched = (threads ?? []).map((t) => ({
+  const { data: lastMessages } = await supabase
+    .from('messages')
+    .select('thread_id, content, message_type, sender_id, created_at')
+    .in('thread_id', threadIds)
+    .order('created_at', { ascending: false });
+  const lastByThread: Record<string, { content: string | null; message_type: string; sender_id: string; created_at: string }> = {};
+  for (const m of lastMessages ?? []) {
+    if (!lastByThread[m.thread_id]) lastByThread[m.thread_id] = m;
+  }
+
+  const enriched = (threads ?? []).map((t) => {
+    const last = lastByThread[t.id];
+    let lastPreview = '';
+    if (last) {
+      if (last.message_type === 'image') lastPreview = '📷 Photo';
+      else if (last.message_type === 'audio') lastPreview = '🎤 Voice';
+      else if (last.message_type === 'video') lastPreview = '🎬 Video';
+      else if (last.message_type === 'location') lastPreview = '📍 Location';
+      else lastPreview = (last.content ?? '').slice(0, 60) + ((last.content ?? '').length > 60 ? '…' : '');
+    }
+    return {
     id: t.id,
     updated_at: t.updated_at,
     post_id: t.post_id,
     title: t.post_id
       ? `${postsMap[t.post_id]?.worker_name || 'Helper'} — ${postsMap[t.post_id]?.category_name || 'Service'}`
       : (directTitles[t.id] ?? 'Chat'),
-  }));
+    unread_count: unreadByThread[t.id] ?? 0,
+    last_message: lastPreview || null,
+  };
+  });
 
   return Response.json({ threads: enriched });
 }

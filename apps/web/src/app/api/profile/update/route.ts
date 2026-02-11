@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { avatar_url, cover_url, display_name, gender } = body;
+  const { avatar_url, cover_url, display_name, gender, lat, lng } = body;
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (typeof avatar_url === 'string' && avatar_url.length > 0) updates.avatar_url = avatar_url;
@@ -25,5 +25,14 @@ export async function POST(request: NextRequest) {
   if (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
+
+  if (typeof lat === 'number' && typeof lng === 'number' && !Number.isNaN(lat) && !Number.isNaN(lng)) {
+    await supabase.rpc('update_profile_location', {
+      p_user_id: user.id,
+      p_lat: lat,
+      p_lng: lng,
+    });
+  }
+
   return Response.json({ ok: true });
 }

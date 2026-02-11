@@ -27,9 +27,8 @@ type ChatUser = {
   gender?: string | null;
   is_premium?: boolean;
   shared_count?: number;
+  distance_km?: number;
 };
-
-const MIN_SHARED_TO_CHAT = 3;
 
 function AvatarIcon({ gender, avatarUrl }: { gender?: string | null; avatarUrl?: string | null }) {
   if (avatarUrl) return null;
@@ -72,6 +71,12 @@ export default function InterestedPeoplePage() {
   const [online, setOnline] = useState<Record<string, boolean>>({});
   const [chatEligible, setChatEligible] = useState<ChatUser[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [nearbyExpanded, setNearbyExpanded] = useState(false);
+  const [nearbyUsers, setNearbyUsers] = useState<ChatUser[]>([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyError, setNearbyError] = useState<string | null>(null);
+  const [friendStatusByUser, setFriendStatusByUser] = useState<Record<string, 'none' | 'pending_sent' | 'friends'>>({});
+  const [addingFriendFor, setAddingFriendFor] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -180,6 +185,81 @@ export default function InterestedPeoplePage() {
     }
   };
 
+  const loadNearby = useCallback(async () => {
+    if (!navigator.geolocation) {
+      setNearbyError('Location not supported');
+      return;
+    }
+    setNearbyLoading(true);
+    setNearbyError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        try {
+          await fetch('/api/profile/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat, lng }),
+          });
+          const res = await fetch(`/api/interests/nearby-all?lat=${lat}&lng=${lng}&radius=10`);
+          const data = await res.json();
+          if (res.ok) {
+            setNearbyUsers(data.users ?? []);
+            const ids = (data.users ?? []).map((u: ChatUser) => u.id);
+            if (ids.length > 0) {
+              const presRes = await fetch(`/api/presence?ids=${ids.join(',')}`);
+              const presData = await presRes.json();
+              setOnline((prev) => ({ ...prev, ...(presData.online ?? {}) }));
+            }
+          } else {
+            setNearbyError(data.error ?? 'Failed to load nearby');
+          }
+        } catch {
+          setNearbyError('Failed to load nearby users');
+        } finally {
+          setNearbyLoading(false);
+        }
+      },
+      () => {
+        setNearbyError('Location access denied');
+        setNearbyLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  const addFriend = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (addingFriendFor) return;
+    setAddingFriendFor(userId);
+    try {
+      const res = await fetch('/api/friends/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to_user_id: userId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFriendStatusByUser((prev) => ({ ...prev, [userId]: 'pending_sent' }));
+      } else {
+        if (data.error === 'Already friends') setFriendStatusByUser((prev) => ({ ...prev, [userId]: 'friends' }));
+        else if (data.error === 'Request already pending') setFriendStatusByUser((prev) => ({ ...prev, [userId]: 'pending_sent' }));
+        else alert(data.error ?? 'Failed');
+      }
+    } catch {
+      alert('Failed to send friend request');
+    } finally {
+      setAddingFriendFor(null);
+    }
+  };
+
+  const toggleNearby = () => {
+    const next = !nearbyExpanded;
+    setNearbyExpanded(next);
+    if (next && nearbyUsers.length === 0 && !nearbyLoading) loadNearby();
+  };
+
   const startChat = async (userId: string) => {
     setStartingChat(userId);
     try {
@@ -219,11 +299,15 @@ export default function InterestedPeoplePage() {
               <span className="font-bold">Madadgar</span>
             </Link>
             <h1 className="text-lg font-semibold">Interested People</h1>
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition text-sm font-medium"
-            >
+            <div className="flex items-center gap-2">
+              <Link href="/chat/friends" className="text-sm text-brand-100 hover:text-white font-medium">
+                Friends
+              </Link>
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition text-sm font-medium"
+              >
               <span className="relative">
                 💬
                 {chatEligible.length > 0 && (
@@ -233,7 +317,8 @@ export default function InterestedPeoplePage() {
                 )}
               </span>
               Available for Chat
-            </button>
+              </button>
+            </div>
           </div>
           <p className="text-sm text-brand-100 mt-1">
             Chat with people who share your interests
@@ -263,6 +348,104 @@ export default function InterestedPeoplePage() {
           </div>
         ) : (
           <div className="space-y-8">
+            <section className="animate-fade-in">
+              <div
+                className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 rounded-2xl border border-emerald-400/30 shadow-premium overflow-hidden cursor-pointer hover:shadow-premium-hover transition-all duration-300"
+                onClick={toggleNearby}
+              >
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">📍</span>
+                    <div>
+                      <p className="font-semibold text-white flex items-center gap-2">
+                        Nearby
+                        <span className="text-emerald-100 text-xs font-normal">within 10km, same interests</span>
+                      </p>
+                      <p className="text-sm text-emerald-100 mt-0.5">Chat with people near you who share your interests</p>
+                    </div>
+                  </div>
+                  <svg
+                    className={`w-5 h-5 text-white/80 transition-transform duration-300 ${nearbyExpanded ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {nearbyExpanded && (
+                  <div className="border-t border-emerald-400/30 p-4 bg-white/5 animate-fade-in">
+                    {nearbyLoading ? (
+                      <div className="py-8 text-center">
+                        <div className="inline-block w-6 h-6 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                        <p className="text-sm text-emerald-100 mt-2">Getting your location...</p>
+                      </div>
+                    ) : nearbyError ? (
+                      <p className="text-center text-amber-200 py-4">{nearbyError}</p>
+                    ) : nearbyUsers.length === 0 ? (
+                      <p className="text-center text-emerald-100 py-4">
+                        No one nearby with shared interests. Add more interests or try again later.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-emerald-100 uppercase tracking-wide mb-2">
+                          {nearbyUsers.length} people nearby
+                        </p>
+                        {nearbyUsers.map((u) => (
+                          <div
+                            key={u.id}
+                            className="flex items-center justify-between p-3 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative w-10 h-10 rounded-full bg-white/20 overflow-hidden shrink-0">
+                                {u.avatar_url ? (
+                                  <Image src={u.avatar_url} alt="" width={40} height={40} className="object-cover" unoptimized />
+                                ) : (
+                                  <AvatarIcon gender={u.gender} avatarUrl={u.avatar_url} />
+                                )}
+                                {online[u.id] && (
+                                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white" title="Online" />
+                                )}
+                              </div>
+                              <div>
+                                <span className="font-medium text-white">{u.display_name}</span>
+                                <span className="text-xs text-emerald-100 block">
+                                  {u.distance_km != null ? `${u.distance_km} km away` : `${u.shared_count ?? 0} shared`}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => addFriend(u.id, e)}
+                                disabled={addingFriendFor === u.id || friendStatusByUser[u.id] === 'pending_sent' || friendStatusByUser[u.id] === 'friends'}
+                                className={`px-3 py-2 rounded-xl text-sm font-medium shrink-0 ${
+                                  friendStatusByUser[u.id] === 'friends'
+                                    ? 'bg-green-500/20 text-green-300'
+                                    : friendStatusByUser[u.id] === 'pending_sent'
+                                    ? 'bg-white/20 text-emerald-100'
+                                    : 'bg-white/10 hover:bg-white/20 text-white'
+                                } disabled:opacity-50`}
+                              >
+                                {addingFriendFor === u.id ? '...' : friendStatusByUser[u.id] === 'friends' ? '✓ Friends' : friendStatusByUser[u.id] === 'pending_sent' ? 'Request sent' : 'Add friend'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); startChat(u.id); }}
+                                disabled={startingChat === u.id}
+                                className="px-4 py-2 rounded-xl bg-white text-emerald-700 text-sm font-medium hover:bg-emerald-50 disabled:opacity-50"
+                              >
+                                {startingChat === u.id ? '...' : 'Chat'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
             {grouped.map(({ group, interests }) => (
               <section key={group} className="animate-fade-in">
                 <h2 className="flex items-center gap-2 text-sm font-bold text-stone-700 mb-3">
@@ -341,6 +524,12 @@ export default function InterestedPeoplePage() {
                               <div className="space-y-2">
                                 <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">
                                   People interested in {int.name}
+                                  {(() => {
+                                    const onlineCount = users.filter((u) => online[u.id]).length;
+                                    return onlineCount > 0 ? (
+                                      <span className="ml-1.5 text-green-600 font-normal">• {onlineCount} online</span>
+                                    ) : null;
+                                  })()}
                                 </p>
                                 {users.map((u) => (
                                   <div
@@ -376,7 +565,21 @@ export default function InterestedPeoplePage() {
                                         )}
                                       </div>
                                     </div>
-                                    {(u.shared_count ?? 0) >= MIN_SHARED_TO_CHAT ? (
+                                    <div className="flex gap-2 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => addFriend(u.id, e)}
+                                        disabled={addingFriendFor === u.id || friendStatusByUser[u.id] === 'pending_sent' || friendStatusByUser[u.id] === 'friends'}
+                                        className={`px-3 py-2 rounded-xl text-sm font-medium ${
+                                          friendStatusByUser[u.id] === 'friends'
+                                            ? 'bg-green-100 text-green-700'
+                                            : friendStatusByUser[u.id] === 'pending_sent'
+                                            ? 'bg-stone-100 text-stone-500'
+                                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                                        } disabled:opacity-50`}
+                                      >
+                                        {addingFriendFor === u.id ? '...' : friendStatusByUser[u.id] === 'friends' ? '✓ Friends' : friendStatusByUser[u.id] === 'pending_sent' ? 'Request sent' : 'Add friend'}
+                                      </button>
                                       <button
                                         type="button"
                                         onClick={() => startChat(u.id)}
@@ -385,11 +588,7 @@ export default function InterestedPeoplePage() {
                                       >
                                         {startingChat === u.id ? '...' : 'Chat'}
                                       </button>
-                                    ) : (
-                                      <span className="px-4 py-2 rounded-xl bg-stone-100 text-stone-500 text-sm" title={`Add ${MIN_SHARED_TO_CHAT - (u.shared_count ?? 0)} more matching interests to chat`}>
-                                        {MIN_SHARED_TO_CHAT - (u.shared_count ?? 0)} more to chat
-                                      </span>
-                                    )}
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -474,7 +673,7 @@ export default function InterestedPeoplePage() {
             <div className="flex items-center justify-between p-4 border-b border-stone-200 bg-brand-600 text-white">
               <div>
                 <h2 className="font-semibold text-lg">Available for Chat</h2>
-                <p className="text-sm text-brand-100">3+ matching interests</p>
+                <p className="text-sm text-brand-100">Same interests • Chat anytime</p>
               </div>
               <button type="button" onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-white/10 transition">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -485,7 +684,7 @@ export default function InterestedPeoplePage() {
             <div className="flex-1 overflow-y-auto p-3">
               {chatEligible.length === 0 ? (
                 <p className="text-sm text-stone-500 py-8 text-center">
-                  Add at least 3 interests and find others with 3+ in common to chat here.
+                  Add interests above, expand to see people, then chat here.
                 </p>
               ) : (
                 <div className="space-y-2">

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { subscribeToMessages } from '@/lib/supabase/realtime';
-
 type Message = {
   id: string;
   content: string | null;
@@ -12,6 +12,8 @@ type Message = {
   sender_id: string;
   created_at: string;
   read_at: string | null;
+  deleted_at: string | null;
+  metadata?: { duration?: number };
 };
 
 export default function ChatScreen() {
@@ -21,6 +23,13 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
+  const [otherUser, setOtherUser] = useState<{ id: string; display_name: string; avatar_url: string | null } | null>(null);
+  const [online, setOnline] = useState(false);
+  const [friendStatus, setFriendStatus] = useState<'none' | 'friends' | 'pending_sent' | 'pending_received' | 'self' | null>(null);
+  const [friendRequestId, setFriendRequestId] = useState<string | null>(null);
+  const [addingFriend, setAddingFriend] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -31,9 +40,24 @@ export default function ChatScreen() {
         return;
       }
       setUserId(user.id);
+      const res = await fetch(`/api/chat/threads/${threadId}`);
+      const threadData = await res.json();
+      if (res.ok && threadData.other_user) {
+        setOtherUser(threadData.other_user);
+        const presRes = await fetch(`/api/presence?ids=${threadData.other_user.id}`);
+        const presData = await presRes.json();
+        setOnline(!!presData.online?.[threadData.other_user.id]);
+        const statusRes = await fetch(`/api/friends/status?user_id=${threadData.other_user.id}`);
+        const statusData = await statusRes.json();
+        setFriendStatus(statusData.status ?? 'none');
+        setFriendRequestId(statusData.request_id ?? null);
+        const premRes = await fetch('/api/premium/status');
+        const premData = await premRes.json();
+        setIsPremium(!!premData.is_premium);
+      }
       const { data } = await supabase
         .from('messages')
-        .select('id, content, message_type, sender_id, created_at, read_at')
+        .select('id, content, message_type, sender_id, created_at, read_at, deleted_at, metadata')
         .eq('thread_id', threadId)
         .order('created_at', { ascending: true });
       setMessages(data ?? []);
@@ -57,12 +81,17 @@ export default function ChatScreen() {
       (payload) => {
         const { new: updated } = payload as { new: Message };
         setMessages((prev) =>
-          prev.map((m) => (m.id === updated.id ? { ...m, read_at: updated.read_at } : m))
+          prev.map((m) => (m.id === updated.id ? { ...m, read_at: updated.read_at, deleted_at: updated.deleted_at } : m))
         );
       }
     );
     return unsub;
   }, [threadId]);
+
+  const [sendingImage, setSendingImage] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,15 +112,244 @@ export default function ChatScreen() {
     setInput('');
   };
 
+  const MAX_VIDEO_MB = isPremium ? 100 : 25;
+  const sendImage = async (file: File) => {
+    if (!userId) return;
+    setSendingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('bucket', 'chat-images');
+      const r = await fetch('/api/storage/upload', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (!d.url) throw new Error(d.error ?? 'Upload failed');
+      const supabase = createClient();
+      const { error } = await supabase.from('messages').insert({
+        thread_id: threadId,
+        sender_id: userId,
+        content: d.url,
+        message_type: 'image',
+      });
+      if (error) throw new Error(error.message);
+      await supabase.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to send image');
+    } finally {
+      setSendingImage(false);
+    }
+  };
+
+  const sendVideo = async (file: File) => {
+    if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+      alert(isPremium ? `Video must be under ${MAX_VIDEO_MB}MB` : `Video limit ${MAX_VIDEO_MB}MB. Upgrade to Premium for 100MB.`);
+      return;
+    }
+    if (!userId) return;
+    setSendingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('bucket', 'chat-media');
+      const r = await fetch('/api/storage/upload', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (!d.url) throw new Error(d.error ?? 'Upload failed');
+      const supabase = createClient();
+      await supabase.from('messages').insert({
+        thread_id: threadId,
+        sender_id: userId,
+        content: d.url,
+        message_type: 'video',
+      });
+      await supabase.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to send video');
+    } finally {
+      setSendingImage(false);
+    }
+  };
+
+  const MAX_AUDIO_SEC = 60;
+  const startRecording = async () => {
+    if (!userId) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+        recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        setSendingImage(true);
+        try {
+          const fd = new FormData();
+          fd.append('file', blob, 'audio.webm');
+          fd.append('bucket', 'chat-media');
+          const r = await fetch('/api/storage/upload', { method: 'POST', body: fd });
+          const d = await r.json();
+          if (!d.url) throw new Error(d.error ?? 'Upload failed');
+          const supabase = createClient();
+          await supabase.from('messages').insert({
+            thread_id: threadId,
+            sender_id: userId,
+            content: d.url,
+            message_type: 'audio',
+            metadata: { duration_sec: MAX_AUDIO_SEC },
+          });
+          await supabase.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
+        } finally {
+          setSendingImage(false);
+        }
+      };
+      recorder.start();
+      recorderRef.current = recorder;
+      setRecording(true);
+      setTimeout(() => { if (recorderRef.current?.state === 'recording') recorderRef.current.stop(); setRecording(false); }, MAX_AUDIO_SEC * 1000);
+    } catch {
+      alert('Microphone access needed for voice messages');
+    }
+  };
+
+  const stopRecording = () => {
+    if (recorderRef.current?.state === 'recording') {
+      recorderRef.current.stop();
+      setRecording(false);
+    }
+  };
+
+  const deleteMessage = async (messageId: string, forEveryone: boolean) => {
+    try {
+      const res = await fetch(`/api/chat/messages/${messageId}`, {
+        method: 'DELETE',
+        headers: { 'x-delete-for-everyone': forEveryone ? 'true' : 'false' },
+      });
+      if (res.ok) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === messageId ? { ...m, deleted_at: new Date().toISOString() } : m))
+        );
+      } else {
+        const d = await res.json();
+        alert(d.error ?? 'Failed to delete');
+      }
+    } catch {
+      alert('Failed to delete message');
+    }
+  };
+
+  const sendFriendRequest = async () => {
+    if (!otherUser || addingFriend) return;
+    setAddingFriend(true);
+    try {
+      const res = await fetch('/api/friends/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to_user_id: otherUser.id }),
+      });
+      const data = await res.json();
+      if (res.ok) setFriendStatus('pending_sent');
+      else alert(data.error ?? 'Failed to send request');
+    } catch {
+      alert('Failed to send friend request');
+    } finally {
+      setAddingFriend(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#f8faf9] flex flex-col">
-      <header className="sticky top-0 z-10 bg-brand-800 text-white px-4 py-3 flex items-center gap-3">
-        <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-white/10 transition">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <h1 className="font-semibold flex-1 truncate">Chat</h1>
+      <header className="sticky top-0 z-10 bg-brand-800 text-white px-4 py-3">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-white/10 transition shrink-0">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          {otherUser && (
+            <>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="relative w-9 h-9 rounded-full bg-brand-600 overflow-hidden shrink-0">
+                  {otherUser.avatar_url ? (
+                    <Image src={otherUser.avatar_url} alt="" width={36} height={36} className="object-cover" unoptimized />
+                  ) : (
+                    <span className="flex items-center justify-center w-full h-full text-lg">👤</span>
+                  )}
+                  {online && (
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-brand-800" title="Online" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <h1 className="font-semibold truncate">{otherUser.display_name}</h1>
+                  <p className="text-xs text-brand-200 truncate">{online ? 'Online' : 'Offline'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {friendStatus === 'none' && (
+                  <button
+                    type="button"
+                    onClick={sendFriendRequest}
+                    disabled={addingFriend}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-sm font-medium transition"
+                    title="Add as friend"
+                  >
+                    {addingFriend ? '…' : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                        <span>Add friend</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                {friendStatus === 'pending_sent' && (
+                  <span className="px-3 py-2 rounded-xl bg-white/10 text-xs font-medium">Request sent</span>
+                )}
+                {friendStatus === 'pending_received' && friendRequestId && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const r = await fetch('/api/friends/decline', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ request_id: friendRequestId }),
+                          });
+                          if (r.ok) setFriendStatus('none');
+                        } catch {}
+                      }}
+                      className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium"
+                    >
+                      Decline
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setAddingFriend(true);
+                        try {
+                          const r = await fetch('/api/friends/accept', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ request_id: friendRequestId }),
+                          });
+                          if (r.ok) setFriendStatus('friends');
+                        } catch {}
+                        setAddingFriend(false);
+                      }}
+                      disabled={addingFriend}
+                      className="px-3 py-2 rounded-xl bg-green-500/80 hover:bg-green-500 text-xs font-medium disabled:opacity-50"
+                    >
+                      {addingFriend ? '…' : 'Accept'}
+                    </button>
+                  </>
+                )}
+                {friendStatus === 'friends' && (
+                  <span className="px-3 py-2 rounded-xl bg-green-500/20 text-green-300 text-xs font-medium">✓ Friends</span>
+                )}
+              </div>
+            </>
+          )}
+          {!otherUser && <h1 className="font-semibold flex-1 truncate">Chat</h1>}
+        </div>
       </header>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 && (
@@ -106,15 +364,107 @@ export default function ChatScreen() {
                 : 'mr-auto bg-white border border-stone-200 text-stone-900 rounded-bl-md'
             }`}
           >
-            <span>{m.content}</span>
-            {m.sender_id === userId && (
-              <span className="ml-2 text-xs opacity-80">{m.read_at ? '✓✓' : '✓'}</span>
+            {m.deleted_at ? (
+              <span className="italic opacity-70">This message was deleted</span>
+            ) : m.message_type === 'image' && m.content ? (
+              <a href={m.content} target="_blank" rel="noopener noreferrer" className="block">
+                <img src={m.content} alt="" className="max-w-full rounded-lg max-h-64 object-cover" />
+              </a>
+            ) : m.message_type === 'audio' && m.content ? (
+              <audio src={m.content} controls className="max-w-full h-10" />
+            ) : m.message_type === 'video' && m.content ? (
+              <video src={m.content} controls className="max-w-full max-h-64 rounded-lg" />
+            ) : (
+              <span>{m.content}</span>
+            )}
+            {m.sender_id === userId && !m.deleted_at && (
+              <span className="inline-flex items-center gap-2">
+                <span className="text-xs opacity-80">{m.read_at ? '✓✓' : '✓'}</span>
+                <button
+                  type="button"
+                  onClick={() => deleteMessage(m.id, false)}
+                  className="text-xs opacity-60 hover:opacity-100"
+                  title="Delete for me"
+                >
+                  Delete
+                </button>
+                {isPremium && (
+                  <button
+                    type="button"
+                    onClick={() => deleteMessage(m.id, true)}
+                    className="text-xs opacity-60 hover:opacity-100"
+                    title="Delete for everyone"
+                  >
+                    Delete for all
+                  </button>
+                )}
+              </span>
             )}
           </div>
         ))}
       </div>
       <form onSubmit={sendMessage} className="p-4 bg-white border-t border-stone-200">
-        <div className="flex gap-2">
+        {showAttachMenu && (
+          <div className="flex gap-2 p-2 mb-2 rounded-xl bg-stone-50 border border-stone-200">
+            <label className="flex-1 flex flex-col items-center gap-1 p-3 rounded-lg bg-white border border-stone-200 hover:border-brand-400 cursor-pointer transition disabled:opacity-50" style={{ pointerEvents: sendingImage ? 'none' : 'auto' }}>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) { sendImage(f); setShowAttachMenu(false); } e.target.value = ''; }}
+                disabled={sendingImage}
+              />
+              <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="text-xs font-medium text-stone-600">Photo</span>
+            </label>
+            <label className="flex-1 flex flex-col items-center gap-1 p-3 rounded-lg bg-white border border-stone-200 hover:border-brand-400 cursor-pointer transition disabled:opacity-50" style={{ pointerEvents: sendingImage ? 'none' : 'auto' }}>
+              <input
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) { sendVideo(f); setShowAttachMenu(false); } e.target.value = ''; }}
+                disabled={sendingImage}
+              />
+              <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span className="text-xs font-medium text-stone-600">Video</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => { startRecording(); setShowAttachMenu(false); }}
+              disabled={sendingImage}
+              className="flex-1 flex flex-col items-center gap-1 p-3 rounded-lg bg-white border border-stone-200 hover:border-brand-400 transition disabled:opacity-50"
+            >
+              <svg className="w-6 h-6 text-brand-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z" />
+              </svg>
+              <span className="text-xs font-medium text-stone-600">Voice</span>
+            </button>
+          </div>
+        )}
+        <div className="flex gap-2 items-center">
+          <button
+            type="button"
+            onClick={() => setShowAttachMenu(!showAttachMenu)}
+            className={`p-2 rounded-xl transition shrink-0 ${showAttachMenu ? 'bg-brand-100 text-brand-700' : 'hover:bg-stone-100 text-stone-500'}`}
+            title="Attach - Image, Video, Voice"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+          </button>
+          {recording ? (
+            <button type="button" onClick={stopRecording} className="p-2 rounded-xl bg-red-100 text-red-600 animate-pulse shrink-0" title="Stop recording">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+            </button>
+          ) : (
+            <button type="button" onClick={startRecording} className="p-2 rounded-xl hover:bg-stone-100 text-stone-500 shrink-0" title="Voice message (max 1 min)">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z" /></svg>
+            </button>
+          )}
           <input
             type="text"
             value={input}
@@ -124,11 +474,13 @@ export default function ChatScreen() {
           />
           <button
             type="submit"
-            className="h-12 px-6 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition"
+            disabled={!input.trim()}
+            className="h-12 px-6 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 transition shrink-0"
           >
             Send
           </button>
         </div>
+        <p className="text-[10px] text-stone-400 mt-1.5">📎 Attach • 🎤 Voice • Send image, video, or voice message</p>
       </form>
     </main>
   );

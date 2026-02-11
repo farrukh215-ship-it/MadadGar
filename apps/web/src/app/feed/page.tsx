@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FeedHeader } from '@/components/FeedHeader';
@@ -101,7 +101,7 @@ export default function FeedPage() {
   const fetchIdRef = useRef(0);
   const router = useRouter();
 
-  const startChat = async (authorId: string, e: React.MouseEvent) => {
+  const startChat = async (authorId: string, e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!authorId) return;
