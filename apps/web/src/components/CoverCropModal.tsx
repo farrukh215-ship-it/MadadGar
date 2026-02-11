@@ -33,11 +33,14 @@ export function CoverCropModal({
   imageSrc,
   onComplete,
   onCancel,
+  variant = 'cover',
 }: {
   imageSrc: string;
   onComplete: (blob: Blob) => void;
   onCancel: () => void;
+  variant?: 'cover' | 'avatar';
 }) {
+  const isAvatar = variant === 'avatar';
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -60,10 +63,10 @@ export function CoverCropModal({
           crop={crop}
           zoom={zoom}
           rotation={0}
-          aspect={3 / 1}
+          aspect={isAvatar ? 1 : 3 / 1}
           minZoom={1}
           maxZoom={3}
-          cropShape="rect"
+          cropShape={isAvatar ? 'round' : 'rect'}
           zoomSpeed={1}
           restrictPosition={true}
           showGrid={false}

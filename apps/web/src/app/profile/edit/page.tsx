@@ -17,11 +17,13 @@ export default function EditProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
+  const [avatarCropSrc, setAvatarCropSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [myInterests, setMyInterests] = useState<Set<string>>(new Set());
   const [allInterests, setAllInterests] = useState<Interest[]>([]);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const loadInterests = useCallback(async () => {
     try {
@@ -183,13 +185,39 @@ export default function EditProfilePage() {
                 <span className="text-3xl">👤</span>
               )}
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
-              className="text-sm"
-            />
+            <div>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const url = URL.createObjectURL(file);
+                    setAvatarCropSrc(url);
+                  }
+                }}
+                className="text-sm"
+              />
+              <p className="mt-1 text-xs text-stone-500">Profile photo crop karke adjust kar sakte hain</p>
+            </div>
           </div>
+          {avatarCropSrc && (
+            <CoverCropModal
+              variant="avatar"
+              imageSrc={avatarCropSrc}
+              onComplete={async (blob) => {
+                setAvatarFile(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+                URL.revokeObjectURL(avatarCropSrc);
+                setAvatarCropSrc(null);
+              }}
+              onCancel={() => {
+                URL.revokeObjectURL(avatarCropSrc);
+                setAvatarCropSrc(null);
+                if (avatarInputRef.current) avatarInputRef.current.value = '';
+              }}
+            />
+          )}
         </div>
 
         <div>
