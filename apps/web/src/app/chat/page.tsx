@@ -15,12 +15,27 @@ type Thread = {
   last_message?: string | null;
   is_friend?: boolean;
   friend_request_sent?: boolean;
+  other_user?: { id: string; display_name: string; gender: string | null; age: number | null } | null;
 };
+
+function formatLastSeen(iso: string): string {
+  const d = new Date(iso);
+  const now = Date.now();
+  const diff = (now - d.getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+  if (diff < 86400 * 2) return 'yesterday';
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} days ago`;
+  return d.toLocaleDateString();
+}
 
 export default function ChatListPage() {
   const router = useRouter();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({});
+  const [onlineMap, setOnlineMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     (async () => {
@@ -34,7 +49,15 @@ export default function ChatListPage() {
       try {
         const res = await fetch('/api/chat/threads');
         const data = await res.json();
-        if (res.ok) setThreads(data.threads ?? []);
+        const list = data.threads ?? [];
+        setThreads(list);
+        const otherIds = list.map((t: Thread) => t.other_user?.id).filter(Boolean) as string[];
+        if (otherIds.length > 0) {
+          const presRes = await fetch(`/api/presence?ids=${otherIds.join(',')}`);
+          const presData = await presRes.json();
+          setOnlineMap(presData.online ?? {});
+          setLastSeenMap(presData.last_seen ?? {});
+        }
       } catch {
         setThreads([]);
       } finally {
@@ -103,47 +126,64 @@ export default function ChatListPage() {
           </div>
         ) : (
           <div className="space-y-1">
-            {threads.map((t) => (
-              <Link
-                key={t.id}
-                href={`/chat/${t.id}`}
-                className="block p-4 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-sm transition"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center text-xl shrink-0">
-                    💬
-                    {(t.unread_count ?? 0) > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                        {t.unread_count! > 99 ? '99+' : t.unread_count}
-                      </span>
-                    )}
+            {threads.map((t) => {
+              const ou = t.other_user;
+              const online = ou ? onlineMap[ou.id] : false;
+              const lastSeen = ou ? lastSeenMap[ou.id] : null;
+              const meta: string[] = [];
+              if (ou) {
+                if (ou.gender) meta.push(ou.gender === 'female' ? 'Female' : ou.gender === 'male' ? 'Male' : 'Other');
+                if (ou.age != null) meta.push(`${ou.age} yrs`);
+                if (online) meta.push('Online');
+                else if (lastSeen) meta.push(`Last seen ${formatLastSeen(lastSeen)}`);
+              }
+              return (
+                <Link
+                  key={t.id}
+                  href={`/chat/${t.id}`}
+                  className="block p-4 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-sm transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center text-xl shrink-0">
+                      💬
+                      {(t.unread_count ?? 0) > 0 && (
+                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                          {t.unread_count! > 99 ? '99+' : t.unread_count}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-brand-900 truncate">
+                        {t.title}
+                        {t.is_friend && <span className="ml-1.5 text-xs text-green-600 font-normal">• Friends</span>}
+                        {t.friend_request_sent && !t.is_friend && <span className="ml-1.5 text-xs text-stone-500 font-normal">• Request sent</span>}
+                      </p>
+                      {meta.length > 0 && (
+                        <p className="text-xs text-stone-500 truncate mt-0.5">
+                          {meta.join(' • ')}
+                        </p>
+                      )}
+                      <p className="text-sm text-stone-600 truncate mt-0.5">
+                        {t.last_message || 'No messages yet'}
+                      </p>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        {t.updated_at
+                          ? new Date(t.updated_at).toLocaleDateString('en-PK', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : ''}
+                      </p>
+                    </div>
+                    <svg className="w-5 h-5 text-stone-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-brand-900 truncate">
-                      {t.title}
-                      {t.is_friend && <span className="ml-1.5 text-xs text-green-600 font-normal">• Friends</span>}
-                      {t.friend_request_sent && !t.is_friend && <span className="ml-1.5 text-xs text-stone-500 font-normal">• Request sent</span>}
-                    </p>
-                    <p className="text-sm text-stone-600 truncate mt-0.5">
-                      {t.last_message || 'No messages yet'}
-                    </p>
-                    <p className="text-xs text-stone-500 mt-0.5">
-                      {t.updated_at
-                        ? new Date(t.updated_at).toLocaleDateString('en-PK', {
-                            day: 'numeric',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : ''}
-                    </p>
-                  </div>
-                  <svg className="w-5 h-5 text-stone-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </main>

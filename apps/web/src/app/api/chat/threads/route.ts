@@ -54,6 +54,7 @@ export async function GET() {
   const directThreadIds = (threads ?? []).filter((t) => !t.post_id).map((t) => t.id);
   let directTitles: Record<string, string> = {};
   let otherUserByThread: Record<string, string> = {};
+  let otherUserProfile: Record<string, { display_name: string; gender: string | null; age: number | null }> = {};
   let unreadByThread: Record<string, number> = {};
   if (directThreadIds.length > 0) {
     const { data: participants } = await supabase
@@ -64,13 +65,21 @@ export async function GET() {
     if (otherIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('user_id, display_name')
+        .select('user_id, display_name, gender, date_of_birth')
         .in('user_id', otherIds);
-      const nameMap = Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p.display_name || 'User']));
       for (const p of participants ?? []) {
         if (p.user_id !== user.id) {
-          directTitles[p.thread_id] = nameMap[p.user_id] ?? 'User';
+          const profile = (profiles ?? []).find((pr) => pr.user_id === p.user_id);
+          const age = profile?.date_of_birth
+            ? Math.floor((Date.now() - new Date(profile.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+            : null;
+          directTitles[p.thread_id] = profile?.display_name || 'User';
           otherUserByThread[p.thread_id] = p.user_id;
+          otherUserProfile[p.user_id] = {
+            display_name: profile?.display_name || 'User',
+            gender: (profile as { gender?: string }).gender ?? null,
+            age: age != null && age >= 0 && age <= 120 ? age : null,
+          };
         }
       }
     }
@@ -118,6 +127,8 @@ export async function GET() {
       else if (last.message_type === 'location') lastPreview = '📍 Location';
       else lastPreview = (last.content ?? '').slice(0, 60) + ((last.content ?? '').length > 60 ? '…' : '');
     }
+    const otherId = !t.post_id ? otherUserByThread[t.id] : null;
+    const profile = otherId ? otherUserProfile[otherId] : null;
     return {
     id: t.id,
     updated_at: t.updated_at,
@@ -127,8 +138,9 @@ export async function GET() {
       : (directTitles[t.id] ?? 'Chat'),
     unread_count: unreadByThread[t.id] ?? 0,
     last_message: lastPreview || null,
-    is_friend: !t.post_id && !!otherUserByThread[t.id] && friendIds.has(otherUserByThread[t.id]),
-    friend_request_sent: !t.post_id && !!otherUserByThread[t.id] && pendingSentIds.has(otherUserByThread[t.id]),
+    is_friend: !!otherId && friendIds.has(otherId),
+    friend_request_sent: !!otherId && pendingSentIds.has(otherId),
+    other_user: profile ? { id: otherId, display_name: profile.display_name, gender: profile.gender, age: profile.age } : null,
   };
   });
 

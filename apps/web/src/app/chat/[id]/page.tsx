@@ -1,6 +1,18 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+
+function formatLastSeen(iso: string): string {
+  const d = new Date(iso);
+  const now = Date.now();
+  const diff = (now - d.getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+  if (diff < 86400 * 2) return 'yesterday';
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} days ago`;
+  return d.toLocaleDateString();
+}
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
@@ -25,6 +37,7 @@ export default function ChatScreen() {
   const [userId, setUserId] = useState<string | null>(null);
   const [otherUser, setOtherUser] = useState<{ id: string; display_name: string; avatar_url: string | null; gender?: string | null; age?: number | null; bio?: string | null } | null>(null);
   const [online, setOnline] = useState(false);
+  const [lastSeenAt, setLastSeenAt] = useState<string | null>(null);
   const [friendStatus, setFriendStatus] = useState<'none' | 'friends' | 'pending_sent' | 'pending_received' | 'self' | null>(null);
   const [friendRequestId, setFriendRequestId] = useState<string | null>(null);
   const [addingFriend, setAddingFriend] = useState(false);
@@ -52,6 +65,7 @@ export default function ChatScreen() {
         const presRes = await fetch(`/api/presence?ids=${threadData.other_user.id}`);
         const presData = await presRes.json();
         setOnline(!!presData.online?.[threadData.other_user.id]);
+        setLastSeenAt(presData.last_seen?.[threadData.other_user.id] ?? null);
         const statusRes = await fetch(`/api/friends/status?user_id=${threadData.other_user.id}`);
         const statusData = await statusRes.json();
         setFriendStatus(statusData.status ?? 'none');
@@ -317,9 +331,11 @@ export default function ChatScreen() {
                 <div className="min-w-0">
                   <h1 className="font-semibold truncate">{otherUser.display_name}</h1>
                   <p className="text-xs text-brand-200 truncate">
-                    {online ? 'Online' : 'Offline'}
-                    {otherUser.gender && ` • ${otherUser.gender === 'female' ? 'Female' : otherUser.gender === 'male' ? 'Male' : 'Other'}`}
-                    {otherUser.age != null && ` • ${otherUser.age} yrs`}
+                    {otherUser.gender && `${otherUser.gender === 'female' ? 'Female' : otherUser.gender === 'male' ? 'Male' : 'Other'}`}
+                    {otherUser.gender && otherUser.age != null && ' • '}
+                    {otherUser.age != null && `${otherUser.age} yrs`}
+                    {(otherUser.gender || otherUser.age != null) && (online || lastSeenAt) && ' • '}
+                    {online ? 'Online' : lastSeenAt ? `Last seen ${formatLastSeen(lastSeenAt)}` : 'Offline'}
                   </p>
                 </div>
               </div>
