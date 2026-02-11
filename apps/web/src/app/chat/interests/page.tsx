@@ -24,8 +24,19 @@ type ChatUser = {
   id: string;
   display_name: string;
   avatar_url: string | null;
+  gender?: string | null;
   is_premium?: boolean;
+  shared_count?: number;
 };
+
+const MIN_SHARED_TO_CHAT = 3;
+
+function AvatarIcon({ gender, avatarUrl }: { gender?: string | null; avatarUrl?: string | null }) {
+  if (avatarUrl) return null;
+  if (gender === 'female') return <span className="flex items-center justify-center w-full h-full text-lg">👩</span>;
+  if (gender === 'male') return <span className="flex items-center justify-center w-full h-full text-lg">👨</span>;
+  return <span className="flex items-center justify-center w-full h-full text-lg">👤</span>;
+}
 
 const GROUP_LABELS: Record<string, string> = {
   hobbies: 'Hobbies',
@@ -59,6 +70,8 @@ export default function InterestedPeoplePage() {
   const [loadingUsers, setLoadingUsers] = useState<string | null>(null);
   const [startingChat, setStartingChat] = useState<string | null>(null);
   const [online, setOnline] = useState<Record<string, boolean>>({});
+  const [chatEligible, setChatEligible] = useState<ChatUser[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -89,6 +102,27 @@ export default function InterestedPeoplePage() {
   useEffect(() => {
     fetch('/api/presence', { method: 'POST' }).catch(() => {});
   }, []);
+
+  const loadChatEligible = useCallback(async () => {
+    try {
+      const res = await fetch('/api/interests/chat-eligible');
+      const data = await res.json();
+      const users = data.users ?? [];
+      setChatEligible(users);
+      const ids = users.map((u: ChatUser) => u.id).filter(Boolean);
+      if (ids.length > 0) {
+        const presRes = await fetch(`/api/presence?ids=${ids.join(',')}`);
+        const presData = await presRes.json();
+        setOnline((prev) => ({ ...prev, ...(presData.online ?? {}) }));
+      }
+    } catch {
+      setChatEligible([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loading && grouped.length > 0) loadChatEligible();
+  }, [loading, grouped.length, loadChatEligible]);
 
   const toggleInterest = async (slug: string) => {
     setLimitError(null);
@@ -159,9 +193,17 @@ export default function InterestedPeoplePage() {
         router.push(`/login?next=${encodeURIComponent('/chat/interests')}`);
         return;
       }
+      if (!res.ok) {
+        alert(data?.error ?? 'Failed to start chat. Please try again.');
+        return;
+      }
       if (data.thread?.id) {
         router.push(`/chat/${data.thread.id}`);
+      } else {
+        alert('Could not open chat. Please try again.');
       }
+    } catch (err) {
+      alert('Network error. Please check your connection and try again.');
     } finally {
       setStartingChat(null);
     }
@@ -177,7 +219,21 @@ export default function InterestedPeoplePage() {
               <span className="font-bold">Madadgar</span>
             </Link>
             <h1 className="text-lg font-semibold">Interested People</h1>
-            <div className="w-20" />
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition text-sm font-medium"
+            >
+              <span className="relative">
+                💬
+                {chatEligible.length > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    {chatEligible.length}
+                  </span>
+                )}
+              </span>
+              Available for Chat
+            </button>
           </div>
           <p className="text-sm text-brand-100 mt-1">
             Chat with people who share your interests
@@ -296,7 +352,7 @@ export default function InterestedPeoplePage() {
                                         {u.avatar_url ? (
                                           <Image src={u.avatar_url} alt="" width={40} height={40} className="object-cover" unoptimized />
                                         ) : (
-                                          <span className="flex items-center justify-center w-full h-full text-lg">👤</span>
+                                          <AvatarIcon gender={u.gender} avatarUrl={u.avatar_url} />
                                         )}
                                         {online[u.id] && (
                                           <span
@@ -308,21 +364,32 @@ export default function InterestedPeoplePage() {
                                           <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center text-[10px] text-white">★</span>
                                         )}
                                       </div>
-                                      <span className="font-medium text-stone-900 flex items-center gap-1.5">
-                                        {u.display_name}
-                                        {u.is_premium && (
-                                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">Premium</span>
+                                      <div>
+                                        <span className="font-medium text-stone-900 flex items-center gap-1.5">
+                                          {u.display_name}
+                                          {u.is_premium && (
+                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">Premium</span>
+                                          )}
+                                        </span>
+                                        {(u.shared_count ?? 0) > 0 && (
+                                          <span className="text-[10px] text-stone-500 block">{u.shared_count} shared</span>
                                         )}
-                                      </span>
+                                      </div>
                                     </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => startChat(u.id)}
-                                      disabled={startingChat === u.id}
-                                      className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 shadow-premium-brand transition-all duration-200"
-                                    >
-                                      {startingChat === u.id ? '...' : 'Chat'}
-                                    </button>
+                                    {(u.shared_count ?? 0) >= MIN_SHARED_TO_CHAT ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => startChat(u.id)}
+                                        disabled={startingChat === u.id}
+                                        className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 shadow-premium-brand transition-all duration-200"
+                                      >
+                                        {startingChat === u.id ? '...' : 'Chat'}
+                                      </button>
+                                    ) : (
+                                      <span className="px-4 py-2 rounded-xl bg-stone-100 text-stone-500 text-sm" title={`Add ${MIN_SHARED_TO_CHAT - (u.shared_count ?? 0)} more matching interests to chat`}>
+                                        {MIN_SHARED_TO_CHAT - (u.shared_count ?? 0)} more to chat
+                                      </span>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -394,6 +461,71 @@ export default function InterestedPeoplePage() {
           </ul>
         </div>
       </main>
+
+      {/* Right sidebar: Available for Chat (3+ shared interests) */}
+      {sidebarOpen && (
+        <>
+          <div className="fixed inset-0 z-[80] bg-black/30" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+          <div
+            className="fixed right-0 top-0 bottom-0 z-[85] w-full max-w-sm bg-white shadow-2xl flex flex-col animate-slide-in-right"
+            role="dialog"
+            aria-label="Available for Chat"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-stone-200 bg-brand-600 text-white">
+              <div>
+                <h2 className="font-semibold text-lg">Available for Chat</h2>
+                <p className="text-sm text-brand-100">3+ matching interests</p>
+              </div>
+              <button type="button" onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-white/10 transition">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3">
+              {chatEligible.length === 0 ? (
+                <p className="text-sm text-stone-500 py-8 text-center">
+                  Add at least 3 interests and find others with 3+ in common to chat here.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {chatEligible.map((u) => (
+                    <div
+                      key={u.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-100 hover:border-brand-200 transition"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-10 h-10 rounded-full bg-stone-200 overflow-hidden shrink-0">
+                          {u.avatar_url ? (
+                            <Image src={u.avatar_url} alt="" width={40} height={40} className="object-cover" unoptimized />
+                          ) : (
+                            <AvatarIcon gender={u.gender} avatarUrl={u.avatar_url} />
+                          )}
+                          {online[u.id] && (
+                            <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white" title="Online" />
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-medium text-stone-900 block">{u.display_name}</span>
+                          <span className="text-xs text-stone-500">{u.shared_count ?? 0} shared interests</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => startChat(u.id)}
+                        disabled={startingChat === u.id}
+                        className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
+                      >
+                        {startingChat === u.id ? '...' : 'Chat'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       <nav className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-stone-200 flex justify-around py-3 px-2 z-50">
         <Link href="/feed" className="flex flex-col items-center gap-1 text-stone-500 hover:text-brand-600">

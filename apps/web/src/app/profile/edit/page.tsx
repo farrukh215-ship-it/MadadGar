@@ -11,8 +11,9 @@ type Interest = { slug: string; name: string; icon: string; parent_group: string
 export default function EditProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string } | null>(null);
-  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null } | null>(null);
   const [displayName, setDisplayName] = useState('');
+  const [gender, setGender] = useState<string>('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
@@ -49,9 +50,10 @@ export default function EditProfilePage() {
         return;
       }
       setUser(u);
-      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url').eq('user_id', u.id).single();
+      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender').eq('user_id', u.id).single();
       setProfile(p ?? null);
       setDisplayName(p?.display_name || '');
+      setGender((p as { gender?: string })?.gender ?? '');
       loadInterests();
       setLoading(false);
     })();
@@ -107,7 +109,7 @@ export default function EditProfilePage() {
       const res = await fetch('/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ display_name: displayName, avatar_url: avatarUrl, cover_url: coverUrl }),
+        body: JSON.stringify({ display_name: displayName, avatar_url: avatarUrl, cover_url: coverUrl, gender: gender || undefined }),
       });
       if (res.ok) {
         router.push('/profile');
@@ -152,6 +154,21 @@ export default function EditProfilePage() {
             className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             placeholder="Your name"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Gender</label>
+          <select
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white"
+          >
+            <option value="">Not set</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+          <p className="text-xs text-stone-500 mt-1">Used for avatar icon when no profile photo</p>
         </div>
 
         <div>

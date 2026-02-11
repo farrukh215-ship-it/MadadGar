@@ -68,12 +68,17 @@ export default function ChatScreen() {
     e.preventDefault();
     if (!input.trim() || !userId) return;
     const supabase = createClient();
-    await supabase.from('messages').insert({
+    const { error } = await supabase.from('messages').insert({
       thread_id: threadId,
       sender_id: userId,
       content: input.trim(),
       message_type: 'text',
     });
+    if (error) {
+      console.error('Send message error:', error);
+      alert(error.message ?? 'Failed to send message. Please try again.');
+      return;
+    }
     await supabase.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
     setInput('');
   };

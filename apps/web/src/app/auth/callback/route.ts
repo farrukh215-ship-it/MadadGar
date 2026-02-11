@@ -37,14 +37,18 @@ export async function GET(request: Request) {
     }
     if (data?.user) {
       try {
+        const meta = data.user.user_metadata as Record<string, string> | undefined;
+        const genderRaw = meta?.gender?.toLowerCase?.();
+        const pGender = ['male', 'female', 'other'].includes(genderRaw) ? genderRaw : null;
         await supabase.rpc('ensure_user_profile', {
           p_user_id: data.user.id,
-          p_email: data.user.email ?? data.user.user_metadata?.email ?? null,
+          p_email: data.user.email ?? meta?.email ?? null,
           p_display_name:
-            data.user.user_metadata?.full_name ??
-            data.user.user_metadata?.name ??
+            meta?.full_name ??
+            meta?.name ??
             data.user.email?.split('@')[0] ??
             null,
+          p_gender: pGender,
         });
       } catch (e) {
         console.error('[auth/callback] ensure_user_profile failed:', e);

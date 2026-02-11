@@ -9,12 +9,13 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { avatar_url, cover_url, display_name } = body;
+  const { avatar_url, cover_url, display_name, gender } = body;
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (typeof avatar_url === 'string' && avatar_url.length > 0) updates.avatar_url = avatar_url;
   if (typeof cover_url === 'string') updates.cover_url = cover_url || null;
   if (typeof display_name === 'string') updates.display_name = display_name.trim() || 'User';
+  if (typeof gender === 'string' && ['male', 'female', 'other'].includes(gender)) updates.gender = gender;
 
   const { error } = await supabase
     .from('profiles')

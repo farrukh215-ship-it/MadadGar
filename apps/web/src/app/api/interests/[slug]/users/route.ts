@@ -16,6 +16,12 @@ export async function GET(
     return Response.json({ error: 'slug required' }, { status: 400 });
   }
 
+  const { data: myInterests } = await supabase
+    .from('user_interests')
+    .select('interest_slug')
+    .eq('user_id', user.id);
+  const mySlugs = new Set((myInterests ?? []).map((r) => r.interest_slug));
+
   const { data: interestRows } = await supabase
     .from('user_interests')
     .select('user_id')
@@ -27,9 +33,20 @@ export async function GET(
     return Response.json({ users: [], interest: null });
   }
 
+  const { data: allTheirInterests } = await supabase
+    .from('user_interests')
+    .select('user_id, interest_slug')
+    .in('user_id', userIds);
+  const sharedByUser = new Map<string, number>();
+  for (const r of allTheirInterests ?? []) {
+    if (mySlugs.has(r.interest_slug)) {
+      sharedByUser.set(r.user_id, (sharedByUser.get(r.user_id) ?? 0) + 1);
+    }
+  }
+
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('user_id, display_name, avatar_url')
+    .select('user_id, display_name, avatar_url, gender')
     .in('user_id', userIds);
 
   let premiumRows: { user_id: string }[] = [];
@@ -50,7 +67,9 @@ export async function GET(
     id: p.user_id,
     display_name: p.display_name || 'User',
     avatar_url: p.avatar_url ?? null,
+    gender: (p as { gender?: string }).gender ?? null,
     is_premium: premiumIds.has(p.user_id),
+    shared_count: sharedByUser.get(p.user_id) ?? 0,
   }));
   usersList.sort((a, b) => (b.is_premium ? 1 : 0) - (a.is_premium ? 1 : 0));
 
