@@ -74,12 +74,16 @@ export default function InterestedPeoplePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [friendStatusByUser, setFriendStatusByUser] = useState<Record<string, 'none' | 'pending_sent' | 'friends'>>({});
   const [addingFriendFor, setAddingFriendFor] = useState<string | null>(null);
+  const [blockedUsers, setBlockedUsers] = useState<Record<string, boolean>>({});
+  const [blockingFor, setBlockingFor] = useState<string | null>(null);
+  const [reportingFor, setReportingFor] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
-      const [interestsRes, myRes] = await Promise.all([
+      const [interestsRes, myRes, blocksRes] = await Promise.all([
         fetch('/api/interests'),
         fetch('/api/interests/my'),
+        fetch('/api/blocks'),
       ]);
       if (interestsRes.ok) {
         const data = await interestsRes.json();
@@ -89,6 +93,15 @@ export default function InterestedPeoplePage() {
         const data = await myRes.json();
         setMyInterests(new Set(data.interests ?? []));
         setIsPremium(!!data.is_premium);
+      }
+      if (blocksRes.ok) {
+        const data = await blocksRes.json();
+        const ids: string[] = data.blocked ?? [];
+        const map: Record<string, boolean> = {};
+        ids.forEach((id: string) => {
+          if (id) map[id] = true;
+        });
+        setBlockedUsers(map);
       }
     } catch {
       setGrouped([]);
@@ -179,6 +192,55 @@ export default function InterestedPeoplePage() {
       setUsersByInterest((prev) => ({ ...prev, [slug]: [] }));
     } finally {
       setLoadingUsers(null);
+    }
+  };
+
+  const blockUser = async (userId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (blockingFor) return;
+    setBlockingFor(userId);
+    try {
+      const res = await fetch('/api/blocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? 'Failed to block user');
+        return;
+      }
+      setBlockedUsers((prev) => ({ ...prev, [userId]: true }));
+    } catch {
+      alert('Failed to block user');
+    } finally {
+      setBlockingFor(null);
+    }
+  };
+
+  const reportUser = async (userId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (reportingFor) return;
+    setReportingFor(userId);
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          reason: 'Interested People: user reported from matches screen',
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? 'Failed to report user');
+        return;
+      }
+      alert('User reported. Shukriya feedback ka.');
+    } catch {
+      alert('Failed to report user');
+    } finally {
+      setReportingFor(null);
     }
   };
 
@@ -366,7 +428,7 @@ export default function InterestedPeoplePage() {
                               <div className="py-8 text-center">
                                 <div className="inline-block w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                               </div>
-                            ) : users.length === 0 ? (
+                            ) : users.filter((u) => !blockedUsers[u.id]).length === 0 ? (
                               <p className="text-sm text-stone-500 text-center py-4">
                                 No one has added this interest yet. Add it to your profile and invite others!
                               </p>
@@ -381,7 +443,7 @@ export default function InterestedPeoplePage() {
                                     ) : null;
                                   })()}
                                 </p>
-                                {users.map((u) => (
+                                {users.filter((u) => !blockedUsers[u.id]).map((u) => (
                                   <div
                                     key={u.id}
                                     className="flex items-center justify-between p-3 rounded-xl bg-white border border-stone-100 hover:border-brand-200 shadow-sm transition-all duration-200"
@@ -404,18 +466,38 @@ export default function InterestedPeoplePage() {
                                         )}
                                       </div>
                                       <div>
-                                        <span className="font-medium text-stone-900 flex items-center gap-1.5">
+                                        <span className="font-medium text-stone-900 flex items-center gap-1.5 flex-wrap">
                                           {u.display_name}
                                           {u.is_premium && (
-                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">Premium</span>
+                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">
+                                              Premium
+                                            </span>
+                                          )}
+                                          {(u.shared_count ?? 0) >= 3 && (
+                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-brand-50 text-brand-800 border border-brand-100">
+                                              Strong match
+                                            </span>
                                           )}
                                         </span>
                                         <span className="text-[10px] text-stone-500 block">
-                                          {[u.gender === 'female' ? 'Female' : u.gender === 'male' ? 'Male' : null, u.age != null ? `${u.age} yrs` : null, (u.shared_count ?? 0) > 0 ? `${u.shared_count} shared` : null].filter(Boolean).join(' • ') || '—'}
+                                          {[
+                                            u.gender === 'female'
+                                              ? 'Female'
+                                              : u.gender === 'male'
+                                              ? 'Male'
+                                              : null,
+                                            u.age != null ? `${u.age} yrs` : null,
+                                            (u.shared_count ?? 0) > 0
+                                              ? `${u.shared_count} shared interests`
+                                              : null,
+                                          ]
+                                            .filter(Boolean)
+                                            .join(' • ') || '—'}
                                         </span>
                                       </div>
                                     </div>
-                                    <div className="flex gap-2 shrink-0">
+                                    <div className="flex flex-col items-end gap-1 shrink-0">
+                                      <div className="flex gap-2">
                                       <button
                                         type="button"
                                         onClick={(e) => addFriend(u.id, e)}
@@ -430,14 +512,33 @@ export default function InterestedPeoplePage() {
                                       >
                                         {addingFriendFor === u.id ? '...' : friendStatusByUser[u.id] === 'friends' ? '✓ Friends' : friendStatusByUser[u.id] === 'pending_sent' ? 'Request sent' : 'Add friend'}
                                       </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => startChat(u.id)}
-                                        disabled={startingChat === u.id}
-                                        className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 shadow-premium-brand transition-all duration-200"
-                                      >
-                                        {startingChat === u.id ? '...' : 'Chat'}
-                                      </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => startChat(u.id)}
+                                          disabled={startingChat === u.id}
+                                          className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 shadow-premium-brand transition-all duration-200"
+                                        >
+                                          {startingChat === u.id ? '...' : 'Chat'}
+                                        </button>
+                                      </div>
+                                      <div className="flex gap-2 text-[10px] text-stone-400">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => reportUser(u.id, e)}
+                                          disabled={reportingFor === u.id}
+                                          className="hover:text-stone-600"
+                                        >
+                                          {reportingFor === u.id ? 'Reporting…' : 'Report'}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => blockUser(u.id, e)}
+                                          disabled={blockingFor === u.id}
+                                          className="hover:text-red-500"
+                                        >
+                                          {blockingFor === u.id ? 'Blocking…' : 'Block'}
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
                                 ))}
@@ -463,6 +564,15 @@ export default function InterestedPeoplePage() {
             >
               Upgrade
             </a>
+          </div>
+        )}
+
+        {!loading && grouped.length > 0 && myInterests.size < 3 && (
+          <div className="mt-6 p-4 rounded-2xl bg-brand-50/80 border border-brand-100 text-sm">
+            <p className="font-semibold text-brand-900">Stronger matches with more interests</p>
+            <p className="text-xs text-brand-800 mt-1">
+              Kam az kam 3 interests add karein taake aapko zyada behtar, strong matches mil saken.
+            </p>
           </div>
         )}
 
@@ -532,13 +642,13 @@ export default function InterestedPeoplePage() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-3">
-              {chatEligible.length === 0 ? (
+              {chatEligible.filter((u) => !blockedUsers[u.id]).length === 0 ? (
                 <p className="text-sm text-stone-500 py-8 text-center">
                   Add interests above, expand to see people, then chat here.
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {chatEligible.map((u) => (
+                  {chatEligible.filter((u) => !blockedUsers[u.id]).map((u) => (
                     <div
                       key={u.id}
                       className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-100 hover:border-brand-200 transition"
@@ -555,18 +665,47 @@ export default function InterestedPeoplePage() {
                           )}
                         </div>
                         <div>
-                          <span className="font-medium text-stone-900 block">{u.display_name}</span>
-                          <span className="text-xs text-stone-500">{u.shared_count ?? 0} shared interests</span>
+                          <span className="font-medium text-stone-900 flex items-center gap-1.5 flex-wrap">
+                            {u.display_name}
+                            {(u.shared_count ?? 0) >= 3 && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-brand-50 text-brand-800 border border-brand-100">
+                                Strong match
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-xs text-stone-500">
+                            {u.shared_count ?? 0} shared interests
+                          </span>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => startChat(u.id)}
-                        disabled={startingChat === u.id}
-                        className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
-                      >
-                        {startingChat === u.id ? '...' : 'Chat'}
-                      </button>
+                      <div className="flex flex-col items-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startChat(u.id)}
+                          disabled={startingChat === u.id}
+                          className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
+                        >
+                          {startingChat === u.id ? '...' : 'Chat'}
+                        </button>
+                        <div className="flex gap-2 text-[10px] text-stone-400">
+                          <button
+                            type="button"
+                            onClick={(e) => reportUser(u.id, e)}
+                            disabled={reportingFor === u.id}
+                            className="hover:text-stone-600"
+                          >
+                            {reportingFor === u.id ? 'Reporting…' : 'Report'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => blockUser(u.id, e)}
+                            disabled={blockingFor === u.id}
+                            className="hover:text-red-500"
+                          >
+                            {blockingFor === u.id ? 'Blocking…' : 'Block'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

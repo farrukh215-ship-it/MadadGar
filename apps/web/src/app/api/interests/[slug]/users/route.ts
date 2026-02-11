@@ -77,7 +77,11 @@ export async function GET(
       shared_count: sharedByUser.get(p.user_id) ?? 0,
     };
   });
-  usersList.sort((a, b) => (b.is_premium ? 1 : 0) - (a.is_premium ? 1 : 0));
+  usersList.sort(
+    (a, b) =>
+      (b.shared_count ?? 0) - (a.shared_count ?? 0) ||
+      (b.is_premium ? 1 : 0) - (a.is_premium ? 1 : 0)
+  );
 
   const { data: interest } = await supabase
     .from('interest_categories')
