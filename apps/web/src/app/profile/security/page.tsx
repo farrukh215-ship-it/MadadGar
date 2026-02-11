@@ -63,9 +63,8 @@ export default function SecurityPage() {
     setSigningOutAll(true);
     try {
       const supabase = createClient();
-      // Supabase JS v2 supports global scope; if not available, this is equivalent to local sign-out.
-      // @ts-expect-error global sign-out may not be typed in older client versions
-      await supabase.auth.signOut({ scope: 'global' });
+      // Attempt global sign-out if supported; otherwise this behaves like normal sign-out.
+      await supabase.auth.signOut({ scope: 'global' } as { scope?: 'global' });
       router.push('/login');
     } finally {
       setSigningOutAll(false);
