@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { MapPin, Star, Phone, ShieldCheck } from 'lucide-react';
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -33,12 +34,19 @@ export default function LoginPage() {
     }
   };
 
+  const features = [
+    { icon: MapPin, title: 'Location Feed', sub: '3-5 km radius', iconBg: 'bg-emerald-500/10 text-emerald-600' },
+    { icon: Star, title: 'Top Rated', sub: 'Trust score based', iconBg: 'bg-amber-500/10 text-amber-600' },
+    { icon: Phone, title: 'Direct Call', sub: 'Connect instantly', iconBg: 'bg-brand-500/10 text-brand-600' },
+    { icon: ShieldCheck, title: 'Verified', sub: 'Recommendations', iconBg: 'bg-green-500/10 text-green-600' },
+  ];
+
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col lg:flex-row">
       {/* Left: Promo section */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-12 flex-col justify-between relative overflow-hidden">
-        <div className="absolute top-10 -left-10 w-64 h-64 bg-brand-200/40 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 -right-10 w-80 h-80 bg-teal-200/30 rounded-full blur-3xl" />
+      <div className="hidden lg:flex flex-1 bg-[linear-gradient(165deg,_#f0fdf9_0%,_#ffffff_40%,_#f8fafc_100%)] p-12 flex-col justify-between relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-200/25 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-teal-200/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative">
           <Link href="/" className="inline-flex items-center gap-2">
             <Image src="/logo.png" alt="Madadgar" width={36} height={36} />
@@ -50,7 +58,7 @@ export default function LoginPage() {
             {['Emergency-friendly', 'Trust-first', 'Nearby'].map((tag) => (
               <span
                 key={tag}
-                className="px-3 py-1 rounded-full text-sm font-medium bg-white/80 text-stone-700 flex items-center gap-1.5 border border-stone-100"
+                className="px-3 py-1.5 rounded-full text-sm font-medium bg-white/90 text-stone-700 flex items-center gap-1.5 border border-stone-200/80 shadow-premium"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
                 {tag}
@@ -60,21 +68,18 @@ export default function LoginPage() {
           <h2 className="text-3xl xl:text-4xl font-bold text-brand-900 leading-tight max-w-lg">
             Madad instantly. Trusted helpers through recommendations.
           </h2>
-          <p className="text-stone-600 max-w-md">
+          <p className="text-stone-600 max-w-md leading-relaxed">
             Google se login karein. Recommendations aur &quot;Madad ki ❤️&quot; system se nearby
             trusted helpers ko seconds mein find karein.
           </p>
           <div className="grid grid-cols-2 gap-4">
-            {[
-              { icon: '📍', title: 'Nearby Feed', sub: '3-5 km radius' },
-              { icon: '⭐', title: 'Top Rated', sub: 'Trust score based' },
-              { icon: '📞', title: 'Quick Contact', sub: 'Call/Chat fast' },
-              { icon: '✓', title: 'Verified', sub: 'Recommendations' },
-            ].map(({ icon, title, sub }) => (
-              <div key={title} className="p-4 rounded-xl bg-white/80 border border-stone-100 shadow-sm">
-                <span className="text-xl">{icon}</span>
-                <p className="mt-1 font-semibold text-brand-900">{title}</p>
-                <p className="text-xs text-stone-500">{sub}</p>
+            {features.map(({ icon: Icon, title, sub, iconBg }) => (
+              <div key={title} className="p-4 rounded-2xl bg-white/95 border border-stone-200/90 shadow-premium hover:shadow-premium-hover transition-all duration-300">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg}`}>
+                  <Icon className="w-5 h-5" strokeWidth={1.75} />
+                </div>
+                <p className="mt-2 font-semibold text-brand-900">{title}</p>
+                <p className="text-xs text-stone-500 mt-0.5">{sub}</p>
               </div>
             ))}
           </div>
@@ -83,7 +88,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right: Login panel */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-white">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 bg-white min-h-[50vh] pt-[max(1.5rem,env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)]">
         <div className="w-full max-w-md">
           <div className="text-center lg:text-left mb-8">
             <Link href="/" className="inline-flex items-center gap-2 lg:hidden mb-6">
@@ -91,7 +96,7 @@ export default function LoginPage() {
               <span className="font-bold text-xl text-brand-900">Madadgar</span>
             </Link>
           </div>
-          <div className="bg-white rounded-2xl shadow-xl border border-stone-100 p-8 sm:p-10">
+          <div className="bg-white rounded-2xl shadow-premium border border-stone-200/80 p-6 sm:p-8 lg:p-10">
             <div className="flex items-center gap-2 mb-2">
               <Image src="/logo.png" alt="" width={32} height={32} />
               <span className="font-bold text-lg text-brand-900">Madadgar</span>
@@ -145,8 +150,8 @@ export default function LoginPage() {
               se agree karte hain.
             </p>
 
-            <div className="mt-6 p-4 rounded-xl bg-stone-50 border border-stone-100 flex items-start gap-3">
-              <span className="text-brand-600 flex-shrink-0">📍</span>
+            <div className="mt-6 p-4 rounded-xl bg-brand-50/80 border border-brand-200/50 flex items-start gap-3">
+              <MapPin className="w-5 h-5 text-brand-600 flex-shrink-0 mt-0.5" strokeWidth={1.75} />
               <p className="text-xs text-stone-600">
                 Tip: Emergency mein fast access ke liye location permission ON rakhein.
               </p>

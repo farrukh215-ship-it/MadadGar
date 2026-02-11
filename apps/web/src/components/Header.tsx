@@ -13,12 +13,12 @@ export function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-stone-200">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-stone-200/80 pt-[env(safe-area-inset-top)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           <Logo size="md" />
-          <nav className="flex items-center gap-6">
-            <Link href="/help" className="text-stone-600 hover:text-brand-700 font-medium transition">
+          <nav className="flex items-center gap-3 sm:gap-6">
+            <Link href="/help" className="text-sm sm:text-base text-stone-600 hover:text-brand-700 font-medium transition py-2 px-1 -mx-1">
               Help
             </Link>
             {user ? (
@@ -31,7 +31,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/profile"
-                  className="px-4 py-2 rounded-xl bg-brand-600 text-white font-medium hover:bg-brand-700 transition flex items-center gap-2"
+                  className="px-4 py-2.5 rounded-xl bg-brand-600 text-white font-medium hover:bg-brand-700 transition flex items-center gap-2 text-sm sm:text-base shadow-premium-brand"
                 >
                   Profile
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +42,7 @@ export function Header() {
             ) : (
               <Link
                 href="/login"
-                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-medium hover:bg-brand-700 transition flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-brand-600 text-white font-medium hover:bg-brand-700 transition flex items-center gap-2 text-sm sm:text-base shadow-premium-brand"
               >
                 Login
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
