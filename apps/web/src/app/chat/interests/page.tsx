@@ -263,7 +263,7 @@ export default function InterestedPeoplePage() {
       if (res.ok) {
         setFriendStatusByUser((prev) => ({ ...prev, [user.id]: 'pending_sent' }));
       } else {
-        if (data.error === 'Already friends') setFriendStatusByUser((prev) => ({ ...prev, [userId]: 'friends' }));
+        if (data.error === 'Already friends') setFriendStatusByUser((prev) => ({ ...prev, [user.id]: 'friends' }));
         else if (data.error === 'Request already pending') setFriendStatusByUser((prev) => ({ ...prev, [user.id]: 'pending_sent' }));
         else alert(data.error ?? 'Failed');
       }
