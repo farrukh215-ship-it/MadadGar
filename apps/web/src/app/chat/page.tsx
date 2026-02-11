@@ -13,6 +13,8 @@ type Thread = {
   title: string;
   unread_count?: number;
   last_message?: string | null;
+  is_friend?: boolean;
+  friend_request_sent?: boolean;
 };
 
 export default function ChatListPage() {
@@ -43,19 +45,19 @@ export default function ChatListPage() {
 
   return (
     <div className="min-h-screen bg-[#f8faf9]">
-      <header className="sticky top-0 z-40 bg-brand-800 text-white shadow-lg">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-            <Link href="/feed" className="flex items-center gap-2">
-              <Image src="/logo.png" alt="Madadgar" width={28} height={28} className="rounded" />
-              <span className="font-bold">Madadgar</span>
+      <header className="sticky top-0 z-40 bg-brand-800 text-white shadow-lg pt-[env(safe-area-inset-top)]">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <Link href="/feed" className="flex items-center gap-2 shrink-0 min-w-0">
+              <Image src="/logo.png" alt="Madadgar" width={26} height={26} className="rounded shrink-0" />
+              <span className="font-bold text-sm sm:text-base truncate hidden sm:inline">Madadgar</span>
             </Link>
-            <h1 className="text-lg font-semibold">Chats</h1>
-            <div className="flex items-center gap-3">
-              <Link href="/chat/friends" className="text-sm text-brand-200 hover:text-white font-medium">
+            <h1 className="text-base sm:text-lg font-semibold truncate flex-1 text-center min-w-0">Chats</h1>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link href="/chat/friends" className="px-2 py-1.5 rounded-lg text-xs sm:text-sm text-brand-200 hover:text-white hover:bg-white/10 font-medium">
                 Friends
               </Link>
-              <Link href="/chat/interests" className="text-sm text-brand-200 hover:text-white font-medium">
+              <Link href="/chat/interests" className="px-2 py-1.5 rounded-lg text-xs sm:text-sm text-brand-200 hover:text-white hover:bg-white/10 font-medium">
                 Interests
               </Link>
             </div>
@@ -117,7 +119,11 @@ export default function ChatListPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-brand-900 truncate">{t.title}</p>
+                    <p className="font-semibold text-brand-900 truncate">
+                      {t.title}
+                      {t.is_friend && <span className="ml-1.5 text-xs text-green-600 font-normal">• Friends</span>}
+                      {t.friend_request_sent && !t.is_friend && <span className="ml-1.5 text-xs text-stone-500 font-normal">• Request sent</span>}
+                    </p>
                     <p className="text-sm text-stone-600 truncate mt-0.5">
                       {t.last_message || 'No messages yet'}
                     </p>
@@ -142,7 +148,7 @@ export default function ChatListPage() {
         )}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-stone-200 flex justify-around py-3 px-2 z-50">
+      <nav className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-stone-200 flex justify-around py-3 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-50">
         <Link href="/feed" className="flex flex-col items-center gap-1 text-stone-500 hover:text-brand-600">
           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
@@ -168,7 +174,7 @@ export default function ChatListPage() {
           Profile
         </Link>
       </nav>
-      <div className="h-20 lg:hidden" />
+      <div className="h-[calc(5rem+env(safe-area-inset-bottom))] lg:hidden" />
     </div>
   );
 }

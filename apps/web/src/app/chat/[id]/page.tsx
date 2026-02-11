@@ -23,13 +23,18 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
-  const [otherUser, setOtherUser] = useState<{ id: string; display_name: string; avatar_url: string | null } | null>(null);
+  const [otherUser, setOtherUser] = useState<{ id: string; display_name: string; avatar_url: string | null; gender?: string | null; age?: number | null; bio?: string | null } | null>(null);
   const [online, setOnline] = useState(false);
   const [friendStatus, setFriendStatus] = useState<'none' | 'friends' | 'pending_sent' | 'pending_received' | 'self' | null>(null);
   const [friendRequestId, setFriendRequestId] = useState<string | null>(null);
   const [addingFriend, setAddingFriend] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Message[]>([]);
+  const [searching, setSearching] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -216,6 +221,37 @@ export default function ChatScreen() {
     }
   };
 
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/chat/search?thread_id=${encodeURIComponent(threadId)}&q=${encodeURIComponent(q)}`);
+        const d = await r.json();
+        setSearchResults(d.messages ?? []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery, threadId]);
+
+  const scrollToMessage = (messageId: string) => {
+    setShowSearch(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setTimeout(() => {
+      document.getElementById(`msg-${messageId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
   const deleteMessage = async (messageId: string, forEveryone: boolean) => {
     try {
       const res = await fetch(`/api/chat/messages/${messageId}`, {
@@ -255,10 +291,10 @@ export default function ChatScreen() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f8faf9] flex flex-col">
-      <header className="sticky top-0 z-10 bg-brand-800 text-white px-4 py-3">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-white/10 transition shrink-0">
+    <main className="min-h-screen bg-[#f8faf9] flex flex-col min-h-[100dvh]">
+      <header className="sticky top-0 z-10 bg-brand-800 text-white px-3 sm:px-4 py-2 sm:py-3 pt-[max(0.5rem,env(safe-area-inset-top))] shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-white/10 transition shrink-0 -ml-1">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -270,7 +306,9 @@ export default function ChatScreen() {
                   {otherUser.avatar_url ? (
                     <Image src={otherUser.avatar_url} alt="" width={36} height={36} className="object-cover" unoptimized />
                   ) : (
-                    <span className="flex items-center justify-center w-full h-full text-lg">👤</span>
+                    <span className="flex items-center justify-center w-full h-full text-lg">
+                      {otherUser.gender === 'female' ? '👩' : otherUser.gender === 'male' ? '👨' : '👤'}
+                    </span>
                   )}
                   {online && (
                     <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-brand-800" title="Online" />
@@ -278,10 +316,24 @@ export default function ChatScreen() {
                 </div>
                 <div className="min-w-0">
                   <h1 className="font-semibold truncate">{otherUser.display_name}</h1>
-                  <p className="text-xs text-brand-200 truncate">{online ? 'Online' : 'Offline'}</p>
+                  <p className="text-xs text-brand-200 truncate">
+                    {online ? 'Online' : 'Offline'}
+                    {otherUser.gender && ` • ${otherUser.gender === 'female' ? 'Female' : otherUser.gender === 'male' ? 'Male' : 'Other'}`}
+                    {otherUser.age != null && ` • ${otherUser.age} yrs`}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowSearch(true)}
+                  className="p-2 rounded-lg hover:bg-white/10 transition"
+                  title="Search messages"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
                 {friendStatus === 'none' && (
                   <button
                     type="button"
@@ -351,13 +403,48 @@ export default function ChatScreen() {
           {!otherUser && <h1 className="font-semibold flex-1 truncate">Chat</h1>}
         </div>
       </header>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {showSearch && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex flex-col items-center pt-20 px-4" onClick={() => setShowSearch(false)}>
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search messages..."
+                className="flex-1 h-10 px-4 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+                autoFocus
+              />
+              <button type="button" onClick={() => setShowSearch(false)} className="p-2 text-stone-500 hover:text-stone-700">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="max-h-64 overflow-y-auto space-y-1">
+              {searching && <p className="text-sm text-stone-500 py-2">Searching...</p>}
+              {!searching && searchQuery.trim().length >= 2 && searchResults.length === 0 && <p className="text-sm text-stone-500 py-2">No matches</p>}
+              {!searching && searchResults.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => scrollToMessage(m.id)}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-100 text-sm"
+                >
+                  <span className="text-stone-600 truncate block">{m.content}</span>
+                  <span className="text-xs text-stone-400">{new Date(m.created_at).toLocaleString()}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-0" ref={messagesEndRef}>
         {messages.length === 0 && (
           <p className="text-center text-stone-500 text-sm py-8">No messages yet. Say hello!</p>
         )}
         {messages.map((m) => (
           <div
             key={m.id}
+            id={`msg-${m.id}`}
             className={`max-w-[85%] p-3 rounded-2xl ${
               m.sender_id === userId
                 ? 'ml-auto bg-brand-600 text-white rounded-br-md'
@@ -378,12 +465,12 @@ export default function ChatScreen() {
               <span>{m.content}</span>
             )}
             {m.sender_id === userId && !m.deleted_at && (
-              <span className="inline-flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5 pt-1 border-t border-white/20">
                 <span className="text-xs opacity-80">{m.read_at ? '✓✓' : '✓'}</span>
                 <button
                   type="button"
                   onClick={() => deleteMessage(m.id, false)}
-                  className="text-xs opacity-60 hover:opacity-100"
+                  className="text-xs opacity-70 hover:opacity-100"
                   title="Delete for me"
                 >
                   Delete
@@ -392,20 +479,20 @@ export default function ChatScreen() {
                   <button
                     type="button"
                     onClick={() => deleteMessage(m.id, true)}
-                    className="text-xs opacity-60 hover:opacity-100"
+                    className="text-xs opacity-70 hover:opacity-100"
                     title="Delete for everyone"
                   >
                     Delete for all
                   </button>
                 )}
-              </span>
+              </div>
             )}
           </div>
         ))}
       </div>
-      <form onSubmit={sendMessage} className="p-4 bg-white border-t border-stone-200">
+      <form onSubmit={sendMessage} className="p-3 sm:p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t border-stone-200 shrink-0">
         {showAttachMenu && (
-          <div className="flex gap-2 p-2 mb-2 rounded-xl bg-stone-50 border border-stone-200">
+          <div className="flex gap-2 p-2 mb-2 rounded-xl bg-stone-50 border border-stone-200 overflow-x-auto">
             <label className="flex-1 flex flex-col items-center gap-1 p-3 rounded-lg bg-white border border-stone-200 hover:border-brand-400 cursor-pointer transition disabled:opacity-50" style={{ pointerEvents: sendingImage ? 'none' : 'auto' }}>
               <input
                 type="file"
@@ -445,11 +532,11 @@ export default function ChatScreen() {
             </button>
           </div>
         )}
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-1.5 sm:gap-2 items-center min-w-0">
           <button
             type="button"
             onClick={() => setShowAttachMenu(!showAttachMenu)}
-            className={`p-2 rounded-xl transition shrink-0 ${showAttachMenu ? 'bg-brand-100 text-brand-700' : 'hover:bg-stone-100 text-stone-500'}`}
+            className={`p-2 rounded-xl transition shrink-0 flex-shrink-0 ${showAttachMenu ? 'bg-brand-100 text-brand-700' : 'hover:bg-stone-100 text-stone-500'}`}
             title="Attach - Image, Video, Voice"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -470,17 +557,17 @@ export default function ChatScreen() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type message..."
-            className="flex-1 h-12 px-4 rounded-xl border-2 border-stone-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
+            className="flex-1 min-w-0 h-11 sm:h-12 px-3 sm:px-4 rounded-xl border-2 border-stone-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition text-base"
           />
           <button
             type="submit"
             disabled={!input.trim()}
-            className="h-12 px-6 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 transition shrink-0"
+            className="h-11 sm:h-12 px-4 sm:px-6 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 transition shrink-0 flex-shrink-0"
           >
             Send
           </button>
         </div>
-        <p className="text-[10px] text-stone-400 mt-1.5">📎 Attach • 🎤 Voice • Send image, video, or voice message</p>
+        <p className="text-[10px] text-stone-400 mt-1 truncate">📎 Attach • 🎤 Voice • Image, video, voice</p>
       </form>
     </main>
   );

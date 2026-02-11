@@ -9,6 +9,8 @@ type Friend = {
   id: string;
   display_name: string;
   avatar_url: string | null;
+  gender?: string | null;
+  age?: number | null;
 };
 
 type FriendRequest = {
@@ -19,9 +21,9 @@ type FriendRequest = {
   created_at: string;
 };
 
-function AvatarIcon({ avatarUrl }: { avatarUrl?: string | null }) {
+function AvatarIcon({ avatarUrl, gender }: { avatarUrl?: string | null; gender?: string | null }) {
   if (avatarUrl) return null;
-  return <span className="flex items-center justify-center w-full h-full text-lg">👤</span>;
+  return <span className="flex items-center justify-center w-full h-full text-lg">{gender === 'female' ? '👩' : gender === 'male' ? '👨' : '👤'}</span>;
 }
 
 export default function FriendsPage() {
@@ -160,7 +162,7 @@ export default function FriendsPage() {
                           {r.from_avatar ? (
                             <Image src={r.from_avatar} alt="" width={40} height={40} className="object-cover" unoptimized />
                           ) : (
-                            <AvatarIcon avatarUrl={null} />
+                            <AvatarIcon avatarUrl={null} gender={null} />
                           )}
                         </div>
                         <span className="font-medium text-stone-900">{r.from_name}</span>
@@ -210,7 +212,7 @@ export default function FriendsPage() {
                           {f.avatar_url ? (
                             <Image src={f.avatar_url} alt="" width={40} height={40} className="object-cover" unoptimized />
                           ) : (
-                            <AvatarIcon avatarUrl={null} />
+                            <AvatarIcon avatarUrl={null} gender={f.gender} />
                           )}
                           {online[f.id] && (
                             <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white" title="Online" />
@@ -218,7 +220,11 @@ export default function FriendsPage() {
                         </div>
                         <div>
                           <span className="font-medium text-stone-900">{f.display_name}</span>
-                          <p className="text-xs text-stone-500">{online[f.id] ? 'Online' : 'Offline'}</p>
+                          <p className="text-xs text-stone-500">
+                            {online[f.id] ? 'Online' : 'Offline'}
+                            {f.gender && ` • ${f.gender === 'female' ? 'Female' : f.gender === 'male' ? 'Male' : 'Other'}`}
+                            {f.age != null && ` • ${f.age} yrs`}
+                          </p>
                         </div>
                       </div>
                       <button

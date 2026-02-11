@@ -9,13 +9,19 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { avatar_url, cover_url, display_name, gender, lat, lng } = body;
+  const { avatar_url, cover_url, display_name, gender, date_of_birth, bio, notification_sound, lat, lng } = body;
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (typeof avatar_url === 'string' && avatar_url.length > 0) updates.avatar_url = avatar_url;
   if (typeof cover_url === 'string') updates.cover_url = cover_url || null;
   if (typeof display_name === 'string') updates.display_name = display_name.trim() || 'User';
   if (typeof gender === 'string' && ['male', 'female', 'other'].includes(gender)) updates.gender = gender;
+  if (typeof date_of_birth === 'string' && date_of_birth) {
+    const d = new Date(date_of_birth);
+    if (!isNaN(d.getTime())) updates.date_of_birth = date_of_birth.split('T')[0];
+  } else if (date_of_birth === null) updates.date_of_birth = null;
+  if (typeof bio === 'string') updates.bio = bio.trim().slice(0, 500) || null;
+  if (typeof notification_sound === 'string' && ['default', 'chime', 'bell', 'pop', 'ding'].includes(notification_sound)) updates.notification_sound = notification_sound;
 
   const { error } = await supabase
     .from('profiles')

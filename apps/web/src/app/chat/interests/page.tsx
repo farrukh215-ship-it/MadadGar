@@ -25,6 +25,7 @@ type ChatUser = {
   display_name: string;
   avatar_url: string | null;
   gender?: string | null;
+  age?: number | null;
   is_premium?: boolean;
   shared_count?: number;
   distance_km?: number;
@@ -202,10 +203,15 @@ export default function InterestedPeoplePage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lat, lng }),
           });
+        } catch {
+          // Profile update failed but we can still try nearby with current coords
+        }
+        try {
           const res = await fetch(`/api/interests/nearby-all?lat=${lat}&lng=${lng}&radius=10`);
           const data = await res.json();
-          if (res.ok) {
+          if (res.ok && !data.error) {
             setNearbyUsers(data.users ?? []);
+            setNearbyError(null);
             const ids = (data.users ?? []).map((u: ChatUser) => u.id);
             if (ids.length > 0) {
               const presRes = await fetch(`/api/presence?ids=${ids.join(',')}`);
@@ -213,19 +219,22 @@ export default function InterestedPeoplePage() {
               setOnline((prev) => ({ ...prev, ...(presData.online ?? {}) }));
             }
           } else {
-            setNearbyError(data.error ?? 'Failed to load nearby');
+            setNearbyUsers([]);
+            setNearbyError(data.error ?? 'Could not load nearby. Add interests & allow location.');
           }
         } catch {
-          setNearbyError('Failed to load nearby users');
+          setNearbyError('Network error. Check connection and try again.');
         } finally {
           setNearbyLoading(false);
         }
       },
-      () => {
-        setNearbyError('Location access denied');
+      (err) => {
+        if (err.code === 1) setNearbyError('Location access denied. Enable in browser settings.');
+        else if (err.code === 3) setNearbyError('Location timed out. Please try again.');
+        else setNearbyError('Could not get location. Try again.');
         setNearbyLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
     );
   }, []);
 
@@ -291,36 +300,37 @@ export default function InterestedPeoplePage() {
 
   return (
     <div className="min-h-screen bg-[#fafaf9]">
-      <header className="sticky top-0 z-40 bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900 text-white shadow-[0_4px_24px_-4px_rgba(0,0,0,0.2)] backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/feed" className="flex items-center gap-2">
-              <Image src="/logo.png" alt="Madadgar" width={28} height={28} className="rounded" />
-              <span className="font-bold">Madadgar</span>
+      <header className="sticky top-0 z-40 bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900 text-white shadow-[0_4px_24px_-4px_rgba(0,0,0,0.2)] backdrop-blur-xl border-b border-white/10 pt-[env(safe-area-inset-top)]">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
+          <div className="flex items-center justify-between gap-2">
+            <Link href="/feed" className="flex items-center gap-1.5 shrink-0 min-w-0">
+              <Image src="/logo.png" alt="Madadgar" width={26} height={26} className="rounded shrink-0" />
+              <span className="font-bold text-sm sm:text-base truncate hidden sm:inline">Madadgar</span>
             </Link>
-            <h1 className="text-lg font-semibold">Interested People</h1>
-            <div className="flex items-center gap-2">
-              <Link href="/chat/friends" className="text-sm text-brand-100 hover:text-white font-medium">
+            <h1 className="text-sm sm:text-lg font-semibold truncate flex-1 text-center min-w-0 px-1">Interested People</h1>
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              <Link href="/chat/friends" className="px-2 py-1.5 rounded-lg text-xs sm:text-sm text-brand-100 hover:text-white hover:bg-white/10 font-medium">
                 Friends
               </Link>
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition text-sm font-medium"
+                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-white/15 hover:bg-white/25 transition text-xs sm:text-sm font-medium shrink-0"
               >
-              <span className="relative">
-                💬
-                {chatEligible.length > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center">
-                    {chatEligible.length}
-                  </span>
-                )}
-              </span>
-              Available for Chat
+                <span className="relative">
+                  💬
+                  {chatEligible.length > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-green-500 text-white text-[9px] font-bold flex items-center justify-center">
+                      {chatEligible.length}
+                    </span>
+                  )}
+                </span>
+                <span className="hidden md:inline">Available for Chat</span>
+                <span className="md:hidden">Chat</span>
               </button>
             </div>
           </div>
-          <p className="text-sm text-brand-100 mt-1">
+          <p className="text-xs text-brand-100 mt-1 truncate">
             Chat with people who share your interests
           </p>
         </div>
@@ -381,7 +391,16 @@ export default function InterestedPeoplePage() {
                         <p className="text-sm text-emerald-100 mt-2">Getting your location...</p>
                       </div>
                     ) : nearbyError ? (
-                      <p className="text-center text-amber-200 py-4">{nearbyError}</p>
+                      <div className="text-center py-4">
+                        <p className="text-amber-200 mb-3">{nearbyError}</p>
+                        <button
+                          type="button"
+                          onClick={() => { setNearbyError(null); loadNearby(); }}
+                          className="px-4 py-2 rounded-xl bg-white/20 text-white text-sm font-medium hover:bg-white/30"
+                        >
+                          Try again
+                        </button>
+                      </div>
                     ) : nearbyUsers.length === 0 ? (
                       <p className="text-center text-emerald-100 py-4">
                         No one nearby with shared interests. Add more interests or try again later.
@@ -560,9 +579,9 @@ export default function InterestedPeoplePage() {
                                             <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">Premium</span>
                                           )}
                                         </span>
-                                        {(u.shared_count ?? 0) > 0 && (
-                                          <span className="text-[10px] text-stone-500 block">{u.shared_count} shared</span>
-                                        )}
+                                        <span className="text-[10px] text-stone-500 block">
+                                          {[u.gender === 'female' ? 'Female' : u.gender === 'male' ? 'Male' : null, u.age != null ? `${u.age} yrs` : null, (u.shared_count ?? 0) > 0 ? `${u.shared_count} shared` : null].filter(Boolean).join(' • ') || '—'}
+                                        </span>
                                       </div>
                                     </div>
                                     <div className="flex gap-2 shrink-0">
@@ -726,7 +745,7 @@ export default function InterestedPeoplePage() {
         </>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-stone-200 flex justify-around py-3 px-2 z-50">
+      <nav className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-stone-200 flex justify-around py-3 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-50">
         <Link href="/feed" className="flex flex-col items-center gap-1 text-stone-500 hover:text-brand-600">
           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
@@ -752,7 +771,7 @@ export default function InterestedPeoplePage() {
           Profile
         </Link>
       </nav>
-      <div className="h-20 lg:hidden" />
+      <div className="h-[calc(5rem+env(safe-area-inset-bottom))] lg:hidden" />
     </div>
   );
 }

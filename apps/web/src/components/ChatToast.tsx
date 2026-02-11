@@ -3,12 +3,20 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { playNotificationSound } from '@/lib/notificationSounds';
 
 type ToastMsg = { id: string; title: string; body?: string; link: string };
 
 export function ChatToast() {
   const [toast, setToast] = useState<ToastMsg | null>(null);
   const chRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
+  const soundRef = useRef<string>('default');
+
+  useEffect(() => {
+    fetch('/api/profile/preferences').then((r) => r.json()).then((d) => {
+      if (d.notification_sound) soundRef.current = d.notification_sound;
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -34,6 +42,7 @@ export function ChatToast() {
               body: preview,
               link: `/chat/${m.thread_id}`,
             });
+            playNotificationSound(soundRef.current);
             setTimeout(() => setToast(null), 4000);
           }
         )

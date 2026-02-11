@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
   });
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('[nearby-all] RPC error:', error.message);
+    return Response.json({ users: [], error: 'Nearby unavailable. Ensure migrations 041-042 are applied and profiles have location.' }, { status: 200 });
   }
 
   const users = (data ?? []).map((u: { user_id: string; display_name: string; avatar_url: string | null; gender: string | null; distance_km: number; shared_interests: string[] }) => ({

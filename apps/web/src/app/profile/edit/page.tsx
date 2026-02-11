@@ -5,15 +5,19 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CoverCropModal } from '@/components/CoverCropModal';
+import { NOTIFICATION_SOUNDS, playNotificationSound } from '@/lib/notificationSounds';
 
 type Interest = { slug: string; name: string; icon: string; parent_group: string };
 
 export default function EditProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string } | null>(null);
-  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null; date_of_birth?: string | null; bio?: string | null; notification_sound?: string | null } | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [gender, setGender] = useState<string>('');
+  const [dateOfBirth, setDateOfBirth] = useState<string>('');
+  const [bio, setBio] = useState<string>('');
+  const [notificationSound, setNotificationSound] = useState<string>('default');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
@@ -52,10 +56,13 @@ export default function EditProfilePage() {
         return;
       }
       setUser(u);
-      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender').eq('user_id', u.id).single();
+      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, bio, notification_sound').eq('user_id', u.id).single();
       setProfile(p ?? null);
       setDisplayName(p?.display_name || '');
       setGender((p as { gender?: string })?.gender ?? '');
+      setDateOfBirth((p as { date_of_birth?: string })?.date_of_birth?.split('T')[0] ?? '');
+      setBio((p as { bio?: string })?.bio ?? '');
+      setNotificationSound((p as { notification_sound?: string })?.notification_sound ?? 'default');
       loadInterests();
       setLoading(false);
     })();
@@ -111,7 +118,7 @@ export default function EditProfilePage() {
       const res = await fetch('/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ display_name: displayName, avatar_url: avatarUrl, cover_url: coverUrl, gender: gender || undefined }),
+        body: JSON.stringify({ display_name: displayName, avatar_url: avatarUrl, cover_url: coverUrl, gender: gender || undefined, date_of_birth: dateOfBirth || undefined, bio: bio || undefined, notification_sound: notificationSound }),
       });
       if (res.ok) {
         router.push('/profile');
@@ -171,6 +178,52 @@ export default function EditProfilePage() {
             <option value="other">Other</option>
           </select>
           <p className="text-xs text-stone-500 mt-1">Used for avatar icon when no profile photo</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Date of birth</label>
+          <input
+            type="date"
+            value={dateOfBirth}
+            onChange={(e) => setDateOfBirth(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+          />
+          <p className="text-xs text-stone-500 mt-1">Age will be shown to people you chat with</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Bio / About</label>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={3}
+            maxLength={500}
+            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 resize-none"
+            placeholder="Tell others about yourself..."
+          />
+          <p className="text-xs text-stone-500 mt-1">{bio.length}/500 characters</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Notification sound</label>
+          <div className="flex flex-wrap gap-2">
+            {NOTIFICATION_SOUNDS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => {
+                  setNotificationSound(s.id);
+                  playNotificationSound(s.id);
+                }}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  notificationSound === s.id ? 'bg-brand-600 text-white' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-stone-500 mt-1">Sound for new message notifications</p>
         </div>
 
         <div>

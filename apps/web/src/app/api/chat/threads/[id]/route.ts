@@ -30,7 +30,7 @@ export async function GET(
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('user_id, display_name, avatar_url')
+    .select('user_id, display_name, avatar_url, gender, date_of_birth, bio')
     .eq('user_id', otherId)
     .single();
 
@@ -41,8 +41,16 @@ export async function GET(
     .neq('sender_id', user.id)
     .is('read_at', null);
 
+  const age = profile?.date_of_birth ? Math.floor((Date.now() - new Date(profile.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
   return Response.json({
-    other_user: profile ? { id: profile.user_id, display_name: profile.display_name || 'User', avatar_url: profile.avatar_url } : null,
+    other_user: profile ? {
+      id: profile.user_id,
+      display_name: profile.display_name || 'User',
+      avatar_url: profile.avatar_url,
+      gender: (profile as { gender?: string }).gender ?? null,
+      age: age != null && age >= 0 && age <= 120 ? age : null,
+      bio: (profile as { bio?: string }).bio ?? null,
+    } : null,
     title: profile?.display_name || 'Chat',
     unread_count: count ?? 0,
   });

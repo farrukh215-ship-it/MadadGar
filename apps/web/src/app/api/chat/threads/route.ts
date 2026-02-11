@@ -53,6 +53,7 @@ export async function GET() {
 
   const directThreadIds = (threads ?? []).filter((t) => !t.post_id).map((t) => t.id);
   let directTitles: Record<string, string> = {};
+  let otherUserByThread: Record<string, string> = {};
   let unreadByThread: Record<string, number> = {};
   if (directThreadIds.length > 0) {
     const { data: participants } = await supabase
@@ -69,9 +70,23 @@ export async function GET() {
       for (const p of participants ?? []) {
         if (p.user_id !== user.id) {
           directTitles[p.thread_id] = nameMap[p.user_id] ?? 'User';
+          otherUserByThread[p.thread_id] = p.user_id;
         }
       }
     }
+  }
+  const { data: friendRows } = await supabase.from('friends').select('friend_id').eq('user_id', user.id);
+  const friendIds = new Set((friendRows ?? []).map((r) => r.friend_id));
+  const otherIdsForReq = [...new Set(Object.values(otherUserByThread))];
+  let pendingSentIds = new Set<string>();
+  if (otherIdsForReq.length > 0) {
+    const { data: pendingSent } = await supabase
+      .from('friend_requests')
+      .select('to_user_id')
+      .eq('from_user_id', user.id)
+      .eq('status', 'pending')
+      .in('to_user_id', otherIdsForReq);
+    pendingSentIds = new Set((pendingSent ?? []).map((r) => r.to_user_id));
   }
   const { data: unreadRows } = await supabase
     .from('messages')
@@ -112,6 +127,8 @@ export async function GET() {
       : (directTitles[t.id] ?? 'Chat'),
     unread_count: unreadByThread[t.id] ?? 0,
     last_message: lastPreview || null,
+    is_friend: !t.post_id && !!otherUserByThread[t.id] && friendIds.has(otherUserByThread[t.id]),
+    friend_request_sent: !t.post_id && !!otherUserByThread[t.id] && pendingSentIds.has(otherUserByThread[t.id]),
   };
   });
 
