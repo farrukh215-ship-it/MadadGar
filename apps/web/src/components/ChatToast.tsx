@@ -20,7 +20,7 @@ export function ChatToast() {
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'messages' },
           async (payload) => {
-            const m = (payload as { new: { sender_id: string; thread_id: string; content: string | null } }).new;
+            const m = (payload as unknown as { new: { sender_id: string; thread_id: string; content: string | null } }).new;
             if (m.sender_id === user.id) return;
             const { data: pts } = await supabase.from('chat_participants').select('user_id').eq('thread_id', m.thread_id);
             const amInThread = (pts ?? []).some((p) => p.user_id === user.id);
