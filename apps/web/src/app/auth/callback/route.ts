@@ -39,7 +39,8 @@ export async function GET(request: Request) {
       try {
         const meta = data.user.user_metadata as Record<string, string> | undefined;
         const genderRaw = meta?.gender?.toLowerCase?.();
-        const pGender = ['male', 'female', 'other'].includes(genderRaw) ? genderRaw : null;
+        const validGenders: readonly string[] = ['male', 'female', 'other'];
+        const pGender = typeof genderRaw === 'string' && validGenders.includes(genderRaw) ? genderRaw : null;
         await supabase.rpc('ensure_user_profile', {
           p_user_id: data.user.id,
           p_email: data.user.email ?? meta?.email ?? null,
