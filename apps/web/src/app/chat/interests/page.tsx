@@ -244,22 +244,27 @@ export default function InterestedPeoplePage() {
     }
   };
 
-  const addFriend = async (userId: string, e: React.MouseEvent) => {
+  const addFriend = async (user: ChatUser, e: React.MouseEvent) => {
     e.stopPropagation();
     if (addingFriendFor) return;
-    setAddingFriendFor(userId);
+    const shared = user.shared_count ?? 0;
+    if (shared < 3) {
+      alert('Kam se kam 3 shared interests hon tou hi friend request bheji ja sakti hai.');
+      return;
+    }
+    setAddingFriendFor(user.id);
     try {
       const res = await fetch('/api/friends/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to_user_id: userId }),
+        body: JSON.stringify({ to_user_id: user.id }),
       });
       const data = await res.json();
       if (res.ok) {
-        setFriendStatusByUser((prev) => ({ ...prev, [userId]: 'pending_sent' }));
+        setFriendStatusByUser((prev) => ({ ...prev, [user.id]: 'pending_sent' }));
       } else {
         if (data.error === 'Already friends') setFriendStatusByUser((prev) => ({ ...prev, [userId]: 'friends' }));
-        else if (data.error === 'Request already pending') setFriendStatusByUser((prev) => ({ ...prev, [userId]: 'pending_sent' }));
+        else if (data.error === 'Request already pending') setFriendStatusByUser((prev) => ({ ...prev, [user.id]: 'pending_sent' }));
         else alert(data.error ?? 'Failed');
       }
     } catch {
@@ -269,13 +274,18 @@ export default function InterestedPeoplePage() {
     }
   };
 
-  const startChat = async (userId: string) => {
-    setStartingChat(userId);
+  const startChat = async (user: ChatUser) => {
+    const shared = user.shared_count ?? 0;
+    if (shared < 3) {
+      alert('Kam se kam 3 shared interests hon tou hi Interested People se chat start ho sakti hai.');
+      return;
+    }
+    setStartingChat(user.id);
     try {
       const res = await fetch('/api/chat/threads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId }),
+        body: JSON.stringify({ user_id: user.id, source: 'interests' }),
       });
       const data = await res.json();
       if (res.status === 401) {
@@ -500,7 +510,7 @@ export default function InterestedPeoplePage() {
                                       <div className="flex gap-2">
                                       <button
                                         type="button"
-                                        onClick={(e) => addFriend(u.id, e)}
+                                        onClick={(e) => addFriend(u, e)}
                                         disabled={addingFriendFor === u.id || friendStatusByUser[u.id] === 'pending_sent' || friendStatusByUser[u.id] === 'friends'}
                                         className={`px-3 py-2 rounded-xl text-sm font-medium ${
                                           friendStatusByUser[u.id] === 'friends'
@@ -514,8 +524,8 @@ export default function InterestedPeoplePage() {
                                       </button>
                                         <button
                                           type="button"
-                                          onClick={() => startChat(u.id)}
-                                          disabled={startingChat === u.id}
+                                        onClick={() => startChat(u)}
+                                        disabled={startingChat === u.id}
                                           className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 shadow-premium-brand transition-all duration-200"
                                         >
                                           {startingChat === u.id ? '...' : 'Chat'}
@@ -681,7 +691,7 @@ export default function InterestedPeoplePage() {
                       <div className="flex flex-col items-end gap-1">
                         <button
                           type="button"
-                          onClick={() => startChat(u.id)}
+                          onClick={() => startChat(u)}
                           disabled={startingChat === u.id}
                           className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
                         >

@@ -12,12 +12,13 @@ type Interest = { slug: string; name: string; icon: string; parent_group: string
 export default function EditProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string } | null>(null);
-  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null; date_of_birth?: string | null; bio?: string | null; notification_sound?: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null; date_of_birth?: string | null; bio?: string | null; notification_sound?: string | null; about_visibility?: 'public' | 'private' } | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [gender, setGender] = useState<string>('');
   const [dateOfBirth, setDateOfBirth] = useState<string>('');
   const [bio, setBio] = useState<string>('');
   const [notificationSound, setNotificationSound] = useState<string>('default');
+  const [aboutVisibility, setAboutVisibility] = useState<'public' | 'private'>('public');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
@@ -56,13 +57,14 @@ export default function EditProfilePage() {
         return;
       }
       setUser(u);
-      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, bio, notification_sound').eq('user_id', u.id).single();
+      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, bio, notification_sound, about_visibility').eq('user_id', u.id).single();
       setProfile(p ?? null);
       setDisplayName(p?.display_name || '');
       setGender((p as { gender?: string })?.gender ?? '');
       setDateOfBirth((p as { date_of_birth?: string })?.date_of_birth?.split('T')[0] ?? '');
       setBio((p as { bio?: string })?.bio ?? '');
       setNotificationSound((p as { notification_sound?: string })?.notification_sound ?? 'default');
+      setAboutVisibility(((p as { about_visibility?: 'public' | 'private' })?.about_visibility) ?? 'public');
       loadInterests();
       setLoading(false);
     })();
@@ -118,7 +120,16 @@ export default function EditProfilePage() {
       const res = await fetch('/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ display_name: displayName, avatar_url: avatarUrl, cover_url: coverUrl, gender: gender || undefined, date_of_birth: dateOfBirth || undefined, bio: bio || undefined, notification_sound: notificationSound }),
+        body: JSON.stringify({
+          display_name: displayName,
+          avatar_url: avatarUrl,
+          cover_url: coverUrl,
+          gender: gender || undefined,
+          date_of_birth: dateOfBirth || undefined,
+          bio: bio || undefined,
+          notification_sound: notificationSound,
+          about_visibility: aboutVisibility,
+        }),
       });
       if (res.ok) {
         router.push('/profile');
@@ -202,6 +213,21 @@ export default function EditProfilePage() {
             placeholder="Tell others about yourself..."
           />
           <p className="text-xs text-stone-500 mt-1">{bio.length}/500 characters</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">About section visibility</label>
+          <select
+            value={aboutVisibility}
+            onChange={(e) => setAboutVisibility(e.target.value === 'private' ? 'private' : 'public')}
+            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white"
+          >
+            <option value="public">Public (everyone can see)</option>
+            <option value="private">Only me (hide from others)</option>
+          </select>
+          <p className="text-xs text-stone-500 mt-1">
+            Agar aap isay private karein ge to About section (phone/email) sirf aap ko nazar aayega, public profile pe nahi.
+          </p>
         </div>
 
         <div>

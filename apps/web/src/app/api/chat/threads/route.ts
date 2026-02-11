@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { post_id, user_id: target_user_id } = body;
+  const { post_id, user_id: target_user_id, source } = body as { post_id?: string; user_id?: string; source?: string };
 
   let otherUserId: string;
 
@@ -165,6 +165,37 @@ export async function POST(request: NextRequest) {
   }
   if (otherUserId === user.id) {
     return Response.json({ error: 'Cannot chat with yourself' }, { status: 400 });
+  }
+
+  // If chat is coming from Interested People, enforce at least 3 shared interests
+  if (source === 'interests') {
+    try {
+      const [{ data: myInterests }, { data: theirInterests }] = await Promise.all([
+        supabase.from('user_interests').select('interest_slug').eq('user_id', user.id),
+        supabase.from('user_interests').select('interest_slug').eq('user_id', otherUserId),
+      ]);
+      const mySet = new Set((myInterests ?? []).map((r) => r.interest_slug as string));
+      let shared = 0;
+      for (const r of theirInterests ?? []) {
+        if (mySet.has(r.interest_slug as string)) {
+          shared++;
+          if (shared >= 3) break;
+        }
+      }
+      if (shared < 3) {
+        return Response.json(
+          {
+            error: 'At least 3 shared interests required to chat from Interested People.',
+            code: 'shared_interests_minimum',
+            shared_count: shared,
+            required: 3,
+          },
+          { status: 403 },
+        );
+      }
+    } catch {
+      // If interests lookup fails, fall back to allowing the chat
+    }
   }
 
   await supabase.from('chat_contacts').upsert(

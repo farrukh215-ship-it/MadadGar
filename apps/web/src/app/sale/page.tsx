@@ -20,6 +20,9 @@ const SALE_SUBCATEGORIES: Record<string, string[]> = {
   clothing: ['Men', 'Women', 'Kids', 'Shoes', 'Bags'],
   home: ['Kitchen', 'Decor', 'Appliances', 'Storage', 'Lighting'],
   sports: ['Cricket', 'Football', 'Gym', 'Cycling', 'Accessories'],
+  books: ['Novels', 'Islamic', 'Academic', 'Kids books', 'Test prep'],
+  tools: ['Power tools', 'Hand tools', 'Car tools', 'Construction', 'Gardening'],
+  other: ['Bundles', 'Clearance', 'Gadgets', 'Home mix', 'Office items'],
 };
 
 type SaleItem = {

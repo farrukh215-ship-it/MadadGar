@@ -18,6 +18,7 @@ type Profile = {
   trust_score: number;
   recommendations_count: number;
   created_at: string;
+  about_visibility?: 'public' | 'private';
 };
 
 type PostItem = {
@@ -320,30 +321,35 @@ export default function UserProfilePage() {
           </div>
         </div>
 
-        {/* About section - phone & email */}
-        <section id="about" className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100 mb-6">
-          <h2 className="text-lg font-semibold text-brand-900 flex items-center gap-2 mb-4">
-            <span>ℹ️</span>
-            About
-          </h2>
-          <div className="space-y-3">
-            {user?.phone && (
-              <div>
-                <p className="text-sm text-stone-500">Phone</p>
-                <a href={`tel:${user.phone}`} className="font-medium text-brand-700 hover:underline">{user.phone}</a>
-              </div>
-            )}
-            {user?.email && (
-              <div>
-                <p className="text-sm text-stone-500">Email</p>
-                <a href={`mailto:${user.email}`} className="font-medium text-brand-700 hover:underline">{user.email}</a>
-              </div>
-            )}
-            {(!user?.phone && !user?.email) && (
-              <p className="text-stone-500 text-sm">Contact info available nahi</p>
-            )}
-          </div>
-        </section>
+        {/* About section - phone & email (respect about_visibility) */}
+        {(isOwnProfile || (profile.about_visibility ?? 'public') === 'public') && (
+          <section id="about" className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100 mb-6">
+            <h2 className="text-lg font-semibold text-brand-900 flex items-center gap-2 mb-4">
+              <span>ℹ️</span>
+              About
+            </h2>
+            <div className="space-y-3">
+              {user?.phone && (
+                <div>
+                  <p className="text-sm text-stone-500">Phone</p>
+                  <a href={`tel:${user.phone}`} className="font-medium text-brand-700 hover:underline">{user.phone}</a>
+                </div>
+              )}
+              {user?.email && (
+                <div>
+                  <p className="text-sm text-stone-500">Email</p>
+                  <a href={`mailto:${user.email}`} className="font-medium text-brand-700 hover:underline">{user.email}</a>
+                </div>
+              )}
+              {(!user?.phone && !user?.email) && (
+                <p className="text-stone-500 text-sm">Contact info available nahi</p>
+              )}
+              {!isOwnProfile && (profile.about_visibility ?? 'public') === 'private' && (
+                <p className="text-xs text-stone-400">User ne About section private rakha hua hai.</p>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="bg-stone-900 rounded-2xl p-6 shadow-lg border border-stone-700 mb-6 overflow-hidden">
           <h2 className="text-lg font-semibold text-white/90 flex items-center gap-2 mb-4">
