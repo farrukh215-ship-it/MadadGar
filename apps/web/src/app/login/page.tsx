@@ -16,17 +16,20 @@ export default function LoginPage() {
   }, []);
 
   const handleGoogleLogin = async () => {
+    setError(null);
     const { createClient } = await import('@/lib/supabase/client');
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
-      },
+      options: { redirectTo },
     });
     if (error) {
-      console.error(error);
+      setError(error.message);
       return;
+    }
+    if (data?.url) {
+      window.location.href = data.url;
     }
   };
 

@@ -33,3 +33,18 @@ SUPABASE_SERVICE_ROLE_KEY=paste-your-service_role-key-here
 5. **Redeploy:** Deployments tab → ⋮ on latest → Redeploy
 
 > `.env.local` is never committed. Production must use Vercel Environment Variables.
+
+---
+
+### 3. Supabase Redirect URLs (Required for Google Login)
+
+In **Supabase Dashboard → Authentication → URL Configuration**:
+
+1. **Site URL:** Your app URL (e.g. `https://your-app.vercel.app` or `http://localhost:3001`)
+2. **Redirect URLs:** Add exactly:
+   - `http://localhost:3001/auth/callback` (for local)
+   - `http://localhost:3000/auth/callback` (if using port 3000)
+   - `https://your-app.vercel.app/auth/callback` (for production)
+   - `https://your-app.vercel.app/**` (wildcard for production)
+
+If Google login fails, the login page will show the error. Check that redirect URLs match exactly.
