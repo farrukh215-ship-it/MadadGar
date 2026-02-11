@@ -72,10 +72,6 @@ export default function InterestedPeoplePage() {
   const [online, setOnline] = useState<Record<string, boolean>>({});
   const [chatEligible, setChatEligible] = useState<ChatUser[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [nearbyExpanded, setNearbyExpanded] = useState(false);
-  const [nearbyUsers, setNearbyUsers] = useState<ChatUser[]>([]);
-  const [nearbyLoading, setNearbyLoading] = useState(false);
-  const [nearbyError, setNearbyError] = useState<string | null>(null);
   const [friendStatusByUser, setFriendStatusByUser] = useState<Record<string, 'none' | 'pending_sent' | 'friends'>>({});
   const [addingFriendFor, setAddingFriendFor] = useState<string | null>(null);
 
@@ -186,58 +182,6 @@ export default function InterestedPeoplePage() {
     }
   };
 
-  const loadNearby = useCallback(async () => {
-    if (!navigator.geolocation) {
-      setNearbyError('Location not supported');
-      return;
-    }
-    setNearbyLoading(true);
-    setNearbyError(null);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        try {
-          await fetch('/api/profile/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lat, lng }),
-          });
-        } catch {
-          // Profile update failed but we can still try nearby with current coords
-        }
-        try {
-          const res = await fetch(`/api/interests/nearby-all?lat=${lat}&lng=${lng}&radius=10`);
-          const data = await res.json();
-          if (res.ok && !data.error) {
-            setNearbyUsers(data.users ?? []);
-            setNearbyError(null);
-            const ids = (data.users ?? []).map((u: ChatUser) => u.id);
-            if (ids.length > 0) {
-              const presRes = await fetch(`/api/presence?ids=${ids.join(',')}`);
-              const presData = await presRes.json();
-              setOnline((prev) => ({ ...prev, ...(presData.online ?? {}) }));
-            }
-          } else {
-            setNearbyUsers([]);
-            setNearbyError(data.error ?? 'Could not load nearby. Add interests & allow location.');
-          }
-        } catch {
-          setNearbyError('Network error. Check connection and try again.');
-        } finally {
-          setNearbyLoading(false);
-        }
-      },
-      (err) => {
-        if (err.code === 1) setNearbyError('Location access denied. Enable in browser settings.');
-        else if (err.code === 3) setNearbyError('Location timed out. Please try again.');
-        else setNearbyError('Could not get location. Try again.');
-        setNearbyLoading(false);
-      },
-      { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
-    );
-  }, []);
-
   const addFriend = async (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (addingFriendFor) return;
@@ -261,12 +205,6 @@ export default function InterestedPeoplePage() {
     } finally {
       setAddingFriendFor(null);
     }
-  };
-
-  const toggleNearby = () => {
-    const next = !nearbyExpanded;
-    setNearbyExpanded(next);
-    if (next && nearbyUsers.length === 0 && !nearbyLoading) loadNearby();
   };
 
   const startChat = async (userId: string) => {
@@ -358,113 +296,6 @@ export default function InterestedPeoplePage() {
           </div>
         ) : (
           <div className="space-y-8">
-            <section className="animate-fade-in">
-              <div
-                className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 rounded-2xl border border-emerald-400/30 shadow-premium overflow-hidden cursor-pointer hover:shadow-premium-hover transition-all duration-300"
-                onClick={toggleNearby}
-              >
-                <div className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">📍</span>
-                    <div>
-                      <p className="font-semibold text-white flex items-center gap-2">
-                        Nearby
-                        <span className="text-emerald-100 text-xs font-normal">within 10km, same interests</span>
-                      </p>
-                      <p className="text-sm text-emerald-100 mt-0.5">Chat with people near you who share your interests</p>
-                    </div>
-                  </div>
-                  <svg
-                    className={`w-5 h-5 text-white/80 transition-transform duration-300 ${nearbyExpanded ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-                {nearbyExpanded && (
-                  <div className="border-t border-emerald-400/30 p-4 bg-white/5 animate-fade-in">
-                    {nearbyLoading ? (
-                      <div className="py-8 text-center">
-                        <div className="inline-block w-6 h-6 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                        <p className="text-sm text-emerald-100 mt-2">Getting your location...</p>
-                      </div>
-                    ) : nearbyError ? (
-                      <div className="text-center py-4">
-                        <p className="text-amber-200 mb-3">{nearbyError}</p>
-                        <button
-                          type="button"
-                          onClick={() => { setNearbyError(null); loadNearby(); }}
-                          className="px-4 py-2 rounded-xl bg-white/20 text-white text-sm font-medium hover:bg-white/30"
-                        >
-                          Try again
-                        </button>
-                      </div>
-                    ) : nearbyUsers.length === 0 ? (
-                      <p className="text-center text-emerald-100 py-4">
-                        No one nearby with shared interests. Add more interests or try again later.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-emerald-100 uppercase tracking-wide mb-2">
-                          {nearbyUsers.length} people nearby
-                        </p>
-                        {nearbyUsers.map((u) => (
-                          <div
-                            key={u.id}
-                            className="flex items-center justify-between p-3 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative w-10 h-10 rounded-full bg-white/20 overflow-hidden shrink-0">
-                                {u.avatar_url ? (
-                                  <Image src={u.avatar_url} alt="" width={40} height={40} className="object-cover" unoptimized />
-                                ) : (
-                                  <AvatarIcon gender={u.gender} avatarUrl={u.avatar_url} />
-                                )}
-                                {online[u.id] && (
-                                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white" title="Online" />
-                                )}
-                              </div>
-                              <div>
-                                <span className="font-medium text-white">{u.display_name}</span>
-                                <span className="text-xs text-emerald-100 block">
-                                  {u.distance_km != null ? `${u.distance_km} km away` : `${u.shared_count ?? 0} shared`}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={(e) => addFriend(u.id, e)}
-                                disabled={addingFriendFor === u.id || friendStatusByUser[u.id] === 'pending_sent' || friendStatusByUser[u.id] === 'friends'}
-                                className={`px-3 py-2 rounded-xl text-sm font-medium shrink-0 ${
-                                  friendStatusByUser[u.id] === 'friends'
-                                    ? 'bg-green-500/20 text-green-300'
-                                    : friendStatusByUser[u.id] === 'pending_sent'
-                                    ? 'bg-white/20 text-emerald-100'
-                                    : 'bg-white/10 hover:bg-white/20 text-white'
-                                } disabled:opacity-50`}
-                              >
-                                {addingFriendFor === u.id ? '...' : friendStatusByUser[u.id] === 'friends' ? '✓ Friends' : friendStatusByUser[u.id] === 'pending_sent' ? 'Request sent' : 'Add friend'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); startChat(u.id); }}
-                                disabled={startingChat === u.id}
-                                className="px-4 py-2 rounded-xl bg-white text-emerald-700 text-sm font-medium hover:bg-emerald-50 disabled:opacity-50"
-                              >
-                                {startingChat === u.id ? '...' : 'Chat'}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </section>
             {grouped.map(({ group, interests }) => (
               <section key={group} className="animate-fade-in">
                 <h2 className="flex items-center gap-2 text-sm font-bold text-stone-700 mb-3">
