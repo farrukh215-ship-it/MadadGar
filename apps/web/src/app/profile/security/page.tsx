@@ -30,8 +30,8 @@ export default function SecurityPage() {
         return;
       }
       setEmail(user.email ?? null);
-      // @ts-expect-error phone may exist in user.user_metadata
-      setPhone(user.phone ?? user.user_metadata?.phone ?? null);
+      const meta = (user as { user_metadata?: { phone?: string } }).user_metadata;
+      setPhone(user.phone ?? meta?.phone ?? null);
 
       // Local synthetic "session" list – current device + last activity
       const now = new Date();
