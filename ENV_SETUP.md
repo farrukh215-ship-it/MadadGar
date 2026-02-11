@@ -1,38 +1,34 @@
 # Environment Variables Setup
 
-## SUPABASE_SERVICE_ROLE_KEY (Required for Chat)
+## Vercel (Production) – All 3 Required
 
-Chat features need this key. Add it in **both** places below.
+If you see "Your project's URL and API key are required" or 401 errors, add **all** of these in Vercel:
+
+1. Go to [Vercel Dashboard](https://vercel.com) → Your Project → **Settings** → **Environment Variables**
+2. Add these (from Supabase Dashboard → Settings → API):
+
+| Name | Value | Required |
+|------|-------|----------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxxx.supabase.co` | Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJ...` (anon public key) | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | `eyJ...` (service_role secret) | Yes (for chat) |
+
+3. **Environments:** Production, Preview
+4. **Save** → **Redeploy** (Deployments → ⋮ → Redeploy)
+
+> Without `NEXT_PUBLIC_*` vars, the app cannot create a Supabase client and will show 401 / env errors.
 
 ---
 
-### 1. Local Development (`apps/web/.env.local`)
-
-Create or edit `apps/web/.env.local`:
+### Local Development (`apps/web/.env.local`)
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://ugtymhfgkzhrpfywfmju.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=paste-your-service_role-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service_role-key
 ```
 
-- Get **service_role** key: Supabase Dashboard → Settings → API → "service_role secret" → Copy
-- Restart dev server after adding: `pnpm dev`
-
----
-
-### 2. Production (Vercel)
-
-1. Go to [Vercel Dashboard](https://vercel.com) → Your Project
-2. **Settings** → **Environment Variables**
-3. Add:
-   - **Name:** `SUPABASE_SERVICE_ROLE_KEY`
-   - **Value:** (paste your service_role key from Supabase)
-   - **Environments:** Production, Preview
-4. Click **Save**
-5. **Redeploy:** Deployments tab → ⋮ on latest → Redeploy
-
-> `.env.local` is never committed. Production must use Vercel Environment Variables.
+Restart dev server: `pnpm dev`
 
 ---
 
@@ -48,3 +44,9 @@ In **Supabase Dashboard → Authentication → URL Configuration**:
    - `https://your-app.vercel.app/**` (wildcard for production)
 
 If Google login fails, the login page will show the error. Check that redirect URLs match exactly.
+
+---
+
+### 401 / Deployment Protection
+
+If you get 401 on Vercel: **Settings → Deployment Protection** → disable "Vercel Authentication" for production, or add your domain to the bypass list.
