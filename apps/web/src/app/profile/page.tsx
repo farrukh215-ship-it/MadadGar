@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ImageLightbox } from '@/components/ImageLightbox';
 
 function SkillBar({ name, percent, delay }: { name: string; percent: number; delay: number }) {
   const [width, setWidth] = useState(0);
@@ -136,6 +137,7 @@ export default function ProfilePage() {
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
   const avatarUrl = profile?.avatar_url;
   const coverUrl = profile?.cover_url;
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-surface-base">
@@ -153,25 +155,37 @@ export default function ProfilePage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-[max(5rem,env(safe-area-inset-bottom))]">
-        {/* Cover */}
-        <div className="relative h-48 sm:h-56 bg-gradient-to-br from-brand-600 to-brand-800 overflow-hidden">
+        {/* Cover - click to enlarge */}
+        <button
+          type="button"
+          className="relative h-48 sm:h-56 bg-gradient-to-br from-brand-600 to-brand-800 overflow-hidden block w-full cursor-pointer"
+          onClick={() => coverUrl && setLightboxImage(coverUrl)}
+        >
           {coverUrl ? (
-            <Image src={coverUrl} alt="Cover" fill className="object-cover" unoptimized />
+            <Image src={coverUrl} alt="Cover" fill className="object-cover hover:opacity-95 transition" unoptimized />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800" />
           )}
-        </div>
+        </button>
 
-        {/* Avatar */}
+        {/* Avatar - click to enlarge */}
         <div className="px-4 -mt-16 relative z-10">
-          <div className="w-28 h-28 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white">
+          <button
+            type="button"
+            className="w-28 h-28 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white block cursor-pointer hover:ring-2 hover:ring-brand-400 hover:ring-offset-2 transition"
+            onClick={() => avatarUrl && setLightboxImage(avatarUrl)}
+          >
             {avatarUrl ? (
               <Image src={avatarUrl} alt={displayName} width={112} height={112} className="object-cover w-full h-full" unoptimized />
             ) : (
               <div className="w-full h-full bg-stone-200 flex items-center justify-center text-4xl">👤</div>
             )}
-          </div>
+          </button>
         </div>
+
+        {lightboxImage && (
+          <ImageLightbox src={lightboxImage} alt={displayName} onClose={() => setLightboxImage(null)} />
+        )}
 
         <div className="pt-4 pb-6">
         {!profileComplete && (

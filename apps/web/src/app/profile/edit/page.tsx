@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ImageLightbox } from '@/components/ImageLightbox';
 import { CoverCropModal } from '@/components/CoverCropModal';
 import { NOTIFICATION_SOUNDS, playNotificationSound } from '@/lib/notificationSounds';
 
@@ -30,6 +31,7 @@ export default function EditProfilePage() {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
   const [avatarCropSrc, setAvatarCropSrc] = useState<string | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [myInterests, setMyInterests] = useState<Set<string>>(new Set());
@@ -403,7 +405,15 @@ export default function EditProfilePage() {
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-2">Profile photo</label>
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-stone-200 flex items-center justify-center">
+            <button
+              type="button"
+              className="w-20 h-20 rounded-full overflow-hidden bg-stone-200 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-brand-400 transition"
+              onClick={() => {
+                if (avatarFile) setLightboxImage(URL.createObjectURL(avatarFile));
+                else if (profile?.avatar_url) setLightboxImage(profile.avatar_url);
+              }}
+              disabled={!avatarFile && !profile?.avatar_url}
+            >
               {avatarFile ? (
                 <img src={URL.createObjectURL(avatarFile)} alt="" className="w-full h-full object-cover" />
               ) : profile?.avatar_url ? (
@@ -411,7 +421,7 @@ export default function EditProfilePage() {
               ) : (
                 <span className="text-3xl">👤</span>
               )}
-            </div>
+            </button>
             <div>
               <input
                 ref={avatarInputRef}
@@ -475,7 +485,15 @@ export default function EditProfilePage() {
 
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-2">Cover photo</label>
-          <div className="relative aspect-[3/1] rounded-xl overflow-hidden bg-stone-200">
+          <button
+            type="button"
+            className="relative aspect-[3/1] rounded-xl overflow-hidden bg-stone-200 block w-full cursor-pointer hover:opacity-95 transition"
+            onClick={() => {
+              if (coverFile) setLightboxImage(URL.createObjectURL(coverFile));
+              else if (profile?.cover_url) setLightboxImage(profile.cover_url);
+            }}
+            disabled={!coverFile && !profile?.cover_url}
+          >
             {coverFile ? (
               <img src={URL.createObjectURL(coverFile)} alt="" className="w-full h-full object-cover" />
             ) : profile?.cover_url ? (
@@ -485,7 +503,7 @@ export default function EditProfilePage() {
                 No cover
               </div>
             )}
-          </div>
+          </button>
           <p className="mt-1 text-xs text-stone-500">Cover crop karke adjust kar sakte hain</p>
           <input
             ref={coverInputRef}
@@ -516,6 +534,10 @@ export default function EditProfilePage() {
             />
           )}
         </div>
+
+        {lightboxImage && (
+          <ImageLightbox src={lightboxImage} alt="" onClose={() => setLightboxImage(null)} />
+        )}
       </main>
     </div>
   );
