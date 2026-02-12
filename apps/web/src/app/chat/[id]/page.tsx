@@ -24,6 +24,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { subscribeToMessages, subscribeToTyping, broadcastTyping } from '@/lib/supabase/realtime';
+import { hapticLight } from '@/lib/haptic';
 type Message = {
   id: string;
   content: string | null;
@@ -145,6 +146,7 @@ export default function ChatScreen() {
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || !userId) return;
+    hapticLight();
     const supabase = createClient();
     const { error } = await supabase.from('messages').insert({
       thread_id: threadId,

@@ -18,17 +18,17 @@ export function Header() {
         <div className="flex items-center justify-between h-14 sm:h-16">
           <Logo size="md" />
           <nav className="flex items-center gap-3 sm:gap-6">
-            <Link href="/help" className="text-sm sm:text-base text-stone-600 hover:text-brand-700 font-medium transition py-2 px-1 -mx-1">
+            <Link href="/help" className="text-sm sm:text-base text-stone-600 hover:text-brand-700 font-medium transition py-2 px-1 -mx-1 touch-feedback touch-feedback-smooth">
               Help
             </Link>
             {user ? (
               <>
-                <Link href="/feed" className="text-stone-600 hover:text-brand-700 font-medium transition">
+                <Link href="/feed" className="text-stone-600 hover:text-brand-700 font-medium transition touch-feedback touch-feedback-smooth">
                   Feed
                 </Link>
                 <Link
                   href="/profile"
-                  className="px-4 py-2.5 rounded-xl bg-brand-600 text-white font-medium hover:bg-brand-700 transition flex items-center gap-2 text-sm sm:text-base shadow-premium-brand"
+                  className="px-4 py-2.5 rounded-xl bg-brand-600 text-white font-medium hover:bg-brand-700 transition flex items-center gap-2 text-sm sm:text-base shadow-premium-brand touch-feedback touch-feedback-smooth"
                 >
                   Profile
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

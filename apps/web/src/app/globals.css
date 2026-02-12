@@ -103,6 +103,19 @@
   .btn-tap-opacity:active {
     opacity: 0.9;
   }
+  /* Premium touch feedback - professional apps */
+  .touch-feedback:active {
+    transform: scale(0.97);
+  }
+  .touch-feedback-smooth {
+    transition: transform 0.15s ease-out;
+  }
+  /* Staggered list animation */
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.1s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.2s; }
+  .stagger-5 { animation-delay: 0.25s; }
 }
 
 @layer base {

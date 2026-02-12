@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
+import { hapticLight, hapticMedium } from '@/lib/haptic';
 
 const CATEGORY_ICONS: Record<string, { Icon: React.ComponentType<{ className?: string }>; gradient: string; iconColor: string }> = {
   mechanic: { Icon: Wrench, gradient: 'from-amber-100 to-amber-50', iconColor: 'text-amber-600' },
@@ -145,6 +146,7 @@ export default function FeedPage() {
   const toggleFavorite = async (itemType: string, itemId: string, e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    hapticMedium();
     const key = `${itemType}:${itemId}`;
     const isFav = favorites.has(key);
     try {
@@ -169,6 +171,7 @@ export default function FeedPage() {
   const startChat = async (authorId: string, e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    hapticLight();
     if (!authorId) return;
     setStartingChat(authorId);
     try {
@@ -459,7 +462,7 @@ export default function FeedPage() {
                           if (itemType === 'product') {
                             return (
                               <div key={item.id} className="relative group">
-                                <Link href={`/products/${item.id}`} className="block">
+                                <Link href={`/products/${item.id}`} className="block touch-feedback touch-feedback-smooth active:scale-[0.99]">
                                   <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-stone-100/80 hover:border-stone-200 h-full flex flex-col">
                                     <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
                                       {hasImage ? (
@@ -481,7 +484,7 @@ export default function FeedPage() {
                                   <button
                                     type="button"
                                     onClick={(e) => toggleFavorite('product', item.id, e)}
-                                    className={`p-1.5 rounded-lg backdrop-blur shadow-sm transition-all ${favorites.has(`product:${item.id}`) ? 'bg-red-100 text-red-600' : 'bg-white/90 text-stone-600 hover:bg-stone-100'}`}
+                                    className={`p-1.5 rounded-lg backdrop-blur shadow-sm transition-all touch-feedback touch-feedback-smooth ${favorites.has(`product:${item.id}`) ? 'bg-red-100 text-red-600' : 'bg-white/90 text-stone-600 hover:bg-stone-100'}`}
                                     title="Save"
                                     aria-label={favorites.has(`product:${item.id}`) ? 'Remove from saved' : 'Save'}
                                   >
@@ -494,7 +497,7 @@ export default function FeedPage() {
                                       type="button"
                                       onClick={(e) => startChat(item.author_id!, e)}
                                       disabled={startingChat === item.author_id}
-                                      className="p-1.5 rounded-lg bg-white/90 backdrop-blur shadow-sm hover:bg-brand-600 hover:text-white text-stone-600 transition-all"
+                                      className="p-1.5 rounded-lg bg-white/90 backdrop-blur shadow-sm hover:bg-brand-600 hover:text-white text-stone-600 transition-all touch-feedback touch-feedback-smooth"
                                       title="Chat"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

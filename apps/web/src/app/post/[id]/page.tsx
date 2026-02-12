@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { FeedHeader } from '@/components/FeedHeader';
+import { hapticLight } from '@/lib/haptic';
 
 const CATEGORY_ICONS: Record<string, string> = {
   mechanic: '🔧',
@@ -161,6 +162,7 @@ export default function PostDetailPage() {
               <button
                 type="button"
                 onClick={async () => {
+                  hapticLight();
                   const res = await fetch(`/api/posts/${id}/reaction`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -173,7 +175,7 @@ export default function PostDetailPage() {
                     router.push(`/login?next=/post/${id}`);
                   }
                 }}
-                className="flex items-center gap-1 text-stone-500 hover:text-brand-600 transition"
+                className="flex items-center gap-1 text-stone-500 hover:text-brand-600 transition touch-feedback touch-feedback-smooth"
               >
                 <span>👍</span>
                 <span>{post.like_count}</span>
@@ -181,6 +183,7 @@ export default function PostDetailPage() {
               <button
                 type="button"
                 onClick={async () => {
+                  hapticLight();
                   const res = await fetch(`/api/posts/${id}/reaction`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -193,7 +196,7 @@ export default function PostDetailPage() {
                     router.push(`/login?next=/post/${id}`);
                   }
                 }}
-                className="flex items-center gap-1 text-stone-500 hover:text-red-600 transition"
+                className="flex items-center gap-1 text-stone-500 hover:text-red-600 transition touch-feedback touch-feedback-smooth"
               >
                 <span>👎</span>
                 <span>{post.dislike_count}</span>

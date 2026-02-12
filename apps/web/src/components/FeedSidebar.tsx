@@ -99,7 +99,7 @@ export function FeedSidebar({
                     <li key={key}>
                       <Link
                         href={item.href}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-stone-600 hover:bg-stone-100/80 hover:text-stone-900 font-medium transition-all duration-200 hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0"
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-stone-600 hover:bg-stone-100/80 hover:text-stone-900 font-medium transition-all duration-200 hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0 touch-feedback touch-feedback-smooth"
                       >
                         <span className="text-xl drop-shadow-sm">{item.icon}</span>
                         {item.label}
@@ -115,7 +115,7 @@ export function FeedSidebar({
                     <button
                       type="button"
                       onClick={() => handleClick(item)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 text-left ${
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 text-left touch-feedback touch-feedback-smooth ${
                         isActive
                           ? 'bg-gradient-to-r from-brand-50 to-brand-100/80 text-brand-800 shadow-[0_2px_12px_-4px_rgba(20,184,166,0.3),inset_0_1px_0_0_rgba(255,255,255,0.6)] border border-brand-200/60'
                           : 'text-stone-600 hover:bg-stone-100/80 hover:text-stone-900 hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-0.5'

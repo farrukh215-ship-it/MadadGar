@@ -41,7 +41,9 @@ export function FeedSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
       {Array.from({ length: count }).map((_, i) => (
-        <FeedCardSkeleton key={i} />
+        <div key={i} className="animate-slide-up" style={{ animationDelay: `${i * 45}ms`, animationFillMode: 'backwards' }}>
+          <FeedCardSkeleton />
+        </div>
       ))}
     </div>
   );
