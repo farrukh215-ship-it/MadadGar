@@ -108,6 +108,12 @@ export default function FeedPage() {
   const initialFilter = (catFromUrl && CATEGORY_TO_FILTER[catFromUrl]) ? CATEGORY_TO_FILTER[catFromUrl] : 'all';
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>(initialFilter);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (catFromUrl && CATEGORY_TO_FILTER[catFromUrl]) {
+      setSidebarFilter(CATEGORY_TO_FILTER[catFromUrl] as SidebarFilter);
+    }
+  }, [catFromUrl]);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [lat, setLat] = useState<number | null>(null);
@@ -248,7 +254,7 @@ export default function FeedPage() {
     return acc;
   }, {});
   let categoryOrder = Object.keys(grouped).sort((a, b) => {
-    const priority = ['Trusted Helpers', 'Food Points', 'Products', 'Used Products'];
+    const priority = ['Used Products', 'Trusted Helpers', 'Food Points', 'Products'];
     const ai = priority.indexOf(a);
     const bi = priority.indexOf(b);
     if (ai >= 0 && bi >= 0) return ai - bi;
@@ -327,7 +333,6 @@ export default function FeedPage() {
                   const hasMore = categoryItems.length > FEED_LIMIT_PER_CATEGORY;
                   const viewAllSlug = CATEGORY_TO_SLUG[categoryName];
                   const catSlug = categoryName.toLowerCase().replace(/\s+/g, '-');
-                  const catIcon = CATEGORY_ICONS[catSlug] ?? (['cook', 'fast', 'desi', 'biryani', 'chinese', 'bbq', 'sweet', 'food', 'products', 'used'].some((k) => catSlug.includes(k)) ? '📦' : '🔧');
 
                   const parentSlug = categoryFromUrl ?? getParentCategorySlug(categoryName);
                   const headingHref = viewAllSlug

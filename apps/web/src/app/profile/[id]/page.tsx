@@ -13,6 +13,10 @@ type Profile = {
   city: string | null;
   avatar_url: string | null;
   cover_url: string | null;
+  bio: string | null;
+  gender?: string | null;
+  date_of_birth?: string | null;
+  marital_status?: string | null;
   is_worker: boolean;
   worker_skill: string | null;
   trust_score: number;
@@ -272,6 +276,9 @@ export default function UserProfilePage() {
             <p className="mt-2 text-stone-600">
               {[profile.area, profile.city].filter(Boolean).join(', ')}
             </p>
+          )}
+          {(profile as { bio?: string }).bio && (isOwnProfile || (profile.about_visibility ?? 'public') === 'public') && (
+            <p className="mt-3 text-stone-600 text-sm leading-relaxed">{(profile as { bio?: string }).bio}</p>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-4">
             <div className="flex gap-6">

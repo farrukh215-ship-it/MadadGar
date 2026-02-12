@@ -207,6 +207,30 @@ export default function PostDetailPage() {
               <button
                 type="button"
                 onClick={async () => {
+                  const url = typeof window !== 'undefined' ? `${window.location.origin}/post/${id}` : '';
+                  if (navigator.share && typeof navigator.share === 'function') {
+                    try {
+                      await navigator.share({
+                        title: `${post.worker_name || 'Helper'} — ${post.category_name}`,
+                        url,
+                        text: post.reason ?? post.relation_tag ?? post.intro ?? '',
+                      });
+                    } catch {
+                      await navigator.clipboard?.writeText(url);
+                      alert('Link copied!');
+                    }
+                  } else {
+                    await navigator.clipboard?.writeText(url);
+                    alert('Link copied!');
+                  }
+                }}
+                className="px-4 py-2 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50"
+              >
+                📤 Share
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
                   await fetch('/api/favorites', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

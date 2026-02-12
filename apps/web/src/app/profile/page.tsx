@@ -60,6 +60,8 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState<RecItem[]>([]);
   const [sales, setSales] = useState<{ id: string; title: string; price: number; images?: string[]; category_name?: string; category_slug?: string; created_at: string }[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string; price_min?: number; price_max?: number; images?: string[]; category_name?: string; category_slug?: string; created_at: string }[]>([]);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,11 +75,17 @@ export default function ProfilePage() {
         const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, trust_score, worker_skill, verified').eq('user_id', u.id).single();
         setProfile(p ?? null);
         try {
-          const [recRes, postsRes, listingsRes] = await Promise.all([
+          const [recRes, postsRes, listingsRes, completeRes, premRes] = await Promise.all([
             fetch(`/api/profile/${u.id}/recommendations`),
             fetch(`/api/profile/${u.id}/posts`),
             fetch('/api/profile/my-listings'),
+            fetch('/api/profile/complete'),
+            fetch('/api/premium/status'),
           ]);
+          const completeData = await completeRes.json();
+          const premData = await premRes.json();
+          setProfileComplete(completeData.is_complete ?? false);
+          setIsPremium(!!premData.is_premium);
           const recData = await recRes.json();
           const postsData = await postsRes.json();
           const listingsData = await listingsRes.json();
@@ -168,14 +176,27 @@ export default function ProfilePage() {
         <div className="px-4 pt-4 pb-6">
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100 mb-6">
           <h2 className="text-lg font-semibold text-brand-900">{displayName}</h2>
-          <div className="mt-4 flex flex-wrap gap-4">
+          <div className="mt-4 flex flex-wrap gap-3">
             {profile?.verified && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-sm font-medium">
                 ✓ Verified
               </span>
             )}
+            {profileComplete && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-sm font-medium">
+                ✓ Profile Complete
+              </span>
+            )}
+            {isPremium && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-sm font-medium">
+                ★ Premium
+              </span>
+            )}
             <Link href={`/profile/${user.id}`} className="text-brand-600 font-medium hover:underline">
               Public profile →
+            </Link>
+            <Link href="/premium" className="text-amber-600 font-medium hover:underline">
+              ★ Premium
             </Link>
             {!profile?.verified && (
               <Link href="/profile/verify" className="text-amber-600 font-medium hover:underline">

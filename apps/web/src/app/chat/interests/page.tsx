@@ -84,6 +84,8 @@ export default function InterestedPeoplePage() {
   const [blockedUsers, setBlockedUsers] = useState<Record<string, boolean>>({});
   const [blockingFor, setBlockingFor] = useState<string | null>(null);
   const [reportingFor, setReportingFor] = useState<string | null>(null);
+  const [showRulesModal, setShowRulesModal] = useState(true);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -120,6 +122,13 @@ export default function InterestedPeoplePage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    fetch('/api/profile/complete')
+      .then((r) => r.json())
+      .then((d) => setProfileComplete(d.is_complete ?? false))
+      .catch(() => setProfileComplete(false));
+  }, []);
 
   useEffect(() => {
     fetch('/api/presence', { method: 'POST' }).catch(() => {});
@@ -353,6 +362,60 @@ export default function InterestedPeoplePage() {
         </div>
       </header>
 
+      {/* Chat Rules Modal */}
+      {showRulesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowRulesModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] overflow-y-auto border border-stone-200" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-gradient-to-br from-brand-600 to-brand-800 text-white p-5 rounded-t-2xl">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <span>📋</span> Interested People Chat Rules
+              </h2>
+              <p className="text-brand-100 text-sm mt-1">In rules ko follow karein aur safe chat karein</p>
+            </div>
+            <div className="p-5 space-y-3 text-stone-700 text-sm">
+              <div className="flex gap-3 p-3 rounded-xl bg-brand-50 border border-brand-100">
+                <span className="text-lg shrink-0">1.</span>
+                <p><strong>Minimum 3 shared interests:</strong> Sirf wohi logse chat kar sakte hain jin ke saath kam se kam 3 interests match hon.</p>
+              </div>
+              <div className="flex gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
+                <span className="text-lg shrink-0">2.</span>
+                <p><strong>Profile complete karein:</strong> Chat karne se pehle apni profile zaroor complete karein — name, gender, age, bio, photo sab fill hon.</p>
+              </div>
+              <div className="flex gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                <span className="text-lg shrink-0">3.</span>
+                <p><strong>Profile dekh sakte hain:</strong> Kisi bhi user ki full public profile dekh sakte hain — unki posts, recommendations, jo bhi unhone share kiya ho.</p>
+              </div>
+              <div className="flex gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                <span className="text-lg shrink-0">4.</span>
+                <p><strong>Respectful behavior:</strong> Sab ke saath adab aur respect se baat karein. Harassment ya abuse allowed nahi hai.</p>
+              </div>
+              <div className="flex gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                <span className="text-lg shrink-0">5.</span>
+                <p><strong>No spam:</strong> Faltu messages, links ya promotional content bhejna mana hai. Report kiya ja sakta hai.</p>
+              </div>
+              <div className="flex gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                <span className="text-lg shrink-0">6.</span>
+                <p><strong>Privacy:</strong> Apni personal info safe rakhein. Kisi ko bhi apna password ya OTP mat share karein.</p>
+              </div>
+              {profileComplete === false && (
+                <Link href="/profile/edit" className="block p-4 rounded-xl bg-amber-100 border border-amber-200 text-amber-900 font-medium text-center hover:bg-amber-200 transition">
+                  Profile complete karein →
+                </Link>
+              )}
+            </div>
+            <div className="p-5 pt-0">
+              <button
+                type="button"
+                onClick={() => setShowRulesModal(false)}
+                className="w-full py-3.5 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition shadow-premium-brand"
+              >
+                Samajh gaya, continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-4xl mx-auto px-4 py-6">
         {loading ? (
           <div className="py-16 text-center">
@@ -515,7 +578,13 @@ export default function InterestedPeoplePage() {
                                       </div>
                                     </div>
                                     <div className="flex flex-col items-end gap-1 shrink-0">
-                                      <div className="flex gap-2">
+                                      <div className="flex flex-wrap gap-2 justify-end">
+                                      <Link
+                                        href={`/profile/${u.id}`}
+                                        className="px-3 py-2 rounded-xl text-sm font-medium bg-stone-100 text-stone-700 hover:bg-stone-200 transition"
+                                      >
+                                        View Profile
+                                      </Link>
                                       <button
                                         type="button"
                                         onClick={(e) => addFriend(u, e)}
@@ -704,14 +773,19 @@ export default function InterestedPeoplePage() {
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => startChat(u)}
-                          disabled={startingChat === u.id}
-                          className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
-                        >
-                          {startingChat === u.id ? '...' : 'Chat'}
-                        </button>
+                        <div className="flex gap-2 flex-wrap justify-end">
+                          <Link href={`/profile/${u.id}`} className="px-3 py-2 rounded-xl text-sm font-medium bg-stone-100 text-stone-700 hover:bg-stone-200">
+                            View Profile
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => startChat(u)}
+                            disabled={startingChat === u.id}
+                            className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
+                          >
+                            {startingChat === u.id ? '...' : 'Chat'}
+                          </button>
+                        </div>
                         <div className="flex gap-2 text-[10px] text-stone-400">
                           <button
                             type="button"
