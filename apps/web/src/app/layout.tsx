@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import '@fontsource/noto-nastaliq-urdu';
 import './globals.css';
 import { IdleLogoutProvider } from '@/components/IdleLogoutProvider';
 import { ChatToast } from '@/components/ChatToast';
@@ -7,6 +8,7 @@ import { ChatToast } from '@/components/ChatToast';
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   display: 'swap',
+  variable: '--font-sans',
 });
 
 export const metadata: Metadata = {
@@ -27,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${plusJakarta.className} antialiased bg-slate-50`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={plusJakarta.variable}>
+      <body className={`${plusJakarta.variable} font-sans antialiased bg-surface-base`} suppressHydrationWarning>
         <IdleLogoutProvider>
           {children}
           <ChatToast />

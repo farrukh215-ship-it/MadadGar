@@ -23,6 +23,9 @@ type Profile = {
   recommendations_count: number;
   created_at: string;
   about_visibility?: 'public' | 'private';
+  phone_visibility?: 'public' | 'private';
+  email_visibility?: 'public' | 'private';
+  bio_visibility?: 'public' | 'private';
 };
 
 type PostItem = {
@@ -112,6 +115,7 @@ export default function UserProfilePage() {
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [aboutExpanded, setAboutExpanded] = useState(false);
   const [messageLoading, setMessageLoading] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
@@ -277,7 +281,7 @@ export default function UserProfilePage() {
               {[profile.area, profile.city].filter(Boolean).join(', ')}
             </p>
           )}
-          {(profile as { bio?: string }).bio && (isOwnProfile || (profile.about_visibility ?? 'public') === 'public') && (
+          {(profile as { bio?: string }).bio && (isOwnProfile || (profile.bio_visibility ?? 'public') === 'public') && (
             <p className="mt-3 text-stone-600 text-sm leading-relaxed">{(profile as { bio?: string }).bio}</p>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-4">
@@ -328,33 +332,44 @@ export default function UserProfilePage() {
           </div>
         </div>
 
-        {/* About section - phone & email (respect about_visibility) */}
+        {/* About section - collapsible, per-item visibility */}
         {(isOwnProfile || (profile.about_visibility ?? 'public') === 'public') && (
-          <section id="about" className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100 mb-6">
-            <h2 className="text-lg font-semibold text-brand-900 flex items-center gap-2 mb-4">
-              <span>ℹ️</span>
-              About
-            </h2>
-            <div className="space-y-3">
-              {user?.phone && (
-                <div>
-                  <p className="text-sm text-stone-500">Phone</p>
-                  <a href={`tel:${user.phone}`} className="font-medium text-brand-700 hover:underline">{user.phone}</a>
-                </div>
-              )}
-              {user?.email && (
-                <div>
-                  <p className="text-sm text-stone-500">Email</p>
-                  <a href={`mailto:${user.email}`} className="font-medium text-brand-700 hover:underline">{user.email}</a>
-                </div>
-              )}
-              {(!user?.phone && !user?.email) && (
-                <p className="text-stone-500 text-sm">Contact info available nahi</p>
-              )}
-              {!isOwnProfile && (profile.about_visibility ?? 'public') === 'private' && (
-                <p className="text-xs text-stone-400">User ne About section private rakha hua hai.</p>
-              )}
-            </div>
+          <section id="about" className="bg-white rounded-2xl shadow-sm border border-stone-100 mb-6 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setAboutExpanded((e) => !e)}
+              className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-stone-50/50 transition"
+            >
+              <h2 className="text-lg font-semibold text-brand-900 flex items-center gap-2">
+                <span>ℹ️</span>
+                About
+              </h2>
+              <svg className={`w-5 h-5 text-stone-500 transition-transform ${aboutExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {aboutExpanded && (
+              <div className="px-6 pb-6 pt-0 space-y-3 border-t border-stone-100">
+                {user?.phone && (isOwnProfile || (profile.phone_visibility ?? 'public') === 'public') && (
+                  <div>
+                    <p className="text-sm text-stone-500">Phone</p>
+                    <a href={`tel:${user.phone}`} className="font-medium text-brand-700 hover:underline">{user.phone}</a>
+                  </div>
+                )}
+                {user?.email && (isOwnProfile || (profile.email_visibility ?? 'public') === 'public') && (
+                  <div>
+                    <p className="text-sm text-stone-500">Email</p>
+                    <a href={`mailto:${user.email}`} className="font-medium text-brand-700 hover:underline">{user.email}</a>
+                  </div>
+                )}
+                {(!user?.phone && !user?.email) && (
+                  <p className="text-stone-500 text-sm">Contact info available nahi</p>
+                )}
+                {!isOwnProfile && user && (user.phone || user.email) && !(user?.phone && (profile.phone_visibility ?? 'public') === 'public') && !(user?.email && (profile.email_visibility ?? 'public') === 'public') && (
+                  <p className="text-stone-500 text-sm">Contact info private rakha gaya</p>
+                )}
+              </div>
+            )}
           </section>
         )}
 

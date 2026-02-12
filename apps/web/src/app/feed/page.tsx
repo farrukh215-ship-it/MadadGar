@@ -6,6 +6,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { UtensilsCrossed, Beef, Cookie, Soup, Flame, Wrench, Zap, Droplets, Snowflake, Car, Sparkles, Hammer, Plug, Smartphone, Laptop, AlertCircle, Package, ShoppingBag, Search } from 'lucide-react';
 import { FeedHeader } from '@/components/FeedHeader';
 import { FeedSidebar, type SidebarFilter } from '@/components/FeedSidebar';
+import { FeedSkeleton } from '@/components/Skeleton';
+import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useRecentSearches } from '@/hooks/useRecentSearches';
 
 const CATEGORY_ICONS: Record<string, { Icon: React.ComponentType<{ className?: string }>; gradient: string; iconColor: string }> = {
   mechanic: { Icon: Wrench, gradient: 'from-amber-100 to-amber-50', iconColor: 'text-amber-600' },
@@ -19,13 +24,13 @@ const CATEGORY_ICONS: Record<string, { Icon: React.ComponentType<{ className?: s
   chinese: { Icon: Soup, gradient: 'from-amber-100 to-orange-50', iconColor: 'text-amber-600' },
   bbq: { Icon: Beef, gradient: 'from-orange-100 to-rose-50', iconColor: 'text-orange-600' },
   sweets: { Icon: Cookie, gradient: 'from-pink-100 to-rose-50', iconColor: 'text-pink-600' },
-  driver: { Icon: Car, gradient: 'from-slate-100 to-slate-50', iconColor: 'text-slate-600' },
+  driver: { Icon: Car, gradient: 'from-slate-100 to-slate-50', iconColor: 'text-stone-600' },
   cleaner: { Icon: Sparkles, gradient: 'from-teal-100 to-emerald-50', iconColor: 'text-teal-600' },
   carpenter: { Icon: Hammer, gradient: 'from-amber-100 to-amber-50', iconColor: 'text-amber-700' },
   painter: { Icon: Sparkles, gradient: 'from-indigo-100 to-violet-50', iconColor: 'text-indigo-600' },
   'generator-tech': { Icon: Plug, gradient: 'from-yellow-100 to-amber-50', iconColor: 'text-amber-600' },
   welder: { Icon: Flame, gradient: 'from-orange-100 to-red-50', iconColor: 'text-orange-600' },
-  'mobile-repair': { Icon: Smartphone, gradient: 'from-slate-100 to-slate-50', iconColor: 'text-slate-600' },
+  'mobile-repair': { Icon: Smartphone, gradient: 'from-slate-100 to-slate-50', iconColor: 'text-stone-600' },
   'computer-it': { Icon: Laptop, gradient: 'from-blue-100 to-indigo-50', iconColor: 'text-blue-600' },
   'emergency-helper': { Icon: AlertCircle, gradient: 'from-red-100 to-rose-50', iconColor: 'text-red-600' },
   products: { Icon: Package, gradient: 'from-indigo-100 to-blue-50', iconColor: 'text-indigo-600' },
@@ -116,9 +121,12 @@ export default function FeedPage() {
   }, [catFromUrl]);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+  const { recent: recentSearches, addSearch } = useRecentSearches();
   const [startingChat, setStartingChat] = useState<string | null>(null);
   const fetchIdRef = useRef(0);
   const router = useRouter();
@@ -169,6 +177,7 @@ export default function FeedPage() {
   const refetchFeed = useCallback(async () => {
     const id = ++fetchIdRef.current;
     setLoading(true);
+    setLoadError(false);
     try {
       const latVal = lat ?? 31.52;
       const lngVal = lng ?? 74.35;
@@ -195,6 +204,7 @@ export default function FeedPage() {
       }
     } catch (e) {
       if (id !== fetchIdRef.current) return;
+      setLoadError(true);
     } finally {
       if (id === fetchIdRef.current) setLoading(false);
     }
@@ -215,9 +225,13 @@ export default function FeedPage() {
     return `${(m / 1000).toFixed(1)} km`;
   };
 
+  useEffect(() => {
+    if (debouncedSearch.trim()) addSearch(debouncedSearch);
+  }, [debouncedSearch, addSearch]);
+
   const filteredItems = items.filter((i) => {
-    const matchSearch = !search ||
-      [i.category_name, i.worker_name, i.area_text, i.reason, i.name, i.title].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !debouncedSearch ||
+      [i.category_name, i.worker_name, i.area_text, i.reason, i.name, i.title].filter(Boolean).join(' ').toLowerCase().includes(debouncedSearch.toLowerCase());
     const itemType = i.item_type ?? 'post';
     const catSlug = (i.category_name ?? i.category_slug ?? '').toLowerCase().replace(/\s+/g, '-');
     const isFoodPost = FOOD_SLUGS.some((s) => catSlug.includes(s)) || [i.category_name, i.worker_name, i.area_text, i.reason].join(' ').toLowerCase().includes('food');
@@ -269,7 +283,7 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/60">
+    <div className="min-h-screen bg-surface-base">
       <FeedHeader onMenuClick={() => setSidebarOpen(true)} />
 
       <div className="flex">
@@ -291,39 +305,70 @@ export default function FeedPage() {
                 {isSubcategoryView ? 'Back to category' : 'Back to main feed'}
               </Link>
             )}
-            <div className="relative mb-6">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </span>
-              <input
-                type="search"
-                placeholder="Search helpers, food, products..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-slate-200/90 shadow-premium focus:ring-2 focus:ring-brand-500/25 focus:border-brand-400 outline-none transition-all placeholder:text-slate-400 text-slate-700"
-              />
+            <div className="mb-6">
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" aria-hidden>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </span>
+                <input
+                  type="search"
+                  placeholder="Search helpers, food, products..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-stone-200/90 shadow-premium focus:ring-2 focus:ring-brand-500/25 focus:border-brand-400 outline-none transition-all placeholder:text-stone-400 text-stone-800"
+                  aria-label="Search helpers, food, products"
+                />
+              </div>
+              {recentSearches.length > 0 && !search && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span className="text-xs text-stone-500 self-center">Recent:</span>
+                  {recentSearches.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setSearch(s)}
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium bg-stone-100 text-stone-700 hover:bg-stone-200 transition btn-tap"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Feed */}
             {loading ? (
-              <div className="py-24 text-center animate-fade-in">
-                <div className="inline-block w-10 h-10 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-                <p className="mt-4 text-slate-500 font-medium">Loading...</p>
-                <p className="mt-1 text-sm text-slate-400">Finding trusted helpers near you</p>
+              <div className="space-y-8">
+                <section>
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-stone-200 animate-shimmer" />
+                    <div className="h-4 w-24 rounded bg-stone-200 animate-shimmer" />
+                  </div>
+                  <FeedSkeleton count={6} />
+                </section>
+                <section>
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-stone-200 animate-shimmer" />
+                    <div className="h-4 w-32 rounded bg-stone-200 animate-shimmer" />
+                  </div>
+                  <FeedSkeleton count={3} />
+                </section>
               </div>
+            ) : loadError ? (
+              <ErrorState
+                title="Could not load feed"
+                message="Check your connection and try again."
+                onRetry={refetchFeed}
+              />
             ) : filteredItems.length === 0 ? (
-              <div className="py-20 text-center bg-white rounded-2xl border border-slate-200/80 shadow-premium">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center mb-4 border border-brand-100">
-                  <Search className="w-8 h-8 text-brand-600" strokeWidth={2} />
-                </div>
-                <p className="text-slate-600 font-medium">No posts nearby</p>
-                <p className="mt-1 text-slate-500 text-sm">Be the first to share a trusted helper!</p>
-                <Link href="/post" className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 shadow-premium-brand transition-all hover:shadow-premium-brand-hover">
-                  Create
-                </Link>
-              </div>
+              <EmptyState
+                title="No posts nearby"
+                subtitle="Be the first to share a trusted helper!"
+                actionLabel="Create"
+                actionHref="/post"
+              />
             ) : (
               <div className="space-y-8">
                 {categoryOrder.map((categoryName) => {
@@ -350,16 +395,16 @@ export default function FeedPage() {
                             className="group/head flex items-center gap-2.5 tracking-tight"
                           >
                             <span className="group-hover/head:shadow-premium-brand transition-all duration-200">
-                              <CategoryIcon slug={catSlug} size="sm" className="shadow-premium border border-slate-100 group-hover/head:border-brand-200" />
+                              <CategoryIcon slug={catSlug} size="sm" className="shadow-premium border border-stone-100 group-hover/head:border-brand-200" />
                             </span>
-                            <h2 className="text-base font-bold text-slate-800 group-hover/head:text-brand-600 transition-colors">
+                            <h2 className="text-base font-bold text-stone-800 group-hover/head:text-brand-600 transition-colors">
                               {categoryName}
                             </h2>
-                            <span className="text-xs text-slate-400 group-hover/head:text-brand-500 ml-0.5">View all →</span>
+                            <span className="text-xs text-stone-400 group-hover/head:text-brand-500 ml-0.5">View all →</span>
                           </Link>
                         ) : (
-                          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2.5 tracking-tight">
-                            <CategoryIcon slug={catSlug} size="sm" className="shadow-premium border border-slate-100" />
+                          <h2 className="text-base font-bold text-stone-800 flex items-center gap-2.5 tracking-tight">
+                            <CategoryIcon slug={catSlug} size="sm" className="shadow-premium border border-stone-100" />
                             {categoryName}
                           </h2>
                         )}
@@ -380,19 +425,19 @@ export default function FeedPage() {
                             return (
                               <div key={item.id} className="relative group">
                                 <Link href={`/products/${item.id}`} className="block">
-                                  <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-slate-100/80 hover:border-slate-200 h-full flex flex-col">
-                                    <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden min-h-[72px]">
+                                  <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-stone-100/80 hover:border-stone-200 h-full flex flex-col">
+                                    <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
                                       {hasImage ? (
                                         <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
                                       ) : (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-50">
                                           <CategoryIcon slug="products" size="lg" className="shadow-md" />
-                                          <span className="absolute bottom-1 left-1 right-1 text-center text-[10px] font-medium text-slate-500 truncate">{item.category_name}</span>
+                                          <span className="absolute bottom-1 left-1 right-1 text-center text-[10px] font-medium text-stone-500 truncate">{item.category_name}</span>
                                         </div>
                                       )}
                                     </div>
                                     <div className="p-2 flex-1 flex flex-col min-h-0">
-                                      <h3 className="font-semibold text-slate-900 text-xs line-clamp-1">{item.name}</h3>
+                                      <h3 className="font-semibold text-stone-900 text-xs line-clamp-1">{item.name}</h3>
                                       <p className="text-brand-600 font-bold mt-0.5 text-xs">Rs {item.price_min != null ? item.price_min.toLocaleString() : '0'}+</p>
                                     </div>
                                   </article>
@@ -402,7 +447,7 @@ export default function FeedPage() {
                                     type="button"
                                     onClick={(e) => startChat(item.author_id!, e)}
                                     disabled={startingChat === item.author_id}
-                                    className="absolute top-1 right-1 p-1.5 rounded-lg bg-white/90 backdrop-blur shadow-sm hover:bg-brand-600 hover:text-white text-slate-600 transition-all z-10"
+                                    className="absolute top-1 right-1 p-1.5 rounded-lg bg-white/90 backdrop-blur shadow-sm hover:bg-brand-600 hover:text-white text-stone-600 transition-all z-10"
                                     title="Chat"
                                   >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -419,8 +464,8 @@ export default function FeedPage() {
                             return (
                               <div key={item.id} className="relative group">
                                 <Link href={`/sale/${item.id}`} className="block">
-                                  <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-slate-100/80 hover:border-slate-200 h-full flex flex-col">
-                                    <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden min-h-[72px]">
+                                  <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-stone-100/80 hover:border-stone-200 h-full flex flex-col">
+                                    <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
                                       {hasImage ? (
                                         <>
                                           <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
@@ -431,14 +476,14 @@ export default function FeedPage() {
                                       ) : (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50">
                                           <CategoryIcon slug="used-products" size="lg" className="shadow-md" />
-                                          <span className="absolute bottom-1 left-1 right-1 text-center text-[10px] font-medium text-slate-500 truncate">{item.category_name || 'Used'}</span>
+                                          <span className="absolute bottom-1 left-1 right-1 text-center text-[10px] font-medium text-stone-500 truncate">{item.category_name || 'Used'}</span>
                                         </div>
                                       )}
                                     </div>
                                     <div className="p-2 flex-1 flex flex-col min-h-0">
-                                      <h3 className="font-semibold text-slate-900 text-xs line-clamp-1">{item.title}</h3>
+                                      <h3 className="font-semibold text-stone-900 text-xs line-clamp-1">{item.title}</h3>
                                       <p className="text-brand-600 font-bold mt-0.5 text-xs">Rs {item.price?.toLocaleString()}</p>
-                                      {item.area_text && <p className="text-[10px] text-slate-500 mt-0.5 truncate">📍 {item.area_text}</p>}
+                                      {item.area_text && <p className="text-[10px] text-stone-500 mt-0.5 truncate">📍 {item.area_text}</p>}
                                     </div>
                                   </article>
                                 </Link>
@@ -447,7 +492,7 @@ export default function FeedPage() {
                                     type="button"
                                     onClick={(e) => startChat(item.author_id!, e)}
                                     disabled={startingChat === item.author_id}
-                                    className="absolute top-1 right-1 p-1.5 rounded-lg bg-white/90 backdrop-blur shadow-sm hover:bg-brand-600 hover:text-white text-slate-600 transition-all z-10"
+                                    className="absolute top-1 right-1 p-1.5 rounded-lg bg-white/90 backdrop-blur shadow-sm hover:bg-brand-600 hover:text-white text-stone-600 transition-all z-10"
                                     title="Chat"
                                   >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -467,8 +512,8 @@ export default function FeedPage() {
                           if (isFoodPost) {
                             return (
                               <Link key={item.id} href={`/post/${item.id}`} className="block group">
-                                <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-slate-100/80 hover:border-slate-200">
-                                  <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden min-h-[72px]">
+                                <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200">
+                                  <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
                                     {hasImage ? (
                                       <>
                                         <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
@@ -486,14 +531,14 @@ export default function FeedPage() {
                                     ) : (
                                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-violet-100/80 to-violet-50/80">
                                         <CategoryIcon slug={slug} size="lg" className="shadow-md" />
-                                        <span className="mt-1.5 text-[10px] font-semibold text-slate-600 truncate max-w-full px-1">{item.category_name}</span>
+                                        <span className="mt-1.5 text-[10px] font-semibold text-stone-600 truncate max-w-full px-1">{item.category_name}</span>
                                       </div>
                                     )}
                                   </div>
                                   <div className="p-2 flex-1 flex flex-col min-h-0">
-                                    <h3 className="font-semibold text-slate-900 text-xs line-clamp-1">{item.worker_name || item.category_name}</h3>
+                                    <h3 className="font-semibold text-stone-900 text-xs line-clamp-1">{item.worker_name || item.category_name}</h3>
                                     {item.area_text && (
-                                      <p className="text-[11px] text-slate-600 mt-1 flex items-center gap-1">
+                                      <p className="text-[11px] text-stone-600 mt-1 flex items-center gap-1">
                                         <span>📍</span>
                                         <span className="line-clamp-2">{item.area_text}</span>
                                       </p>
@@ -508,12 +553,12 @@ export default function FeedPage() {
                           return (
                             <article
                               key={item.id}
-                              className={`rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-slate-100/80 hover:border-slate-200 ${
+                              className={`rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200 ${
                                 isEmergency ? 'ring-1 ring-red-200' : ''
                               }`}
                             >
                               <Link href={`/post/${item.id}`} className="flex-1 flex flex-col block group min-h-0">
-                                <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden min-h-[72px]">
+                                <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
                                   {hasImage ? (
                                     <>
                                       <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
@@ -524,6 +569,9 @@ export default function FeedPage() {
                                           <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-brand-100/95 text-brand-800">🔧</span>
                                         )}
                                         {item.avg_rating != null && <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-black/40 text-white">⭐{item.avg_rating}</span>}
+                                        {(item.rec_count ?? 0) > 0 && (
+                                          <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-blue-500/90 text-white" title="Verified recommendations">✓</span>
+                                        )}
                                       </div>
                                       {formatDistance(item.distance_m) && (
                                         <span className="absolute bottom-1 right-1 px-1 py-0.5 rounded text-[9px] bg-black/40 text-white">{formatDistance(item.distance_m)}</span>
@@ -532,55 +580,35 @@ export default function FeedPage() {
                                   ) : (
                                     <div className={`absolute inset-0 flex flex-col items-center justify-center ${isEmergency ? 'bg-red-50/80' : 'bg-gradient-to-br from-teal-50/80 to-emerald-50/80'}`}>
                                       <CategoryIcon slug={slug} size="lg" className="shadow-md" />
-                                      <span className="mt-1.5 text-[10px] font-semibold text-slate-600 truncate max-w-full px-1">{item.category_name}</span>
+                                      <span className="mt-1.5 text-[10px] font-semibold text-stone-600 truncate max-w-full px-1">{item.category_name}</span>
                                     </div>
                                   )}
                                 </div>
                                 <div className="p-2 flex-1 flex flex-col min-h-0">
-                                  <h3 className="font-semibold text-slate-900 text-xs line-clamp-1">{item.worker_name || 'Helper'} — {item.category_name}</h3>
-                                  {(item.reason || item.relation_tag) && <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{item.reason ?? item.relation_tag}</p>}
-                                  <div className="mt-1 flex gap-1.5 text-[9px] text-slate-500">
+                                  <h3 className="font-semibold text-stone-900 text-xs line-clamp-1">{item.worker_name || 'Helper'} — {item.category_name}</h3>
+                                  {(item.reason || item.relation_tag) && <p className="text-[10px] text-stone-500 line-clamp-1 mt-0.5">{item.reason ?? item.relation_tag}</p>}
+                                  <div className="mt-1 flex gap-1.5 text-[9px] text-stone-500">
                                     <span>👍 {item.like_count ?? item.madad_count ?? 0}</span>
                                     {(item.reviews_count ?? 0) > 0 && <span>⭐ {item.reviews_count}</span>}
                                   </div>
                                 </div>
                               </Link>
                               <div className="px-2 pb-2 pt-0" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex gap-1.5">
-                                  <a
-                                    href={`tel:${item.phone}`}
-                                    className="flex-1 py-2 rounded-lg bg-brand-600 text-white text-center text-[11px] font-semibold hover:bg-brand-700 transition-all flex items-center justify-center gap-1.5"
-                                  >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                                      />
-                                    </svg>
-                                    Call
-                                  </a>
-                                  {item.author_id && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => startChat(item.author_id!, e)}
-                                      disabled={startingChat === item.author_id}
-                                      className="px-2.5 py-2 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-semibold hover:bg-brand-50 hover:text-brand-700 border border-slate-200 hover:border-brand-200 transition-all flex items-center justify-center gap-1.5"
-                                      title="Chat"
-                                    >
-                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                                        />
-                                      </svg>
-                                      {startingChat === item.author_id ? '...' : 'Chat'}
-                                    </button>
-                                  )}
-                                </div>
+                                <a
+                                  href={`tel:${item.phone}`}
+                                  className="block w-full min-h-[44px] py-2 rounded-lg bg-brand-600 text-white text-center text-[11px] font-semibold hover:bg-brand-700 transition-all flex items-center justify-center gap-1.5 btn-tap"
+                                  aria-label="Call"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                    />
+                                  </svg>
+                                  Call
+                                </a>
                               </div>
                             </article>
                           );
@@ -596,26 +624,26 @@ export default function FeedPage() {
       </div>
 
       {/* Bottom nav (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 lg:hidden bg-white/95 backdrop-blur-xl border-t border-slate-200/80 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.06)] flex justify-around py-3 px-2 z-50 safe-area-pb">
+      <nav className="fixed bottom-0 left-0 right-0 lg:hidden bg-white/95 backdrop-blur-xl border-t border-stone-200/80 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.06)] flex justify-around py-3 px-2 z-50 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <Link href="/feed" className="flex flex-col items-center gap-1 text-brand-600 font-semibold transition">
           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
           </svg>
           <span className="text-xs">Home</span>
         </Link>
-        <Link href="/post" className="flex flex-col items-center gap-1 text-slate-500 hover:text-brand-600 transition">
+        <Link href="/post" className="flex flex-col items-center gap-1 text-stone-500 hover:text-brand-600 transition">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           <span className="text-xs">Create</span>
         </Link>
-        <Link href="/chat" className="flex flex-col items-center gap-1 text-slate-500 hover:text-brand-600 transition">
+        <Link href="/chat" className="flex flex-col items-center gap-1 text-stone-500 hover:text-brand-600 transition">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
           <span className="text-xs">Chat</span>
         </Link>
-        <Link href="/profile" className="flex flex-col items-center gap-1 text-slate-500 hover:text-brand-600 transition">
+        <Link href="/profile" className="flex flex-col items-center gap-1 text-stone-500 hover:text-brand-600 transition">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>

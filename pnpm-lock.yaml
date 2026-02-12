@@ -66,6 +66,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@fontsource/noto-nastaliq-urdu':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@supabase/ssr':
         specifier: ^0.5.0
         version: 0.5.2(@supabase/supabase-js@2.95.3)
@@ -1161,6 +1164,9 @@ packages:
   '@expo/xcpretty@4.4.0':
     resolution: {integrity: sha512-o2qDlTqJ606h4xR36H2zWTywmZ3v3842K6TU8Ik2n1mfW0S580VHlt3eItVYdLYz+klaPp7CXqanja8eASZjRw==}
     hasBin: true
+
+  '@fontsource/noto-nastaliq-urdu@5.2.8':
+    resolution: {integrity: sha512-Bgb/sxhDEU7zm5/9R+GL5BfMSifYhwnB0kQX9fBOPhzjprqrYcDJL/mLUe7ZcZz2H0KIVWZahIzlaovUaqEhDg==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -6749,6 +6755,8 @@ snapshots:
       '@babel/code-frame': 7.29.0
       chalk: 4.1.2
       js-yaml: 4.1.1
+
+  '@fontsource/noto-nastaliq-urdu@5.2.8': {}
 
   '@humanfs/core@0.19.1': {}
 

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { ChatListSkeleton } from '@/components/Skeleton';
 
 type Thread = {
   id: string;
@@ -73,9 +74,9 @@ export default function ChatListPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-[#f8faf9]">
+    <div className="min-h-screen bg-surface-base">
       <header className="sticky top-0 z-40 bg-brand-800 text-white shadow-lg pt-[env(safe-area-inset-top)]">
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between gap-2">
             <Link href="/feed" className="flex items-center gap-2 shrink-0 min-w-0">
               <Image src="/logo.png" alt="Madadgar" width={26} height={26} className="rounded shrink-0" />
@@ -94,37 +95,30 @@ export default function ChatListPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         {loading ? (
-          <div className="py-16 text-center">
-            <div className="inline-block w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-            <p className="mt-4 text-stone-500">Loading chats...</p>
-          </div>
+          <ChatListSkeleton count={5} />
         ) : threads.length === 0 ? (
-          <div className="py-16 text-center bg-white rounded-2xl border border-stone-200 shadow-sm">
-            <div className="text-5xl mb-4">💬</div>
-            <p className="text-stone-600 font-medium">No chats yet</p>
-            <p className="text-sm text-stone-500 mt-1">
-              Start by tapping Chat on any helper in the feed
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-              <div className="flex flex-wrap gap-3 justify-center">
+          <div className="py-16 text-center bg-white rounded-2xl border border-stone-200/80 shadow-premium animate-fade-in">
+            <div className="text-5xl mb-4" aria-hidden>💬</div>
+            <p className="font-semibold text-stone-800">No chats yet</p>
+            <p className="mt-1 text-sm text-stone-500">Start by tapping Chat on any helper in the feed</p>
+            <div className="flex flex-wrap gap-3 justify-center mt-6">
               <Link
                 href="/chat/interests"
-                className="inline-block px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 shadow-premium-brand hover:shadow-premium-brand-hover transition-all"
+                className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 shadow-premium-brand transition-all hover:shadow-premium-brand-hover btn-tap"
               >
                 Interested People
               </Link>
               <Link
                 href="/chat/friends"
-                className="inline-block px-6 py-3 rounded-xl bg-stone-200 text-stone-700 font-semibold hover:bg-stone-300 transition"
+                className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 rounded-xl bg-stone-200 text-stone-700 font-semibold hover:bg-stone-300 transition btn-tap"
               >
                 Friends
               </Link>
-            </div>
               <Link
                 href="/feed"
-                className="inline-block px-6 py-3 rounded-xl bg-stone-200 text-stone-700 font-semibold hover:bg-stone-300 transition"
+                className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 rounded-xl bg-stone-200 text-stone-700 font-semibold hover:bg-stone-300 transition btn-tap"
               >
                 Browse helpers
               </Link>
@@ -140,56 +134,66 @@ export default function ChatListPage() {
               if (ou) {
                 if (ou.gender) meta.push(ou.gender === 'female' ? 'Female' : ou.gender === 'male' ? 'Male' : 'Other');
                 if (ou.age != null) meta.push(`${ou.age} yrs`);
+                const ms = formatMaritalStatus(ou.marital_status);
+                if (ms) meta.push(ms);
                 if (online) meta.push('Online');
                 else if (lastSeen) meta.push(`Last seen ${formatLastSeen(lastSeen)}`);
-                const ms = formatMaritalStatus(ou.marital_status);
-                if (ms) meta.push(`(${ms})`);
               }
               return (
-                <Link
+                <div
                   key={t.id}
-                  href={`/chat/${t.id}`}
-                  className="block p-4 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-sm transition"
+                  className="flex items-center gap-3 p-4 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-sm transition"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center text-xl shrink-0">
-                      💬
-                      {(t.unread_count ?? 0) > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                          {t.unread_count! > 99 ? '99+' : t.unread_count}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-brand-900 truncate">
-                        {t.title}
-                        {t.is_friend && <span className="ml-1.5 text-xs text-green-600 font-normal">• Friends</span>}
-                        {t.friend_request_sent && !t.is_friend && <span className="ml-1.5 text-xs text-stone-500 font-normal">• Request sent</span>}
-                      </p>
-                      {meta.length > 0 && (
-                        <p className="text-xs text-stone-500 truncate mt-0.5">
-                          {meta.join(' • ')}
-                        </p>
-                      )}
-                      <p className="text-sm text-stone-600 truncate mt-0.5">
-                        {t.last_message || 'No messages yet'}
-                      </p>
-                      <p className="text-xs text-stone-500 mt-0.5">
-                        {t.updated_at
-                          ? new Date(t.updated_at).toLocaleDateString('en-PK', {
-                              day: 'numeric',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : ''}
-                      </p>
-                    </div>
-                    <svg className="w-5 h-5 text-stone-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                  <div className="relative w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center text-xl shrink-0">
+                    💬
+                    {(t.unread_count ?? 0) > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                        {t.unread_count! > 99 ? '99+' : t.unread_count}
+                      </span>
+                    )}
                   </div>
-                </Link>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-brand-900 truncate flex items-center gap-1 flex-wrap">
+                      {ou ? (
+                        <Link href={`/profile/${ou.id}`} className="hover:text-brand-700 hover:underline">
+                          {t.title}
+                        </Link>
+                      ) : (
+                        <span>{t.title}</span>
+                      )}
+                      {t.is_friend && <span className="text-xs text-green-600 font-normal">• Friends</span>}
+                      {t.friend_request_sent && !t.is_friend && <span className="text-xs text-stone-500 font-normal">• Request sent</span>}
+                    </p>
+                    {meta.length > 0 && (
+                      <p className="text-xs text-stone-500 truncate mt-0.5">
+                        {meta.join(' • ')}
+                      </p>
+                    )}
+                    <p className="text-sm text-stone-600 truncate mt-0.5">
+                      {t.last_message || 'No messages yet'}
+                    </p>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      {t.updated_at
+                        ? new Date(t.updated_at).toLocaleDateString('en-PK', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : ''}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/chat/${t.id}`}
+                    className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-green-600 text-white hover:bg-green-700 transition shrink-0 btn-tap"
+                    title="Open chat"
+                    aria-label="Open chat"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </Link>
+                </div>
               );
             })}
           </div>

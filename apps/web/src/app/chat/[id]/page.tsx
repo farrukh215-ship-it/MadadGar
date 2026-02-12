@@ -20,9 +20,10 @@ function formatLastSeen(iso: string): string {
   return d.toLocaleDateString();
 }
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { subscribeToMessages } from '@/lib/supabase/realtime';
+import { subscribeToMessages, subscribeToTyping, broadcastTyping } from '@/lib/supabase/realtime';
 type Message = {
   id: string;
   content: string | null;
@@ -53,6 +54,8 @@ export default function ChatScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Message[]>([]);
   const [searching, setSearching] = useState(false);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -113,6 +116,27 @@ export default function ChatScreen() {
     return unsub;
   }, [threadId]);
 
+  useEffect(() => {
+    if (!userId || !otherUser) return;
+    const unsub = subscribeToTyping(threadId, (uid, typing) => {
+      if (uid === otherUser.id) setOtherUserTyping(typing);
+    });
+    return unsub;
+  }, [threadId, userId, otherUser?.id]);
+
+  useEffect(() => {
+    if (!userId || !input.trim()) return;
+    broadcastTyping(threadId, userId, true);
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      broadcastTyping(threadId, userId, false);
+      typingTimeoutRef.current = null;
+    }, 2000);
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [threadId, userId, input]);
+
   const [sendingImage, setSendingImage] = useState(false);
   const [recording, setRecording] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -134,6 +158,7 @@ export default function ChatScreen() {
       return;
     }
     await supabase.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
+    broadcastTyping(threadId, userId, false);
     setInput('');
   };
 
@@ -321,7 +346,7 @@ export default function ChatScreen() {
           </button>
           {otherUser && (
             <>
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Link href={`/profile/${otherUser.id}`} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-90 transition">
                 <div className="relative w-9 h-9 rounded-full bg-brand-600 overflow-hidden shrink-0">
                   {otherUser.avatar_url ? (
                     <Image src={otherUser.avatar_url} alt="" width={36} height={36} className="object-cover" unoptimized />
@@ -345,7 +370,7 @@ export default function ChatScreen() {
                     {formatMaritalStatus(otherUser.marital_status) && ` (${formatMaritalStatus(otherUser.marital_status)})`}
                   </p>
                 </div>
-              </div>
+              </Link>
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
@@ -461,8 +486,13 @@ export default function ChatScreen() {
         </div>
       )}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-0" ref={messagesEndRef}>
-        {messages.length === 0 && (
+        {messages.length === 0 && !otherUserTyping && (
           <p className="text-center text-stone-500 text-sm py-8">No messages yet. Say hello!</p>
+        )}
+        {otherUserTyping && (
+          <div className="max-w-[85%] mr-auto p-3 rounded-2xl rounded-bl-md bg-white border border-stone-200">
+            <span className="text-sm text-stone-500 italic">{otherUser?.display_name ?? 'Someone'} is typing...</span>
+          </div>
         )}
         {messages.map((m) => (
           <div

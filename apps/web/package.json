@@ -11,7 +11,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "react-easy-crop": "^5.0.4",
+    "@fontsource/noto-nastaliq-urdu": "^5.2.8",
     "@supabase/ssr": "^0.5.0",
     "@supabase/supabase-js": "^2.45.0",
     "class-variance-authority": "^0.7.0",
@@ -20,6 +20,7 @@
     "next": "15.0.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-easy-crop": "^5.0.4",
     "tailwind-merge": "^2.5.0"
   },
   "devDependencies": {

@@ -64,3 +64,32 @@ export function subscribeToThreadList(
     supabase.removeChannel(channel);
   };
 }
+
+export function subscribeToTyping(
+  threadId: string,
+  onTyping: (userId: string, typing: boolean) => void
+) {
+  const supabase = createClient();
+  const channel = supabase
+    .channel(`typing:${threadId}`)
+    .on('broadcast', { event: 'typing' }, ({ payload }) => {
+      if (payload?.user_id && typeof payload.typing === 'boolean') {
+        onTyping(payload.user_id, payload.typing);
+      }
+    })
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+export function broadcastTyping(threadId: string, userId: string, typing: boolean) {
+  const supabase = createClient();
+  const channel = supabase.channel(`typing:${threadId}`);
+  channel.send({
+    type: 'broadcast',
+    event: 'typing',
+    payload: { user_id: userId, typing },
+  });
+}

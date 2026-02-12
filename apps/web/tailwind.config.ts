@@ -19,6 +19,19 @@ const config: Config = {
           800: '#115e59',
           900: '#134e4a',
         },
+        surface: {
+          base: 'var(--surface-base)',
+          raised: 'var(--surface-raised)',
+          overlay: 'var(--surface-overlay)',
+          sunken: 'var(--surface-sunken)',
+        },
+      },
+      fontFamily: {
+        sans: ['var(--font-sans)', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        urdu: ['Noto Nastaliq Urdu', 'serif'],
+      },
+      fontSize: {
+        '2xs': ['0.6875rem', { lineHeight: '1.25' }],
       },
       boxShadow: {
         card: '0 1px 3px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.04)',
@@ -37,6 +50,10 @@ const config: Config = {
         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
         slideUp: { '0%': { opacity: '0', transform: 'translateY(8px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
         slideInRight: { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(0)' } },
+        shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
+      },
+      minHeight: {
+        'touch': '44px',
       },
     },
   },

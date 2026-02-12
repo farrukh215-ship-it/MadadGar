@@ -116,7 +116,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#f8faf9] flex items-center justify-center">
+      <main className="min-h-screen bg-surface-base flex items-center justify-center">
         <div className="inline-block w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </main>
     );
@@ -124,7 +124,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-[#f8faf9] flex flex-col items-center justify-center p-6">
+      <main className="min-h-screen bg-surface-base flex flex-col items-center justify-center p-6">
         <p className="text-stone-600">Please log in to view your profile</p>
         <Link href="/login" className="mt-4 text-brand-600 font-medium">
           Login
@@ -138,9 +138,9 @@ export default function ProfilePage() {
   const coverUrl = profile?.cover_url;
 
   return (
-    <div className="min-h-screen bg-[#f8faf9]">
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-stone-200">
-        <div className="max-w-4xl mx-auto px-4 py-3">
+    <div className="min-h-screen bg-surface-base">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-stone-200 pt-[env(safe-area-inset-top)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between">
             <Link href="/feed" className="flex items-center gap-2">
               <Image src="/logo.png" alt="Madadgar" width={28} height={28} className="rounded" />
@@ -152,7 +152,7 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-[max(5rem,env(safe-area-inset-bottom))]">
         {/* Cover */}
         <div className="relative h-48 sm:h-56 bg-gradient-to-br from-brand-600 to-brand-800 overflow-hidden">
           {coverUrl ? (
@@ -173,9 +173,18 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="px-4 pt-4 pb-6">
+        <div className="pt-4 pb-6">
+        {!profileComplete && (
+          <Link
+            href="/profile/edit"
+            className="block mb-4 p-4 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-800 animate-fade-in"
+          >
+            <p className="font-semibold">Complete your profile</p>
+            <p className="text-sm mt-1 opacity-90">Add name, photo & bio to get the most from Madadgar</p>
+          </Link>
+        )}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100 mb-6">
-          <h2 className="text-lg font-semibold text-brand-900">{displayName}</h2>
+          <h2 className="text-lg font-semibold text-stone-900">{displayName}</h2>
           <div className="mt-4 flex flex-wrap gap-3">
             {profile?.verified && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-sm font-medium">

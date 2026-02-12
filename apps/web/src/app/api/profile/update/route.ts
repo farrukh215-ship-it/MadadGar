@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { avatar_url, cover_url, display_name, gender, date_of_birth, bio, notification_sound, about_visibility, marital_status, lat, lng } = body as {
+  const { avatar_url, cover_url, display_name, gender, date_of_birth, bio, notification_sound, about_visibility, phone_visibility, email_visibility, bio_visibility, marital_status, lat, lng } = body as {
     avatar_url?: string;
     cover_url?: string | null;
     display_name?: string;
@@ -18,6 +18,9 @@ export async function POST(request: NextRequest) {
     bio?: string | null;
     notification_sound?: string;
     about_visibility?: 'public' | 'private';
+    phone_visibility?: 'public' | 'private';
+    email_visibility?: 'public' | 'private';
+    bio_visibility?: 'public' | 'private';
     marital_status?: string;
     lat?: number;
     lng?: number;
@@ -35,6 +38,9 @@ export async function POST(request: NextRequest) {
   if (typeof bio === 'string') updates.bio = bio.trim().slice(0, 500) || null;
   if (typeof notification_sound === 'string' && ['default', 'chime', 'bell', 'pop', 'ding'].includes(notification_sound)) updates.notification_sound = notification_sound;
   if (typeof about_visibility === 'string' && ['public', 'private'].includes(about_visibility)) updates.about_visibility = about_visibility;
+  if (typeof phone_visibility === 'string' && ['public', 'private'].includes(phone_visibility)) updates.phone_visibility = phone_visibility;
+  if (typeof email_visibility === 'string' && ['public', 'private'].includes(email_visibility)) updates.email_visibility = email_visibility;
+  if (typeof bio_visibility === 'string' && ['public', 'private'].includes(bio_visibility)) updates.bio_visibility = bio_visibility;
   if (typeof marital_status === 'string' && ['single', 'married', 'divorced', 'widowed', 'prefer_not_to_say'].includes(marital_status)) updates.marital_status = marital_status;
   else if (marital_status === null || marital_status === '') updates.marital_status = null;
 

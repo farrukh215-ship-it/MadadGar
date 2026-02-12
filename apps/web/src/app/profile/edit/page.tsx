@@ -12,7 +12,7 @@ type Interest = { slug: string; name: string; icon: string; parent_group: string
 export default function EditProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string } | null>(null);
-  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null; date_of_birth?: string | null; marital_status?: string | null; bio?: string | null; notification_sound?: string | null; about_visibility?: 'public' | 'private' } | null>(null);
+  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null; date_of_birth?: string | null; marital_status?: string | null; bio?: string | null; notification_sound?: string | null; about_visibility?: 'public' | 'private'; phone_visibility?: 'public' | 'private'; email_visibility?: 'public' | 'private'; bio_visibility?: 'public' | 'private' } | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [gender, setGender] = useState<string>('');
   const [dateOfBirth, setDateOfBirth] = useState<string>('');
@@ -20,6 +20,9 @@ export default function EditProfilePage() {
   const [notificationSound, setNotificationSound] = useState<string>('default');
   const [maritalStatus, setMaritalStatus] = useState<string>('');
   const [aboutVisibility, setAboutVisibility] = useState<'public' | 'private'>('public');
+  const [phoneVisibility, setPhoneVisibility] = useState<'public' | 'private'>('public');
+  const [emailVisibility, setEmailVisibility] = useState<'public' | 'private'>('public');
+  const [bioVisibility, setBioVisibility] = useState<'public' | 'private'>('public');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
@@ -58,7 +61,7 @@ export default function EditProfilePage() {
         return;
       }
       setUser(u);
-      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, marital_status, bio, notification_sound, about_visibility').eq('user_id', u.id).single();
+      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, marital_status, bio, notification_sound, about_visibility, phone_visibility, email_visibility, bio_visibility').eq('user_id', u.id).single();
       setProfile(p ?? null);
       setDisplayName(p?.display_name || '');
       setGender((p as { gender?: string })?.gender ?? '');
@@ -67,6 +70,9 @@ export default function EditProfilePage() {
       setBio((p as { bio?: string })?.bio ?? '');
       setNotificationSound((p as { notification_sound?: string })?.notification_sound ?? 'default');
       setAboutVisibility(((p as { about_visibility?: 'public' | 'private' })?.about_visibility) ?? 'public');
+      setPhoneVisibility(((p as { phone_visibility?: 'public' | 'private' })?.phone_visibility) ?? 'public');
+      setEmailVisibility(((p as { email_visibility?: 'public' | 'private' })?.email_visibility) ?? 'public');
+      setBioVisibility(((p as { bio_visibility?: 'public' | 'private' })?.bio_visibility) ?? 'public');
       loadInterests();
       setLoading(false);
     })();
@@ -132,6 +138,9 @@ export default function EditProfilePage() {
           bio: bio || undefined,
           notification_sound: notificationSound,
           about_visibility: aboutVisibility,
+          phone_visibility: phoneVisibility,
+          email_visibility: emailVisibility,
+          bio_visibility: bioVisibility,
         }),
       });
       if (res.ok) {
@@ -233,21 +242,57 @@ export default function EditProfilePage() {
             placeholder="Tell others about yourself..."
           />
           <p className="text-xs text-stone-500 mt-1">{bio.length}/500 characters</p>
+          <div className="mt-2">
+            <label className="block text-xs font-medium text-stone-600 mb-1">Bio visibility</label>
+            <select
+              value={bioVisibility}
+              onChange={(e) => setBioVisibility(e.target.value === 'private' ? 'private' : 'public')}
+              className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm bg-white"
+            >
+              <option value="public">Public</option>
+              <option value="private">Only me</option>
+            </select>
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-2">About section visibility</label>
-          <select
-            value={aboutVisibility}
-            onChange={(e) => setAboutVisibility(e.target.value === 'private' ? 'private' : 'public')}
-            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white"
-          >
-            <option value="public">Public (everyone can see)</option>
-            <option value="private">Only me (hide from others)</option>
-          </select>
-          <p className="text-xs text-stone-500 mt-1">
-            Agar aap isay private karein ge to About section (phone/email) sirf aap ko nazar aayega, public profile pe nahi.
-          </p>
+        <div className="border border-stone-200 rounded-xl p-4 bg-stone-50/50">
+          <h3 className="text-sm font-semibold text-stone-800 mb-3">Profile visibility (Facebook-style)</h3>
+          <p className="text-xs text-stone-500 mb-3">Har item ko public ya personal kar sakte hain</p>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-stone-600 mb-1">About section (overall)</label>
+              <select
+                value={aboutVisibility}
+                onChange={(e) => setAboutVisibility(e.target.value === 'private' ? 'private' : 'public')}
+                className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm bg-white"
+              >
+                <option value="public">Public</option>
+                <option value="private">Only me</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-600 mb-1">Phone visibility</label>
+              <select
+                value={phoneVisibility}
+                onChange={(e) => setPhoneVisibility(e.target.value === 'private' ? 'private' : 'public')}
+                className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm bg-white"
+              >
+                <option value="public">Public</option>
+                <option value="private">Only me</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-600 mb-1">Email visibility</label>
+              <select
+                value={emailVisibility}
+                onChange={(e) => setEmailVisibility(e.target.value === 'private' ? 'private' : 'public')}
+                className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm bg-white"
+              >
+                <option value="public">Public</option>
+                <option value="private">Only me</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div>
