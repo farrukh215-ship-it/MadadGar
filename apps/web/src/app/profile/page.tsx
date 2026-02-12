@@ -345,21 +345,28 @@ export default function ProfilePage() {
                   <h3 className="text-sm font-medium text-stone-600 mb-2">Used Items</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {sales.map((s) => (
-                      <Link
-                        key={s.id}
-                        href={`/sale/${s.id}`}
-                        className="block p-3 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-md transition"
-                      >
-                        <div className="aspect-square rounded-lg bg-stone-100 overflow-hidden mb-2">
-                          {s.images?.[0] ? (
-                            <Image src={s.images[0]} alt="" width={120} height={120} className="w-full h-full object-cover" unoptimized />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-2xl">💰</div>
-                          )}
-                        </div>
-                        <p className="font-medium text-stone-900 text-sm line-clamp-1">{s.title}</p>
-                        <p className="text-brand-600 font-bold text-xs">Rs {s.price?.toLocaleString()}</p>
-                      </Link>
+                      <div key={s.id} className="relative group">
+                        <Link
+                          href={`/sale/${s.id}`}
+                          className="block p-3 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-md transition"
+                        >
+                          <div className="aspect-square rounded-lg bg-stone-100 overflow-hidden mb-2">
+                            {s.images?.[0] ? (
+                              <Image src={s.images[0]} alt="" width={120} height={120} className="w-full h-full object-cover" unoptimized />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-2xl">💰</div>
+                            )}
+                          </div>
+                          <p className="font-medium text-stone-900 text-sm line-clamp-1">{s.title}</p>
+                          <p className="text-brand-600 font-bold text-xs">Rs {s.price?.toLocaleString()}</p>
+                        </Link>
+                        <Link
+                          href={`/sale/${s.id}/edit`}
+                          className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-brand-600 text-white text-xs font-medium hover:bg-brand-700 transition shadow-sm"
+                        >
+                          ✏️ Edit
+                        </Link>
+                      </div>
                     ))}
                   </div>
                 </div>

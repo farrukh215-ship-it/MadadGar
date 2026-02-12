@@ -11,7 +11,7 @@ export async function GET(
   const supabase = await createClient();
   const { data: listing, error } = await supabase
     .from('sale_listings')
-    .select('id, title, price, description, images, area_text, phone, created_at, category_id, author_id')
+    .select('id, title, price, description, images, area_text, phone, created_at, category_id, subcategory_id, author_id')
     .eq('id', id)
     .single();
 
@@ -19,7 +19,11 @@ export async function GET(
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
 
+  const { data: { user } } = await supabase.auth.getUser();
   const { data: cat } = await supabase.from('sale_categories').select('id, slug, name, icon').eq('id', listing.category_id).single();
+  const { data: sub } = listing.subcategory_id
+    ? await supabase.from('sale_subcategories').select('id, slug, name').eq('id', listing.subcategory_id).single()
+    : { data: null };
   const { data: profile } = await supabase.from('profiles').select('display_name').eq('user_id', listing.author_id).single();
 
   return Response.json({
@@ -27,7 +31,10 @@ export async function GET(
     category_name: cat?.name,
     category_slug: cat?.slug,
     category_icon: cat?.icon,
+    subcategory_name: sub?.name,
+    subcategory_slug: sub?.slug,
     author_name: profile?.display_name ?? 'User',
+    is_owner: user?.id === listing.author_id,
   });
 }
 
@@ -49,6 +56,7 @@ export async function PATCH(
   const updates: Record<string, unknown> = {};
   if (body.title !== undefined) updates.title = String(body.title).trim();
   if (body.category_id !== undefined) updates.category_id = body.category_id;
+  if (body.subcategory_id !== undefined) updates.subcategory_id = body.subcategory_id ?? null;
   if (body.price !== undefined) updates.price = parseFloat(body.price);
   if (body.description !== undefined) updates.description = body.description ?? null;
   if (body.area_text !== undefined) updates.area_text = body.area_text ?? null;

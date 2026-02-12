@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FeedHeader } from '@/components/FeedHeader';
@@ -14,8 +14,24 @@ const SALE_ICONS: Record<string, string> = {
   cosmetics: '💄', footwear: '👟', toys: '🧸',
 };
 
-export default function AddSalePage() {
+type Listing = {
+  id: string;
+  title: string;
+  price: number;
+  description?: string;
+  images?: string[];
+  area_text?: string;
+  phone?: string;
+  category_id: string;
+  subcategory_id?: string;
+  author_id: string;
+};
+
+export default function EditSalePage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
+  const [listing, setListing] = useState<Listing | null>(null);
   const [categories, setCategories] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [subcategories, setSubcategories] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [title, setTitle] = useState('');
@@ -32,15 +48,39 @@ export default function AddSalePage() {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('/api/categories/sale')
-      .then((r) => r.json())
-      .then((d) => setCategories(d.categories ?? []));
-  }, []);
+    if (!id) return;
+    Promise.all([
+      fetch(`/api/sale/${id}`).then((r) => r.json()),
+      fetch('/api/categories/sale').then((r) => r.json()),
+    ]).then(([saleData, catData]) => {
+      if (!saleData.is_owner) {
+        router.replace(`/sale/${id}`);
+        return;
+      }
+      setListing(saleData);
+      setCategories(catData.categories ?? []);
+      setTitle(saleData.title ?? '');
+      setCategoryId(saleData.category_id ?? '');
+      setSubcategoryId(saleData.subcategory_id ?? '');
+      setPrice(String(saleData.price ?? ''));
+      setDescription(saleData.description ?? '');
+      setPhone(saleData.phone ?? '');
+      setImages(saleData.images ?? []);
+      const at = saleData.area_text ?? '';
+      if (at.includes(', ')) {
+        const [c, ...rest] = at.split(', ');
+        setCity(c);
+        setAreaDetail(rest.join(', '));
+      } else {
+        setCity(at || null);
+        setAreaDetail('');
+      }
+    });
+  }, [id, router]);
 
   useEffect(() => {
     if (!categoryId) {
       setSubcategories([]);
-      setSubcategoryId('');
       return;
     }
     const cat = categories.find((c) => c.id === categoryId);
@@ -48,10 +88,12 @@ export default function AddSalePage() {
     fetch(`/api/categories/sale/subcategories?category=${encodeURIComponent(cat.slug)}`)
       .then((r) => r.json())
       .then((d) => {
-        setSubcategories(d.subcategories ?? []);
-        setSubcategoryId('');
+        const subs = d.subcategories ?? [];
+        setSubcategories(subs);
+        const valid = subs.some((s: { id: string }) => s.id === listing?.subcategory_id);
+        setSubcategoryId(valid && listing?.subcategory_id ? listing.subcategory_id : '');
       });
-  }, [categoryId, categories]);
+  }, [categoryId, categories, listing?.subcategory_id]);
 
   const uploadFile = async (file: File) => {
     if (!file || images.length >= MAX_IMAGES) return;
@@ -63,7 +105,6 @@ export default function AddSalePage() {
       const res = await fetch('/api/storage/upload', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.url) setImages((prev) => [...prev, data.url].slice(0, MAX_IMAGES));
-      else if (data.error) console.error('Upload error:', data.error);
     } finally {
       setUploading(false);
     }
@@ -83,13 +124,13 @@ export default function AddSalePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !categoryId || !price) return;
+    if (!title || !categoryId || !price || !id) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/sale', {
-        method: 'POST',
+      const res = await fetch(`/api/sale/${id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        body: JSON.stringify({
           title,
           category_id: categoryId,
           subcategory_id: subcategoryId || null,
@@ -100,21 +141,31 @@ export default function AddSalePage() {
           images,
         }),
       });
-      if (res.ok) {
-        router.push('/sale');
+      if (res.ok) router.push(`/sale/${id}`);
+      else {
+        const err = await res.json();
+        alert(err.error || 'Failed to update');
       }
     } finally {
       setLoading(false);
     }
   };
 
+  if (!listing) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-stone-50">
       <FeedHeader />
       <main className="max-w-xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold text-stone-900">Sell Used Product</h1>
-          <Link href="/sale" className="text-sm font-medium text-brand-600 hover:underline">
+          <h1 className="text-xl font-bold text-stone-900">Edit Listing</h1>
+          <Link href={`/sale/${id}`} className="text-sm font-medium text-brand-600 hover:underline">
             ← Back
           </Link>
         </div>
@@ -179,7 +230,6 @@ export default function AddSalePage() {
             />
           </div>
 
-          {/* Images - premium OLX style */}
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-2">Photos (max {MAX_IMAGES})</label>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
@@ -206,44 +256,24 @@ export default function AddSalePage() {
               {images.length < MAX_IMAGES && (
                 <div className="flex flex-col gap-2">
                   <label className="aspect-square rounded-xl border-2 border-dashed border-stone-300 flex flex-col items-center justify-center cursor-pointer hover:border-brand-400 hover:bg-brand-50/30 transition">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      disabled={uploading}
-                    />
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
                     {uploading ? (
                       <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <>
-                        <span className="text-2xl text-stone-400 mb-1">📁</span>
-                        <span className="text-xs text-stone-500">Gallery</span>
-                      </>
+                      <><span className="text-2xl text-stone-400 mb-1">📁</span><span className="text-xs text-stone-500">Gallery</span></>
                     )}
                   </label>
                   <label className="aspect-square rounded-xl border-2 border-dashed border-stone-300 flex flex-col items-center justify-center cursor-pointer hover:border-brand-400 hover:bg-brand-50/30 transition">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleCameraCapture}
-                      className="hidden"
-                      disabled={uploading}
-                    />
+                    <input type="file" accept="image/*" capture="environment" onChange={handleCameraCapture} className="hidden" disabled={uploading} />
                     {uploading ? (
                       <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <>
-                        <span className="text-2xl text-stone-400 mb-1">📷</span>
-                        <span className="text-xs text-stone-500">Camera</span>
-                      </>
+                      <><span className="text-2xl text-stone-400 mb-1">📷</span><span className="text-xs text-stone-500">Camera</span></>
                     )}
                   </label>
                 </div>
               )}
             </div>
-            <p className="text-xs text-stone-500 mt-1">Click image to preview • Gallery or Camera to add</p>
           </div>
 
           <div>
@@ -256,7 +286,7 @@ export default function AddSalePage() {
               type="text"
               value={areaDetail}
               onChange={(e) => setAreaDetail(e.target.value)}
-              placeholder="e.g. DHA Phase 5, Model Town"
+              placeholder="e.g. DHA Phase 5"
               className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
             />
           </div>
@@ -286,35 +316,18 @@ export default function AddSalePage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 transition shadow-lg shadow-brand-500/20"
+            className="w-full py-4 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 transition"
           >
-            {loading ? 'Posting...' : 'Post for Sale'}
+            {loading ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
       </main>
 
-      {/* Image preview lightbox */}
       {previewIndex !== null && images[previewIndex] && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setPreviewIndex(null)}
-        >
-          <button
-            type="button"
-            onClick={() => setPreviewIndex(null)}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30"
-          >
-            ✕
-          </button>
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setPreviewIndex(null)}>
+          <button type="button" onClick={() => setPreviewIndex(null)} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white">✕</button>
           <div className="relative max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-            <Image
-              src={images[previewIndex]}
-              alt="Preview"
-              width={600}
-              height={400}
-              className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
-              unoptimized
-            />
+            <Image src={images[previewIndex]} alt="Preview" width={600} height={400} className="w-full h-auto max-h-[80vh] object-contain rounded-lg" unoptimized />
           </div>
         </div>
       )}

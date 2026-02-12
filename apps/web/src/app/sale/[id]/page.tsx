@@ -23,6 +23,7 @@ type SaleDetail = {
   category_slug?: string;
   author_name?: string;
   created_at: string;
+  is_owner?: boolean;
 };
 
 export default function SaleDetailPage() {
@@ -34,7 +35,7 @@ export default function SaleDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/sale/${id}`)
+    fetch(`/api/sale/${id}`, { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => setItem(d))
       .finally(() => setLoading(false));
@@ -106,9 +107,16 @@ export default function SaleDetailPage() {
           {/* Details */}
           <div className="space-y-6">
             <div>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-stone-100 text-stone-600">
-                {icon} {item.category_name ?? 'Other'}
-              </span>
+              <div className="flex items-start justify-between gap-3">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-stone-100 text-stone-600">
+                  {icon} {item.category_name ?? 'Other'}
+                </span>
+                {item.is_owner && (
+                  <Link href={`/sale/${item.id}/edit`} className="shrink-0 px-3 py-1.5 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 transition">
+                    ✏️ Edit
+                  </Link>
+                )}
+              </div>
               <h1 className="text-2xl font-bold text-stone-900 mt-2">{item.title}</h1>
               <p className="text-3xl font-bold text-brand-600 mt-2">Rs {item.price?.toLocaleString()}</p>
               {item.area_text && (
@@ -153,9 +161,15 @@ export default function SaleDetailPage() {
               </div>
             )}
 
-            <Link href="/sale/add" className="block py-3 rounded-xl border-2 border-dashed border-brand-300 text-brand-600 text-center font-medium hover:bg-brand-50 transition">
-              + Sell your own item
-            </Link>
+            {item.is_owner ? (
+              <Link href={`/sale/${item.id}/edit`} className="block py-3 rounded-xl border-2 border-brand-300 bg-brand-50 text-brand-700 text-center font-medium hover:bg-brand-100 transition">
+                ✏️ Edit your listing
+              </Link>
+            ) : (
+              <Link href="/sale/add" className="block py-3 rounded-xl border-2 border-dashed border-brand-300 text-brand-600 text-center font-medium hover:bg-brand-50 transition">
+                + Sell your own item
+              </Link>
+            )}
           </div>
         </div>
 
