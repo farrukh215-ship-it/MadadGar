@@ -622,7 +622,23 @@ export default function ChatScreen() {
             Send
           </button>
         </div>
-        <p className="text-[10px] text-stone-400 mt-1 truncate">📎 Attach • 🎤 Voice • Image, video, voice</p>
+        {/* Chat suggestions & quick replies */}
+        <div className="flex gap-1.5 mt-2 overflow-x-auto pb-1 scrollbar-hide">
+          {['Thanks', 'Call you soon', 'Job done', 'Ok', 'Yes', 'No', 'Will check', 'Thik hai'].map((quick) => (
+            <button
+              key={quick}
+              type="button"
+              onClick={() => {
+                setInput(quick);
+                hapticLight();
+              }}
+              className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 hover:bg-brand-100 hover:text-brand-700 transition"
+            >
+              {quick}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-stone-400 mt-1 truncate">📎 Attach • 🎤 Voice • Quick replies</p>
       </form>
     </main>
   );

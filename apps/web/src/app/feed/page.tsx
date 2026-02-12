@@ -99,6 +99,7 @@ const CATEGORY_TO_SLUG: Record<string, string> = {
   'Food Points': 'food-points',
   'Products': 'products',
   'Used Products': 'used-products',
+  'Ask for Help': 'ask-for-help',
 };
 
 function getParentCategorySlug(categoryName: string): string | null {
@@ -132,6 +133,9 @@ export default function FeedPage() {
   const { recent: recentSearches, addSearch } = useRecentSearches();
   const [startingChat, setStartingChat] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [helpRequests, setHelpRequests] = useState<{ id: string; title: string; author_name: string; suggestions_count: number }[]>([]);
+  const [donationItems, setDonationItems] = useState<{ id: string; title: string; category_name: string; received: number; amount_requested: number | null }[]>([]);
+  const [searchResults, setSearchResults] = useState<FeedItem[] | null>(null);
   const fetchIdRef = useRef(0);
   const router = useRouter();
 
@@ -222,10 +226,12 @@ export default function FeedPage() {
       const latVal = lat ?? 31.52;
       const lngVal = lng ?? 74.35;
       let url = '';
-      if (sidebarFilter === 'all' || sidebarFilter === 'trusted-helpers' || sidebarFilter === 'food-points' || sidebarFilter === 'nearby' || sidebarFilter === 'top-rated' || sidebarFilter === 'verified') {
+      if (sidebarFilter === 'all' || sidebarFilter === 'recommended' || sidebarFilter === 'trusted-helpers' || sidebarFilter === 'food-points' || sidebarFilter === 'nearby' || sidebarFilter === 'top-rated' || sidebarFilter === 'verified') {
         if (sidebarFilter === 'all') {
           url = `/api/feed/all-combined?lat=${latVal}&lng=${lngVal}`;
           if (city) url += `&city=${encodeURIComponent(city)}`;
+        } else if (sidebarFilter === 'recommended') {
+          url = `/api/feed/recommended?lat=${latVal}&lng=${lngVal}`;
         } else if (sidebarFilter === 'top-rated') {
           url = '/api/feed/top-rated';
         } else {
@@ -236,6 +242,16 @@ export default function FeedPage() {
         if (id !== fetchIdRef.current) return;
         const newItems = data.items ?? [];
         setItems((prev) => (newItems.length > 0 ? newItems : prev));
+        if (sidebarFilter === 'all' || sidebarFilter === 'recommended') {
+          fetch('/api/help?limit=5')
+            .then((r) => r.json())
+            .then((d) => setHelpRequests((d.requests ?? []).map((r: { id: string; title: string; author_name: string; suggestions_count: number }) => ({ id: r.id, title: r.title, author_name: r.author_name, suggestions_count: r.suggestions_count ?? 0 }))))
+            .catch(() => setHelpRequests([]));
+          fetch('/api/donations?limit=6')
+            .then((r) => r.json())
+            .then((d) => setDonationItems((d.donations ?? []).map((x: { id: string; title: string; category_name: string; received: number; amount_requested: number | null }) => ({ id: x.id, title: x.title, category_name: x.category_name, received: x.received ?? 0, amount_requested: x.amount_requested }))))
+            .catch(() => setDonationItems([]));
+        }
       } else if (sidebarFilter === 'sale') {
         const saleUrl = city ? `/api/sale?city=${encodeURIComponent(city)}` : '/api/sale';
         const res = await fetch(saleUrl);
@@ -271,7 +287,22 @@ export default function FeedPage() {
     if (debouncedSearch.trim()) addSearch(debouncedSearch);
   }, [debouncedSearch, addSearch]);
 
-  const filteredItems = items.filter((i) => {
+  useEffect(() => {
+    if (debouncedSearch.trim().length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    fetch(`/api/search?q=${encodeURIComponent(debouncedSearch)}&type=all`)
+      .then((r) => r.json())
+      .then((d) => setSearchResults(d.results ?? []))
+      .catch(() => setSearchResults([]));
+  }, [debouncedSearch]);
+
+  const displayItems = searchResults != null && debouncedSearch.trim().length >= 2
+    ? searchResults.filter((r) => ['post', 'product', 'sale'].includes((r.item_type ?? r._type) as string))
+    : items;
+
+  const filteredItems = displayItems.filter((i) => {
     const matchSearch = !debouncedSearch ||
       [i.category_name, i.worker_name, i.area_text, i.reason, i.name, i.title].filter(Boolean).join(' ').toLowerCase().includes(debouncedSearch.toLowerCase());
     const itemType = i.item_type ?? 'post';
@@ -291,6 +322,8 @@ export default function FeedPage() {
       if (itemType !== 'post' || (i.avg_rating == null || i.avg_rating < 4)) return false;
     } else if (sidebarFilter === 'verified') {
       if (itemType !== 'post' || (i.rec_count == null || i.rec_count === 0)) return false;
+    } else if (sidebarFilter === 'recommended') {
+      // Recommended shows personalized mix - same as all for display
     }
     return matchSearch;
   });
@@ -413,6 +446,50 @@ export default function FeedPage() {
               />
             ) : (
               <div className="space-y-8">
+                {donationItems.length > 0 && sidebarFilter === 'all' && (
+                  <section className="animate-slide-up">
+                    <Link href="/donation" className="group/head flex items-center gap-2.5 mb-3">
+                      <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-100 to-rose-50 flex items-center justify-center shadow-sm border border-stone-100 group-hover/head:border-rose-200">💝</span>
+                      <h2 className="text-base font-bold text-stone-800 group-hover/head:text-brand-600">Donations</h2>
+                      <span className="text-xs text-stone-400 group-hover/head:text-brand-500 ml-0.5">View all →</span>
+                    </Link>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                      {donationItems.slice(0, 6).map((d) => (
+                        <Link key={d.id} href="/donation" className="block">
+                          <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-rose-200">
+                            <div className="p-3 flex-1">
+                              <h3 className="font-semibold text-stone-900 text-xs line-clamp-2">{d.title}</h3>
+                              <p className="text-[10px] text-stone-500 mt-1">{d.category_name}</p>
+                              <p className="text-[10px] text-green-600 mt-0.5 font-medium">Rs {d.received.toLocaleString()} received</p>
+                            </div>
+                          </article>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                )}
+                {helpRequests.length > 0 && sidebarFilter === 'all' && (
+                  <section className="animate-slide-up">
+                    <Link href="/ask-for-help" className="group/head flex items-center gap-2.5 mb-3">
+                      <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center shadow-sm border border-stone-100 group-hover/head:border-amber-200">💡</span>
+                      <h2 className="text-base font-bold text-stone-800 group-hover/head:text-brand-600">Ask for Help</h2>
+                      <span className="text-xs text-stone-400 group-hover/head:text-brand-500 ml-0.5">View all →</span>
+                    </Link>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                      {helpRequests.slice(0, 6).map((hr) => (
+                        <Link key={hr.id} href={`/ask-for-help#${hr.id}`} className="block">
+                          <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-amber-200">
+                            <div className="p-3 flex-1">
+                              <h3 className="font-semibold text-stone-900 text-xs line-clamp-2">{hr.title}</h3>
+                              <p className="text-[10px] text-stone-500 mt-1 truncate">{hr.author_name}</p>
+                              <p className="text-[10px] text-brand-600 mt-0.5">{hr.suggestions_count} suggestions</p>
+                            </div>
+                          </article>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                )}
                 {categoryOrder.map((categoryName) => {
                   const categoryItems = grouped[categoryName] ?? [];
                   const showAllInSection = isCategoryView || isSubcategoryView;

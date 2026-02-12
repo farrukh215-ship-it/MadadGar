@@ -87,6 +87,13 @@ export default function InterestedPeoplePage() {
   const [reportingFor, setReportingFor] = useState<string | null>(null);
   const [showRulesModal, setShowRulesModal] = useState(true);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
+  const [topProfiles, setTopProfiles] = useState<{
+    male: ChatUser[];
+    female: ChatUser[];
+    most_active: ChatUser[];
+    all: ChatUser[];
+  } | null>(null);
+  const [loadingTopProfiles, setLoadingTopProfiles] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -155,6 +162,33 @@ export default function InterestedPeoplePage() {
   useEffect(() => {
     if (!loading && grouped.length > 0) loadChatEligible();
   }, [loading, grouped.length, loadChatEligible]);
+
+  const loadTopProfiles = useCallback(async () => {
+    setLoadingTopProfiles(true);
+    try {
+      const res = await fetch('/api/interests/top-profiles');
+      const data = await res.json();
+      setTopProfiles(data);
+      const ids = [
+        ...(data.male ?? []).map((u: ChatUser) => u.id),
+        ...(data.female ?? []).map((u: ChatUser) => u.id),
+        ...(data.most_active ?? []).map((u: ChatUser) => u.id),
+      ].filter(Boolean);
+      if (ids.length > 0) {
+        const presRes = await fetch(`/api/presence?ids=${[...new Set(ids)].join(',')}`);
+        const presData = await presRes.json();
+        setOnline((prev) => ({ ...prev, ...(presData.online ?? {}) }));
+      }
+    } catch {
+      setTopProfiles(null);
+    } finally {
+      setLoadingTopProfiles(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loading) loadTopProfiles();
+  }, [loading, loadTopProfiles]);
 
   const toggleInterest = async (slug: string) => {
     setLimitError(null);
@@ -418,6 +452,98 @@ export default function InterestedPeoplePage() {
       )}
 
       <main className="max-w-4xl mx-auto px-4 py-6">
+        {/* Top Profiles - Section wise */}
+        {!loading && topProfiles && (topProfiles.male?.length > 0 || topProfiles.female?.length > 0 || topProfiles.most_active?.length > 0) && (
+          <section className="mb-8 animate-fade-in">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-stone-700 mb-3">
+              <span>⭐</span> Top Profiles
+            </h2>
+            <div className="space-y-4">
+              {topProfiles.most_active?.length > 0 && (
+                <div className="bg-white rounded-2xl border border-stone-100 shadow-premium overflow-hidden">
+                  <h3 className="px-4 py-2.5 text-xs font-bold text-stone-600 uppercase tracking-wide bg-stone-50 border-b border-stone-100">
+                    🟢 Most Active
+                  </h3>
+                  <div className="p-4 flex gap-3 overflow-x-auto pb-2">
+                    {topProfiles.most_active.filter((u) => !blockedUsers[u.id]).map((u) => (
+                      <div key={u.id} className="flex-shrink-0 w-32">
+                        <Link href={`/profile/${u.id}`} className="block text-center">
+                          <div className="relative w-14 h-14 mx-auto rounded-full bg-stone-200 overflow-hidden ring-2 ring-white shadow-sm">
+                            {u.avatar_url ? (
+                              <Image src={u.avatar_url} alt="" width={56} height={56} className="object-cover" unoptimized />
+                            ) : (
+                              <AvatarIcon gender={u.gender} avatarUrl={u.avatar_url} />
+                            )}
+                            {online[u.id] && (
+                              <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white" />
+                            )}
+                          </div>
+                          <p className="mt-1.5 text-xs font-medium text-stone-800 truncate">{u.display_name}</p>
+                          <p className="text-[10px] text-stone-500">{(u.shared_count ?? 0)} shared</p>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {topProfiles.male?.length > 0 && (
+                <div className="bg-white rounded-2xl border border-stone-100 shadow-premium overflow-hidden">
+                  <h3 className="px-4 py-2.5 text-xs font-bold text-stone-600 uppercase tracking-wide bg-stone-50 border-b border-stone-100">
+                    👨 Male
+                  </h3>
+                  <div className="p-4 flex gap-3 overflow-x-auto pb-2">
+                    {topProfiles.male.filter((u) => !blockedUsers[u.id]).map((u) => (
+                      <div key={u.id} className="flex-shrink-0 w-32">
+                        <Link href={`/profile/${u.id}`} className="block text-center">
+                          <div className="relative w-14 h-14 mx-auto rounded-full bg-stone-200 overflow-hidden ring-2 ring-white shadow-sm">
+                            {u.avatar_url ? (
+                              <Image src={u.avatar_url} alt="" width={56} height={56} className="object-cover" unoptimized />
+                            ) : (
+                              <AvatarIcon gender={u.gender} avatarUrl={u.avatar_url} />
+                            )}
+                            {online[u.id] && (
+                              <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white" />
+                            )}
+                          </div>
+                          <p className="mt-1.5 text-xs font-medium text-stone-800 truncate">{u.display_name}</p>
+                          <p className="text-[10px] text-stone-500">{(u.shared_count ?? 0)} shared</p>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {topProfiles.female?.length > 0 && (
+                <div className="bg-white rounded-2xl border border-stone-100 shadow-premium overflow-hidden">
+                  <h3 className="px-4 py-2.5 text-xs font-bold text-stone-600 uppercase tracking-wide bg-stone-50 border-b border-stone-100">
+                    👩 Female
+                  </h3>
+                  <div className="p-4 flex gap-3 overflow-x-auto pb-2">
+                    {topProfiles.female.filter((u) => !blockedUsers[u.id]).map((u) => (
+                      <div key={u.id} className="flex-shrink-0 w-32">
+                        <Link href={`/profile/${u.id}`} className="block text-center">
+                          <div className="relative w-14 h-14 mx-auto rounded-full bg-stone-200 overflow-hidden ring-2 ring-white shadow-sm">
+                            {u.avatar_url ? (
+                              <Image src={u.avatar_url} alt="" width={56} height={56} className="object-cover" unoptimized />
+                            ) : (
+                              <AvatarIcon gender={u.gender} avatarUrl={u.avatar_url} />
+                            )}
+                            {online[u.id] && (
+                              <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white" />
+                            )}
+                          </div>
+                          <p className="mt-1.5 text-xs font-medium text-stone-800 truncate">{u.display_name}</p>
+                          <p className="text-[10px] text-stone-500">{(u.shared_count ?? 0)} shared</p>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         {loading ? (
           <div className="py-16 text-center">
             <div className="inline-block w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />

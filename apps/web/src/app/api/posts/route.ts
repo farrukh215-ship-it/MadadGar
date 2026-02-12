@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { checkSpamContent } from '@/lib/spamDetector';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -27,6 +28,15 @@ export async function POST(request: NextRequest) {
   if (!post_type || !category_id || !phone) {
     return Response.json(
       { error: 'Missing required fields: post_type, category_id, phone' },
+      { status: 400 }
+    );
+  }
+
+  const textToCheck = [reason, relation_tag, intro, worker_name].filter(Boolean).join(' ');
+  const spamCheck = checkSpamContent(textToCheck);
+  if (spamCheck.isSpam) {
+    return Response.json(
+      { error: 'Content appears to be spam or inappropriate. Please revise.', reasons: spamCheck.reasons },
       { status: 400 }
     );
   }

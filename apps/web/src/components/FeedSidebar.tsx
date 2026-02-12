@@ -6,6 +6,7 @@ import Image from 'next/image';
 
 export type SidebarFilter =
   | 'all'
+  | 'recommended'
   | 'trusted-helpers'
   | 'food-points'
   | 'sale'
@@ -15,9 +16,13 @@ export type SidebarFilter =
 
 const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string; label: string; href?: string; badge?: string }[] = [
   { id: 'all', icon: '🌟', label: 'All Madadgar' },
+  { id: 'recommended', icon: '✨', label: 'For You', badge: 'AI' },
   { id: 'all', icon: '📌', label: 'Saved', href: '/saved' },
+  { id: 'all', icon: '💡', label: 'Ask for Help', href: '/ask-for-help' },
   { id: 'all', icon: '❤️', label: 'Interested People', href: '/chat/interests' },
+  { id: 'all', icon: '🛡️', label: 'Admin', href: '/admin' },
   { id: 'sale', icon: '📦', label: 'Used Products', href: '/sale' },
+  { id: 'all', icon: '💝', label: 'Donations', href: '/donation' },
   { id: 'trusted-helpers', icon: '🔧', label: 'Trusted Helpers' },
   { id: 'food-points', icon: '🍽️', label: 'Food Points' },
   { id: 'nearby', icon: '📍', label: 'Nearby' },

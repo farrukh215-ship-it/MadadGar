@@ -65,6 +65,7 @@ export default function ProfilePage() {
   const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [insights, setInsights] = useState<{ best_time_to_post?: { day_label: string; hour_label: string }; insights?: string[] } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -77,13 +78,16 @@ export default function ProfilePage() {
         const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, trust_score, worker_skill, verified').eq('user_id', u.id).single();
         setProfile(p ?? null);
         try {
-          const [recRes, postsRes, listingsRes, completeRes, premRes] = await Promise.all([
+          const [recRes, postsRes, listingsRes, completeRes, premRes, insightsRes] = await Promise.all([
             fetch(`/api/profile/${u.id}/recommendations`),
             fetch(`/api/profile/${u.id}/posts`),
             fetch('/api/profile/my-listings'),
             fetch('/api/profile/complete'),
             fetch('/api/premium/status'),
+            fetch('/api/analytics/insights'),
           ]);
+          const insightsData = await insightsRes.json();
+          if (insightsRes.ok) setInsights(insightsData);
           const completeData = await completeRes.json();
           const premData = await premRes.json();
           setProfileComplete(completeData.is_complete ?? false);
@@ -221,12 +225,22 @@ export default function ProfilePage() {
             <Link href="/premium" className="text-amber-600 font-medium hover:underline">
               ★ Premium
             </Link>
-            {!profile?.verified && (
-              <Link href="/profile/verify" className="text-amber-600 font-medium hover:underline">
-                Get verified →
-              </Link>
-            )}
           </div>
+          {insights?.insights?.length ? (
+            <div className="mt-4 p-4 rounded-xl bg-brand-50/80 border border-brand-100">
+              <h3 className="text-sm font-semibold text-brand-900 mb-2">📊 Insights</h3>
+              <ul className="text-sm text-brand-800 space-y-1">
+                {insights.insights.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {!profile?.verified && (
+            <Link href="/profile/verify" className="mt-2 inline-block text-amber-600 font-medium hover:underline">
+              Get verified →
+            </Link>
+          )}
         </div>
 
         {/* About section - phone & email */}
