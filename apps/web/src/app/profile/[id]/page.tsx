@@ -120,6 +120,7 @@ export default function UserProfilePage() {
   const [messageLoading, setMessageLoading] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -207,7 +208,6 @@ export default function UserProfilePage() {
 
   const avatarUrl = profile.avatar_url ?? (user ? null : null);
   const coverUrl = profile.cover_url;
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-[#f8faf9]">

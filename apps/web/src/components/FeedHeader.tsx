@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { NotificationsDropdown } from './NotificationsDropdown';
+import { ChatDropdown } from './ChatDropdown';
 
 type UserInfo = {
   id: string;
@@ -14,11 +15,23 @@ type UserInfo = {
 
 export function FeedHeader({
   onMenuClick,
+  chatOpen,
+  onChatOpenChange,
+  chatButtonRef,
 }: {
   onMenuClick?: () => void;
+  chatOpen?: boolean;
+  onChatOpenChange?: (open: boolean) => void;
+  chatButtonRef?: React.RefObject<HTMLButtonElement | null>;
 }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [location, setLocation] = useState<string | null>(null);
+  const internalChatRef = useRef<HTMLButtonElement>(null);
+  const chatRef = chatButtonRef ?? internalChatRef;
+  const isControlled = onChatOpenChange !== undefined;
+  const [internalChatOpen, setInternalChatOpen] = useState(false);
+  const chatOpenState = isControlled ? (chatOpen ?? false) : internalChatOpen;
+  const setChatOpenState = isControlled ? (onChatOpenChange ?? (() => {})) : setInternalChatOpen;
 
   useEffect(() => {
     (async () => {
@@ -94,12 +107,22 @@ export function FeedHeader({
               </span>
             )}
             <NotificationsDropdown />
-            <Link href="/chat" className="flex flex-col items-center gap-0.5 p-1.5 rounded-xl hover:bg-white/10 transition flex-shrink-0 group">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <span className="text-[10px] sm:text-xs font-medium text-white/90 group-hover:text-white">Chat</span>
-            </Link>
+            <div className="relative flex-shrink-0">
+              <button
+                ref={chatRef}
+                type="button"
+                onClick={() => setChatOpenState(!chatOpenState)}
+                className="flex flex-col items-center gap-0.5 p-1.5 rounded-xl hover:bg-white/10 transition group"
+                aria-expanded={chatOpenState}
+                aria-haspopup="true"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span className="text-[10px] sm:text-xs font-medium text-white/90 group-hover:text-white">Chat</span>
+              </button>
+              <ChatDropdown open={chatOpenState} onClose={() => setChatOpenState(false)} anchorRef={chatRef} />
+            </div>
             <Link href="/profile" className="flex flex-col items-center gap-0.5 p-1.5 rounded-xl hover:bg-white/10 transition flex-shrink-0 group">
               <div className="relative ring-2 ring-white/20 group-hover:ring-white/40 rounded-full transition shadow-lg">
                 {user?.avatarUrl ? (

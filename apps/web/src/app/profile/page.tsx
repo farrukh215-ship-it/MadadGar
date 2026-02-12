@@ -64,6 +64,7 @@ export default function ProfilePage() {
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -137,7 +138,6 @@ export default function ProfilePage() {
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
   const avatarUrl = profile?.avatar_url;
   const coverUrl = profile?.cover_url;
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-surface-base">
