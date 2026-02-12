@@ -8,6 +8,7 @@ import { FeedHeader } from '@/components/FeedHeader';
 const SALE_ICONS: Record<string, string> = {
   mobiles: '📱', laptops: '💻', electronics: '🔌', furniture: '🪑', vehicles: '🚗',
   bikes: '🏍️', clothing: '👕', books: '📚', home: '🏠', sports: '⚽', tools: '🔧', other: '📦',
+  cosmetics: '💄', footwear: '👟', toys: '🧸',
 };
 
 const SALE_SUBCATEGORIES: Record<string, string[]> = {
@@ -23,6 +24,9 @@ const SALE_SUBCATEGORIES: Record<string, string[]> = {
   books: ['Novels', 'Islamic', 'Academic', 'Kids books', 'Test prep'],
   tools: ['Power tools', 'Hand tools', 'Car tools', 'Construction', 'Gardening'],
   other: ['Bundles', 'Clearance', 'Gadgets', 'Home mix', 'Office items'],
+  cosmetics: ['Lipstick', 'Skincare', 'Face Makeup', 'Hair Care', 'Fragrance'],
+  footwear: ['Men', 'Women', 'Kids', 'Sports', 'Formal'],
+  toys: ['Action Figures', 'Board Games', 'Educational', 'Outdoor', 'Stuffed Toys'],
 };
 
 type SaleItem = {
@@ -35,6 +39,8 @@ type SaleItem = {
   phone?: string;
   category_name?: string;
   category_slug?: string;
+  subcategory_name?: string;
+  subcategory_slug?: string;
   created_at?: string;
 };
 
@@ -43,6 +49,8 @@ export default function SalePage() {
   const [items, setItems] = useState<SaleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
+  const [subcategories, setSubcategories] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [search, setSearch] = useState('');
   const [priceBand, setPriceBand] = useState<string>('all');
   const [priceMin, setPriceMin] = useState<string>('');
@@ -55,9 +63,21 @@ export default function SalePage() {
   }, []);
 
   useEffect(() => {
+    if (selectedCategory) {
+      fetch(`/api/categories/sale/subcategories?category=${encodeURIComponent(selectedCategory)}`)
+        .then((r) => r.json())
+        .then((d) => setSubcategories(d.subcategories ?? []));
+    } else {
+      setSubcategories([]);
+      setSelectedSubcategoryId(null);
+    }
+  }, [selectedCategory]);
+
+  useEffect(() => {
     setLoading(true);
     setPriceBand('all');
     let url = selectedCategory ? `/api/sale?category=${encodeURIComponent(selectedCategory)}` : '/api/sale';
+    if (selectedSubcategoryId) url += (url.includes('?') ? '&' : '?') + `subcategory_id=${encodeURIComponent(selectedSubcategoryId)}`;
     const pMin = priceMin ? parseFloat(priceMin) : null;
     const pMax = priceMax ? parseFloat(priceMax) : null;
     if (pMin != null && !isNaN(pMin)) url += (url.includes('?') ? '&' : '?') + `price_min=${pMin}`;
@@ -66,7 +86,7 @@ export default function SalePage() {
       .then((r) => r.json())
       .then((d) => setItems(d.items ?? []))
       .finally(() => setLoading(false));
-  }, [selectedCategory, priceMin, priceMax]);
+  }, [selectedCategory, selectedSubcategoryId, priceMin, priceMax]);
 
   const filteredItems = items
     // Text search
@@ -137,7 +157,7 @@ export default function SalePage() {
         <div className="flex flex-wrap gap-2 mb-6">
           <button
             type="button"
-            onClick={() => setSelectedCategory(null)}
+            onClick={() => { setSelectedCategory(null); setSelectedSubcategoryId(null); }}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition ${!selectedCategory ? 'bg-brand-600 text-white shadow-md' : 'bg-white text-stone-600 border border-stone-200 hover:border-brand-300'}`}
           >
             All
@@ -146,7 +166,7 @@ export default function SalePage() {
             <button
               key={c.id}
               type="button"
-              onClick={() => setSelectedCategory(selectedCategory === c.slug ? null : c.slug)}
+              onClick={() => { setSelectedCategory(selectedCategory === c.slug ? null : c.slug); setSelectedSubcategoryId(null); }}
               className={`px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition ${selectedCategory === c.slug ? 'bg-brand-600 text-white shadow-md' : 'bg-white text-stone-600 border border-stone-200 hover:border-brand-300'}`}
             >
               <span>{SALE_ICONS[c.slug] ?? '📦'}</span>
@@ -154,6 +174,30 @@ export default function SalePage() {
             </button>
           ))}
         </div>
+
+        {/* Subcategory pills (when category is selected) */}
+        {selectedCategory && subcategories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            <span className="text-sm text-stone-500 self-center py-1">Subcategory:</span>
+            <button
+              type="button"
+              onClick={() => setSelectedSubcategoryId(null)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${!selectedSubcategoryId ? 'bg-brand-600 text-white border-brand-600 shadow-sm' : 'bg-white text-stone-600 border-stone-200 hover:border-brand-300'}`}
+            >
+              All
+            </button>
+            {subcategories.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setSelectedSubcategoryId(selectedSubcategoryId === s.id ? null : s.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${selectedSubcategoryId === s.id ? 'bg-brand-600 text-white border-brand-600 shadow-sm' : 'bg-white text-stone-600 border-stone-200 hover:border-brand-300'}`}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Price range filter */}
         <div className="flex flex-wrap items-center gap-2 mb-6">

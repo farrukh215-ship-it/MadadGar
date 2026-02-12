@@ -93,13 +93,6 @@ export function FeedHeader({
                 {location}
               </span>
             )}
-            <Link
-              href="/post"
-              className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 font-medium transition-all hover:shadow-lg border border-white/20"
-            >
-              <span>➕</span>
-              Create
-            </Link>
             <NotificationsDropdown />
             <Link href="/chat" className="flex flex-col items-center gap-0.5 p-1.5 rounded-xl hover:bg-white/10 transition flex-shrink-0 group">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

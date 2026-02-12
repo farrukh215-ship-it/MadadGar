@@ -26,9 +26,6 @@ export function Header() {
                 <Link href="/feed" className="text-stone-600 hover:text-brand-700 font-medium transition">
                   Feed
                 </Link>
-                <Link href="/post" className="text-stone-600 hover:text-brand-700 font-medium transition">
-                  Create recommendation
-                </Link>
                 <Link
                   href="/profile"
                   className="px-4 py-2.5 rounded-xl bg-brand-600 text-white font-medium hover:bg-brand-700 transition flex items-center gap-2 text-sm sm:text-base shadow-premium-brand"

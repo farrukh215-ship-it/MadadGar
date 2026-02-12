@@ -10,13 +10,16 @@ const MAX_IMAGES = 5;
 const SALE_ICONS: Record<string, string> = {
   mobiles: '📱', laptops: '💻', electronics: '🔌', furniture: '🪑', vehicles: '🚗',
   bikes: '🏍️', clothing: '👕', books: '📚', home: '🏠', sports: '⚽', tools: '🔧', other: '📦',
+  cosmetics: '💄', footwear: '👟', toys: '🧸',
 };
 
 export default function AddSalePage() {
   const router = useRouter();
   const [categories, setCategories] = useState<{ id: string; slug: string; name: string }[]>([]);
+  const [subcategories, setSubcategories] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [subcategoryId, setSubcategoryId] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
   const [areaText, setAreaText] = useState('');
@@ -31,6 +34,22 @@ export default function AddSalePage() {
       .then((r) => r.json())
       .then((d) => setCategories(d.categories ?? []));
   }, []);
+
+  useEffect(() => {
+    if (!categoryId) {
+      setSubcategories([]);
+      setSubcategoryId('');
+      return;
+    }
+    const cat = categories.find((c) => c.id === categoryId);
+    if (!cat) return;
+    fetch(`/api/categories/sale/subcategories?category=${encodeURIComponent(cat.slug)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setSubcategories(d.subcategories ?? []);
+        setSubcategoryId('');
+      });
+  }, [categoryId, categories]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,9 +76,10 @@ export default function AddSalePage() {
       const res = await fetch('/api/sale', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+          body: JSON.stringify({
           title,
           category_id: categoryId,
+          subcategory_id: subcategoryId || null,
           price: parseFloat(price),
           description: description || null,
           area_text: areaText || null,
@@ -115,6 +135,23 @@ export default function AddSalePage() {
               ))}
             </select>
           </div>
+          {subcategories.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">Subcategory</label>
+              <select
+                value={subcategoryId}
+                onChange={(e) => setSubcategoryId(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+              >
+                <option value="">Select subcategory (optional)</option>
+                {subcategories.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">Price (Rs)</label>

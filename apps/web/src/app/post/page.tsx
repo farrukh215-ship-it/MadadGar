@@ -37,7 +37,6 @@ export default function PostPage() {
       { type: 'self' as const, slug: undefined, icon: '🔧', title: 'I am a worker', desc: 'Apna skill add karein', color: 'from-stone-50 to-white', border: 'border-stone-200', hover: 'hover:border-brand-300 hover:from-brand-50/30' },
     ];
     const linkOptions = [
-      { href: '/products/add', icon: '📦', title: 'Add Product', desc: 'Naya product list karein', color: 'from-slate-50 to-white', border: 'border-slate-200', hover: 'hover:border-brand-300 hover:from-brand-50/30' },
       { href: '/sale/add', icon: '💰', title: 'Post for Sale', desc: 'Used items bechein — OLX style', color: 'from-amber-50/80 to-stone-50', border: 'border-amber-200', hover: 'hover:from-amber-100 hover:to-stone-100 hover:border-amber-300' },
     ];
     const cardClass = (opt: { color: string; border: string; hover: string }) =>

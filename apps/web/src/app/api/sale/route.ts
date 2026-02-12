@@ -4,19 +4,21 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const categorySlug = searchParams.get('category') || null;
+  const subcategoryId = searchParams.get('subcategory_id') || null;
   const priceMin = searchParams.get('price_min') ? parseFloat(searchParams.get('price_min')!) : null;
   const priceMax = searchParams.get('price_max') ? parseFloat(searchParams.get('price_max')!) : null;
 
   const supabase = await createClient();
   let query = supabase
     .from('sale_listings')
-    .select('id, title, price, description, images, area_text, phone, created_at, category_id, author_id')
+    .select('id, title, price, description, images, area_text, phone, created_at, category_id, subcategory_id, author_id')
     .order('created_at', { ascending: false });
 
   if (categorySlug) {
     const { data: cat } = await supabase.from('sale_categories').select('id').eq('slug', categorySlug).single();
     if (cat) query = query.eq('category_id', cat.id);
   }
+  if (subcategoryId) query = query.eq('subcategory_id', subcategoryId);
   if (priceMin != null && !isNaN(priceMin)) query = query.gte('price', priceMin);
   if (priceMax != null && !isNaN(priceMax)) query = query.lte('price', priceMax);
 
@@ -30,13 +32,20 @@ export async function GET(request: NextRequest) {
   const { data: cats } = await supabase.from('sale_categories').select('id, slug, name, icon').in('id', catIds);
   const catMap = Object.fromEntries((cats ?? []).map((c) => [c.id, c]));
 
+  const subIds = [...new Set((listings ?? []).map((l: { subcategory_id?: string | null }) => l.subcategory_id).filter(Boolean))] as string[];
+  const { data: subs } = subIds.length > 0 ? await supabase.from('sale_subcategories').select('id, slug, name').in('id', subIds) : { data: [] };
+  const subMap = Object.fromEntries((subs ?? []).map((s) => [s.id, s]));
+
   const items = (listings ?? []).map((l: Record<string, unknown>) => {
     const cat = catMap[l.category_id as string];
+    const sub = l.subcategory_id ? subMap[l.subcategory_id as string] : null;
     return {
       ...l,
       category_name: cat?.name,
       category_slug: cat?.slug,
       category_icon: cat?.icon,
+      subcategory_name: sub?.name,
+      subcategory_slug: sub?.slug,
     };
   });
 
@@ -53,6 +62,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const title = String(body.title ?? '').trim();
   const categoryId = body.category_id;
+  const subcategoryId = body.subcategory_id || null;
   const price = parseFloat(body.price);
   if (!title || !categoryId || isNaN(price)) {
     return Response.json({ error: 'Title, category and price required' }, { status: 400 });
@@ -65,6 +75,7 @@ export async function POST(request: NextRequest) {
       author_id: user.id,
       title,
       category_id: categoryId,
+      subcategory_id: subcategoryId,
       price,
       description: body.description || null,
       images,
