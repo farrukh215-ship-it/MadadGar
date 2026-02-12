@@ -1,22 +1,28 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { CITY_STORAGE_KEY } from '@/lib/cities';
 
-const CityContext = createContext<{
+type CityContextValue = {
   city: string | null;
   setCity: (city: string | null) => void;
-}>({ city: null, setCity: () => {} });
+};
 
-export function CityProvider({ children }: { children: React.ReactNode }) {
+const CityContext = createContext<CityContextValue>({ city: null, setCity: () => {} });
+
+/** Provider wrapper to avoid React 19 + TS Provider type mismatch */
+function CityProviderInner({ value, children }: { value: CityContextValue; children: ReactNode }) {
+  const Provider = CityContext.Provider as React.ComponentType<{ value: CityContextValue; children: ReactNode }>;
+  return <Provider value={value}>{children}</Provider>;
+}
+
+export function CityProvider({ children }: { children: ReactNode }) {
   const [city, setCityState] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(CITY_STORAGE_KEY);
       setCityState(stored || null);
-      setMounted(true);
     }
   }, []);
 
@@ -28,15 +34,7 @@ export function CityProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
-  return (
-    <CityContext.Provider value={{ city, setCity }}>
-      {children}
-    </CityContext.Provider>
-  );
+  return <CityProviderInner value={{ city, setCity }}>{children}</CityProviderInner>;
 }
 
 export function useCity() {
