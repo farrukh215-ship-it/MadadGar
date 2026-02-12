@@ -30,7 +30,7 @@ export function FeedHeader({
   const { city, setCity } = useCity();
   const internalChatRef = useRef<HTMLButtonElement>(null);
   const chatRef = chatButtonRef ?? internalChatRef;
-  const handledByPointerRef = useRef(false);
+  const lastToggleRef = useRef(0);
   const isControlled = onChatOpenChange !== undefined;
   const [internalChatOpen, setInternalChatOpen] = useState(false);
   const chatOpenState = isControlled ? (chatOpen ?? false) : internalChatOpen;
@@ -95,22 +95,19 @@ export function FeedHeader({
               />
             </div>
             <NotificationsDropdown />
-            <div className="relative flex-shrink-0">
+            <div className="relative flex-shrink-0 z-[45]">
               <button
                 ref={chatRef}
                 type="button"
                 onPointerDown={(e) => {
-                  if (e.pointerType === 'touch') {
+                  if (e.pointerType === 'touch' || e.pointerType === 'pen') {
                     e.preventDefault();
-                    handledByPointerRef.current = true;
+                    lastToggleRef.current = Date.now();
                     setChatOpenState(!chatOpenState);
                   }
                 }}
-                onClick={() => {
-                  if (handledByPointerRef.current) {
-                    handledByPointerRef.current = false;
-                    return;
-                  }
+                onClick={(e) => {
+                  if (Date.now() - lastToggleRef.current < 300) return;
                   setChatOpenState(!chatOpenState);
                 }}
                 className="flex flex-col items-center gap-0.5 p-1.5 rounded-xl hover:bg-white/10 transition group"
