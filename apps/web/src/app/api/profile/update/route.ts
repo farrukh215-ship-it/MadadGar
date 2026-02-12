@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { avatar_url, cover_url, display_name, gender, date_of_birth, bio, notification_sound, about_visibility, phone_visibility, email_visibility, bio_visibility, marital_status, lat, lng } = body as {
+  const { avatar_url, cover_url, display_name, gender, date_of_birth, bio, notification_sound, about_visibility, phone_visibility, email_visibility, bio_visibility, marital_status, availability, service_radius_km, lat, lng } = body as {
     avatar_url?: string;
     cover_url?: string | null;
     display_name?: string;
@@ -22,6 +22,8 @@ export async function POST(request: NextRequest) {
     email_visibility?: 'public' | 'private';
     bio_visibility?: 'public' | 'private';
     marital_status?: string;
+    availability?: boolean;
+    service_radius_km?: number | null | string;
     lat?: number;
     lng?: number;
   };
@@ -43,6 +45,9 @@ export async function POST(request: NextRequest) {
   if (typeof bio_visibility === 'string' && ['public', 'private'].includes(bio_visibility)) updates.bio_visibility = bio_visibility;
   if (typeof marital_status === 'string' && ['single', 'married', 'divorced', 'widowed', 'prefer_not_to_say'].includes(marital_status)) updates.marital_status = marital_status;
   else if (marital_status === null || marital_status === '') updates.marital_status = null;
+  if (typeof availability === 'boolean') updates.availability = availability;
+  if (typeof service_radius_km === 'number' && service_radius_km >= 1 && service_radius_km <= 100) updates.service_radius_km = service_radius_km;
+  else if (service_radius_km === null || service_radius_km === '') updates.service_radius_km = null;
 
   const { error } = await supabase
     .from('profiles')

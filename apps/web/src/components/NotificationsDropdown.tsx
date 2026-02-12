@@ -36,7 +36,7 @@ export function NotificationsDropdown() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
-          <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-xl border border-stone-200 z-50">
+          <div className="fixed left-4 right-4 top-20 sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:absolute w-auto sm:w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-xl border border-stone-200 z-50">
             <div className="p-3 border-b border-stone-100">
               <h3 className="font-semibold text-stone-900">Notifications</h3>
             </div>

@@ -48,7 +48,7 @@ type PostDetail = {
   dislike_count: number;
   avg_rating: number | null;
   reviews_count: number;
-  reviews: { rating: number; review_text: string | null; rater_name: string; created_at: string }[];
+  reviews: { id: string; rating: number; review_text: string | null; rater_name: string; created_at: string; worker_reply?: string | null; worker_reply_at?: string | null }[];
   created_at: string;
 };
 
@@ -58,6 +58,9 @@ export default function PostDetailPage() {
   const id = params.id as string;
   const [post, setPost] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -68,6 +71,14 @@ export default function PostDetailPage() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    import('@/lib/supabase/client').then(({ createClient }) => {
+      createClient().auth.getUser().then(({ data: { user: u } }) => {
+        setCurrentUserId(u?.id ?? null);
+      });
+    });
+  }, []);
 
   useEffect(() => {
     if (post) {
@@ -193,12 +204,63 @@ export default function PostDetailPage() {
               <div className="mt-6 space-y-3">
                 <h3 className="font-semibold text-stone-900">Reviews</h3>
                 {post.reviews.slice(0, 5).map((r, i) => (
-                  <div key={i} className="p-3 rounded-xl bg-stone-50 border border-stone-100">
+                  <div key={r.id ?? i} className="p-4 rounded-xl bg-stone-50 border border-stone-100">
                     <div className="flex justify-between">
                       <span className="font-medium text-stone-800">{r.rater_name}</span>
                       <span className="text-amber-600 font-bold">⭐ {r.rating}/10</span>
                     </div>
                     {r.review_text && <p className="mt-2 text-sm text-stone-600">{r.review_text}</p>}
+                    {r.worker_reply && (
+                      <div className="mt-3 pl-3 border-l-2 border-brand-200">
+                        <p className="text-xs font-medium text-brand-700 mb-0.5">Helper reply</p>
+                        <p className="text-sm text-stone-600">{r.worker_reply}</p>
+                      </div>
+                    )}
+                    {currentUserId === post.author_id && !r.worker_reply && (
+                      <div className="mt-3">
+                        {replyingTo === r.id ? (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="Reply to this review..."
+                              className="flex-1 px-3 py-2 rounded-lg border border-stone-200 text-sm"
+                              maxLength={500}
+                            />
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const res = await fetch(`/api/posts/${id}/ratings/${r.id}/reply`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ reply: replyText }),
+                                });
+                                if (res.ok) {
+                                  setPost((p) => p ? { ...p, reviews: p.reviews.map((rev) => rev.id === r.id ? { ...rev, worker_reply: replyText, worker_reply_at: new Date().toISOString() } : rev) } : null);
+                                  setReplyingTo(null);
+                                  setReplyText('');
+                                }
+                              }}
+                              className="px-3 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
+                            >
+                              Reply
+                            </button>
+                            <button type="button" onClick={() => { setReplyingTo(null); setReplyText(''); }} className="px-2 py-2 text-stone-500 hover:text-stone-700">
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setReplyingTo(r.id)}
+                            className="text-sm text-brand-600 font-medium hover:underline"
+                          >
+                            Reply as helper
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -257,7 +319,21 @@ export default function PostDetailPage() {
                 Report
               </button>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 space-y-2">
+              {post.area_text && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(post.area_text + ' Pakistan')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full py-3 rounded-xl border border-stone-200 text-stone-700 text-center font-medium hover:bg-stone-50 transition-all flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Get directions
+                </a>
+              )}
               <a
                 href={`tel:${post.phone}`}
                 className="block w-full py-4 rounded-xl bg-brand-600 text-white text-center font-semibold hover:bg-brand-700 shadow-premium-brand hover:shadow-premium-brand-hover transition-all flex items-center justify-center gap-2"

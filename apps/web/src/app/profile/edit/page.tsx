@@ -12,7 +12,7 @@ type Interest = { slug: string; name: string; icon: string; parent_group: string
 export default function EditProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string } | null>(null);
-  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null; date_of_birth?: string | null; marital_status?: string | null; bio?: string | null; notification_sound?: string | null; about_visibility?: 'public' | 'private'; phone_visibility?: 'public' | 'private'; email_visibility?: 'public' | 'private'; bio_visibility?: 'public' | 'private' } | null>(null);
+  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null; cover_url: string | null; gender?: string | null; date_of_birth?: string | null; marital_status?: string | null; bio?: string | null; notification_sound?: string | null; about_visibility?: 'public' | 'private'; phone_visibility?: 'public' | 'private'; email_visibility?: 'public' | 'private'; bio_visibility?: 'public' | 'private'; availability?: boolean; service_radius_km?: number | null } | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [gender, setGender] = useState<string>('');
   const [dateOfBirth, setDateOfBirth] = useState<string>('');
@@ -23,6 +23,9 @@ export default function EditProfilePage() {
   const [phoneVisibility, setPhoneVisibility] = useState<'public' | 'private'>('public');
   const [emailVisibility, setEmailVisibility] = useState<'public' | 'private'>('public');
   const [bioVisibility, setBioVisibility] = useState<'public' | 'private'>('public');
+  const [availability, setAvailability] = useState(true);
+  const [serviceRadiusKm, setServiceRadiusKm] = useState<number | ''>('');
+  const [notifPrefs, setNotifPrefs] = useState({ friend_requests: true, messages: true, recommendations: true, updates: true });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
@@ -61,7 +64,7 @@ export default function EditProfilePage() {
         return;
       }
       setUser(u);
-      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, marital_status, bio, notification_sound, about_visibility, phone_visibility, email_visibility, bio_visibility').eq('user_id', u.id).single();
+      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, marital_status, bio, notification_sound, about_visibility, phone_visibility, email_visibility, bio_visibility, availability, service_radius_km').eq('user_id', u.id).single();
       setProfile(p ?? null);
       setDisplayName(p?.display_name || '');
       setGender((p as { gender?: string })?.gender ?? '');
@@ -73,6 +76,12 @@ export default function EditProfilePage() {
       setPhoneVisibility(((p as { phone_visibility?: 'public' | 'private' })?.phone_visibility) ?? 'public');
       setEmailVisibility(((p as { email_visibility?: 'public' | 'private' })?.email_visibility) ?? 'public');
       setBioVisibility(((p as { bio_visibility?: 'public' | 'private' })?.bio_visibility) ?? 'public');
+      setAvailability((p as { availability?: boolean })?.availability ?? true);
+      setServiceRadiusKm((p as { service_radius_km?: number | null })?.service_radius_km ?? '');
+      fetch('/api/profile/notification-preferences')
+        .then((r) => r.json())
+        .then((d) => setNotifPrefs({ friend_requests: d.friend_requests ?? true, messages: d.messages ?? true, recommendations: d.recommendations ?? true, updates: d.updates ?? true }))
+        .catch(() => {});
       loadInterests();
       setLoading(false);
     })();
@@ -141,6 +150,8 @@ export default function EditProfilePage() {
           phone_visibility: phoneVisibility,
           email_visibility: emailVisibility,
           bio_visibility: bioVisibility,
+          availability,
+          service_radius_km: serviceRadiusKm === '' ? null : Number(serviceRadiusKm),
         }),
       });
       if (res.ok) {
@@ -212,6 +223,47 @@ export default function EditProfilePage() {
             className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
           />
           <p className="text-xs text-stone-500 mt-1">Age will be shown to people you chat with</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Availability (Busy/Available)</label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="availability"
+                checked={availability}
+                onChange={() => setAvailability(true)}
+                className="rounded-full border-stone-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span>Available</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="availability"
+                checked={!availability}
+                onChange={() => setAvailability(false)}
+                className="rounded-full border-stone-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span>Busy</span>
+            </label>
+          </div>
+          <p className="text-xs text-stone-500 mt-1">Seekers ko dikhayega ke aap available ho ya busy</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">Service area (km radius)</label>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={serviceRadiusKm}
+            onChange={(e) => setServiceRadiusKm(e.target.value === '' ? '' : parseInt(e.target.value, 10) || '')}
+            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+            placeholder="e.g. 5 (leave empty for no limit)"
+          />
+          <p className="text-xs text-stone-500 mt-1">Kahan tak service dete hain (1-100 km). Khali = koi limit nahi</p>
         </div>
 
         <div>
@@ -292,6 +344,37 @@ export default function EditProfilePage() {
                 <option value="private">Only me</option>
               </select>
             </div>
+          </div>
+        </div>
+
+        <div className="border border-stone-200 rounded-xl p-4 bg-stone-50/50">
+          <h3 className="text-sm font-semibold text-stone-800 mb-3">Notification preferences</h3>
+          <p className="text-xs text-stone-500 mb-3">Kis cheez pe notification chahiye</p>
+          <div className="space-y-2">
+            {[
+              { key: 'friend_requests', label: 'Friend requests' },
+              { key: 'messages', label: 'Messages' },
+              { key: 'recommendations', label: 'Recommendations' },
+              { key: 'updates', label: 'App updates' },
+            ].map(({ key, label }) => (
+              <label key={key} className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm text-stone-700">{label}</span>
+                <input
+                  type="checkbox"
+                  checked={notifPrefs[key as keyof typeof notifPrefs]}
+                  onChange={(e) => {
+                    const next = { ...notifPrefs, [key]: e.target.checked };
+                    setNotifPrefs(next);
+                    fetch('/api/profile/notification-preferences', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(next),
+                    }).catch(() => {});
+                  }}
+                  className="rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+                />
+              </label>
+            ))}
           </div>
         </div>
 

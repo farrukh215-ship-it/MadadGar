@@ -128,8 +128,43 @@ export default function FeedPage() {
   const debouncedSearch = useDebounce(search, 300);
   const { recent: recentSearches, addSearch } = useRecentSearches();
   const [startingChat, setStartingChat] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const fetchIdRef = useRef(0);
   const router = useRouter();
+
+  useEffect(() => {
+    fetch('/api/favorites')
+      .then((r) => r.json())
+      .then((d) => {
+        const items = (d.items ?? []) as { item_type: string; item_id: string }[];
+        setFavorites(new Set(items.map((i) => `${i.item_type}:${i.item_id}`)));
+      })
+      .catch(() => {});
+  }, []);
+
+  const toggleFavorite = async (itemType: string, itemId: string, e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const key = `${itemType}:${itemId}`;
+    const isFav = favorites.has(key);
+    try {
+      if (isFav) {
+        await fetch(`/api/favorites?item_type=${itemType}&item_id=${itemId}`, { method: 'DELETE' });
+        setFavorites((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      } else {
+        await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ item_type: itemType, item_id: itemId }),
+        });
+        setFavorites((prev) => new Set([...prev, key]));
+      }
+    } catch {}
+  };
 
   const startChat = async (authorId: string, e: MouseEvent) => {
     e.preventDefault();
@@ -442,19 +477,32 @@ export default function FeedPage() {
                                     </div>
                                   </article>
                                 </Link>
-                                {item.author_id && (
+                                <div className="absolute top-1 right-1 flex gap-0.5 z-10">
                                   <button
                                     type="button"
-                                    onClick={(e) => startChat(item.author_id!, e)}
-                                    disabled={startingChat === item.author_id}
-                                    className="absolute top-1 right-1 p-1.5 rounded-lg bg-white/90 backdrop-blur shadow-sm hover:bg-brand-600 hover:text-white text-stone-600 transition-all z-10"
-                                    title="Chat"
+                                    onClick={(e) => toggleFavorite('product', item.id, e)}
+                                    className={`p-1.5 rounded-lg backdrop-blur shadow-sm transition-all ${favorites.has(`product:${item.id}`) ? 'bg-red-100 text-red-600' : 'bg-white/90 text-stone-600 hover:bg-stone-100'}`}
+                                    title="Save"
+                                    aria-label={favorites.has(`product:${item.id}`) ? 'Remove from saved' : 'Save'}
                                   >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    <svg className="w-3.5 h-3.5" fill={favorites.has(`product:${item.id}`) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                     </svg>
                                   </button>
-                                )}
+                                  {item.author_id && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => startChat(item.author_id!, e)}
+                                      disabled={startingChat === item.author_id}
+                                      className="p-1.5 rounded-lg bg-white/90 backdrop-blur shadow-sm hover:bg-brand-600 hover:text-white text-stone-600 transition-all"
+                                      title="Chat"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             );
                           }
@@ -487,19 +535,32 @@ export default function FeedPage() {
                                     </div>
                                   </article>
                                 </Link>
-                                {item.author_id && (
+                                <div className="absolute top-1 right-1 flex gap-0.5 z-10">
                                   <button
                                     type="button"
-                                    onClick={(e) => startChat(item.author_id!, e)}
-                                    disabled={startingChat === item.author_id}
-                                    className="absolute top-1 right-1 p-1.5 rounded-lg bg-white/90 backdrop-blur shadow-sm hover:bg-brand-600 hover:text-white text-stone-600 transition-all z-10"
-                                    title="Chat"
+                                    onClick={(e) => toggleFavorite('sale', item.id, e)}
+                                    className={`p-1.5 rounded-lg backdrop-blur shadow-sm transition-all ${favorites.has(`sale:${item.id}`) ? 'bg-red-100 text-red-600' : 'bg-white/90 text-stone-600 hover:bg-stone-100'}`}
+                                    title="Save"
+                                    aria-label={favorites.has(`sale:${item.id}`) ? 'Remove from saved' : 'Save'}
                                   >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    <svg className="w-3.5 h-3.5" fill={favorites.has(`sale:${item.id}`) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                     </svg>
                                   </button>
-                                )}
+                                  {item.author_id && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => startChat(item.author_id!, e)}
+                                      disabled={startingChat === item.author_id}
+                                      className="p-1.5 rounded-lg bg-white/90 backdrop-blur shadow-sm hover:bg-brand-600 hover:text-white text-stone-600 transition-all"
+                                      title="Chat"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             );
                           }
@@ -508,12 +569,13 @@ export default function FeedPage() {
                           const isEmergency = item.category_name?.toLowerCase().includes('emergency');
                           const isFoodPost = FOOD_SLUGS.some((s) => slug.includes(s)) || [item.category_name, item.worker_name, item.area_text, item.reason].join(' ').toLowerCase().includes('food');
 
-                          // Food Points: only location, no Call/Chat
+                          // Food Points: only location, Save button
                           if (isFoodPost) {
                             return (
-                              <Link key={item.id} href={`/post/${item.id}`} className="block group">
-                                <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200">
-                                  <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
+                              <div key={item.id} className="relative group">
+                                <Link href={`/post/${item.id}`} className="block">
+                                  <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200">
+                                    <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
                                     {hasImage ? (
                                       <>
                                         <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
@@ -543,9 +605,21 @@ export default function FeedPage() {
                                         <span className="line-clamp-2">{item.area_text}</span>
                                       </p>
                                     )}
-                                  </div>
-                                </article>
-                              </Link>
+                                    </div>
+                                  </article>
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={(e) => toggleFavorite('post', item.id, e)}
+                                  className="absolute top-1 right-1 p-1.5 rounded-lg z-10 backdrop-blur shadow-sm transition-all bg-white/90 text-stone-600 hover:bg-stone-100"
+                                  title="Save"
+                                  aria-label={favorites.has(`post:${item.id}`) ? 'Remove from saved' : 'Save'}
+                                >
+                                  <svg className="w-3.5 h-3.5" fill={favorites.has(`post:${item.id}`) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                  </svg>
+                                </button>
+                              </div>
                             );
                           }
 
@@ -557,6 +631,19 @@ export default function FeedPage() {
                                 isEmergency ? 'ring-1 ring-red-200' : ''
                               }`}
                             >
+                              <div className="absolute top-1 right-1 flex gap-0.5 z-10">
+                                <button
+                                  type="button"
+                                  onClick={(e) => toggleFavorite('post', item.id, e)}
+                                  className={`p-1.5 rounded-lg backdrop-blur shadow-sm transition-all ${favorites.has(`post:${item.id}`) ? 'bg-red-100 text-red-600' : 'bg-white/90 text-stone-600 hover:bg-stone-100'}`}
+                                  title="Save"
+                                  aria-label={favorites.has(`post:${item.id}`) ? 'Remove from saved' : 'Save'}
+                                >
+                                  <svg className="w-3.5 h-3.5" fill={favorites.has(`post:${item.id}`) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                  </svg>
+                                </button>
+                              </div>
                               <Link href={`/post/${item.id}`} className="flex-1 flex flex-col block group min-h-0">
                                 <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
                                   {hasImage ? (
@@ -587,9 +674,11 @@ export default function FeedPage() {
                                 <div className="p-2 flex-1 flex flex-col min-h-0">
                                   <h3 className="font-semibold text-stone-900 text-xs line-clamp-1">{item.worker_name || 'Helper'} — {item.category_name}</h3>
                                   {(item.reason || item.relation_tag) && <p className="text-[10px] text-stone-500 line-clamp-1 mt-0.5">{item.reason ?? item.relation_tag}</p>}
-                                  <div className="mt-1 flex gap-1.5 text-[9px] text-stone-500">
-                                    <span>👍 {item.like_count ?? item.madad_count ?? 0}</span>
-                                    {(item.reviews_count ?? 0) > 0 && <span>⭐ {item.reviews_count}</span>}
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-semibold">
+                                      ❤️ Madad {item.like_count ?? item.madad_count ?? 0}
+                                    </span>
+                                    {(item.reviews_count ?? 0) > 0 && <span className="text-[9px] text-stone-500">⭐ {item.reviews_count}</span>}
                                   </div>
                                 </div>
                               </Link>

@@ -45,6 +45,8 @@ export default function SalePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [priceBand, setPriceBand] = useState<string>('all');
+  const [priceMin, setPriceMin] = useState<string>('');
+  const [priceMax, setPriceMax] = useState<string>('');
 
   useEffect(() => {
     fetch('/api/categories/sale')
@@ -54,14 +56,17 @@ export default function SalePage() {
 
   useEffect(() => {
     setLoading(true);
-    // Reset price band when switching main category
     setPriceBand('all');
-    const url = selectedCategory ? `/api/sale?category=${encodeURIComponent(selectedCategory)}` : '/api/sale';
+    let url = selectedCategory ? `/api/sale?category=${encodeURIComponent(selectedCategory)}` : '/api/sale';
+    const pMin = priceMin ? parseFloat(priceMin) : null;
+    const pMax = priceMax ? parseFloat(priceMax) : null;
+    if (pMin != null && !isNaN(pMin)) url += (url.includes('?') ? '&' : '?') + `price_min=${pMin}`;
+    if (pMax != null && !isNaN(pMax)) url += (url.includes('?') ? '&' : '?') + `price_max=${pMax}`;
     fetch(url)
       .then((r) => r.json())
       .then((d) => setItems(d.items ?? []))
       .finally(() => setLoading(false));
-  }, [selectedCategory]);
+  }, [selectedCategory, priceMin, priceMax]);
 
   const filteredItems = items
     // Text search
@@ -148,6 +153,27 @@ export default function SalePage() {
               {c.name}
             </button>
           ))}
+        </div>
+
+        {/* Price range filter */}
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <span className="text-sm text-stone-500">Price range:</span>
+          <input
+            type="number"
+            placeholder="Min"
+            value={priceMin}
+            onChange={(e) => setPriceMin(e.target.value)}
+            className="w-24 px-3 py-2 rounded-lg border border-stone-200 text-sm"
+          />
+          <span className="text-stone-400">–</span>
+          <input
+            type="number"
+            placeholder="Max"
+            value={priceMax}
+            onChange={(e) => setPriceMax(e.target.value)}
+            className="w-24 px-3 py-2 rounded-lg border border-stone-200 text-sm"
+          />
+          <span className="text-xs text-stone-400">(Rs)</span>
         </div>
 
         {/* Mobiles → price bands (Facebook / OLX style quick filters) */}

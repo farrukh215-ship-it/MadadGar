@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const categorySlug = searchParams.get('category') || null;
+  const priceMin = searchParams.get('price_min') ? parseFloat(searchParams.get('price_min')!) : null;
+  const priceMax = searchParams.get('price_max') ? parseFloat(searchParams.get('price_max')!) : null;
 
   const supabase = await createClient();
   let query = supabase
@@ -15,6 +17,8 @@ export async function GET(request: NextRequest) {
     const { data: cat } = await supabase.from('sale_categories').select('id').eq('slug', categorySlug).single();
     if (cat) query = query.eq('category_id', cat.id);
   }
+  if (priceMin != null && !isNaN(priceMin)) query = query.gte('price', priceMin);
+  if (priceMax != null && !isNaN(priceMax)) query = query.lte('price', priceMax);
 
   const { data: listings, error } = await query;
 

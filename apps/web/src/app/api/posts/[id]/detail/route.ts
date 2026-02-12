@@ -23,7 +23,7 @@ export async function GET(
 
   const [{ data: profile }, { data: ratings }, { data: reactions }] = await Promise.all([
     supabase.from('profiles').select('display_name, verified').eq('user_id', post.author_id).single(),
-    supabase.from('ratings').select('rating, review_text, created_at, rater_id').eq('post_id', postId).order('created_at', { ascending: false }).limit(20),
+    supabase.from('ratings').select('id, rating, review_text, worker_reply, worker_reply_at, created_at, rater_id').eq('post_id', postId).order('created_at', { ascending: false }).limit(20),
     supabase.from('post_reactions').select('reaction').eq('post_id', postId),
   ]);
 
@@ -36,7 +36,13 @@ export async function GET(
   const nameMap = Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p.display_name || 'User']));
 
   const reviews = (ratings ?? []).map((r) => ({
-    ...r,
+    id: r.id,
+    rating: r.rating,
+    review_text: r.review_text,
+    worker_reply: r.worker_reply,
+    worker_reply_at: r.worker_reply_at,
+    created_at: r.created_at,
+    rater_id: r.rater_id,
     rater_name: nameMap[r.rater_id] ?? 'User',
   }));
 
