@@ -20,7 +20,6 @@ const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string; label: string; href?: st
   { id: 'all', icon: '📌', label: 'Saved', href: '/saved' },
   { id: 'all', icon: '💡', label: 'Ask for Help', href: '/ask-for-help' },
   { id: 'all', icon: '❤️', label: 'Interested People', href: '/chat/interests' },
-  { id: 'all', icon: '🛡️', label: 'Admin', href: '/admin' },
   { id: 'sale', icon: '📦', label: 'Used Products', href: '/sale' },
   { id: 'all', icon: '💝', label: 'Donations', href: '/donation' },
   { id: 'trusted-helpers', icon: '🔧', label: 'Trusted Helpers' },
