@@ -60,6 +60,13 @@ export default function SalePage() {
   const [priceMax, setPriceMax] = useState<string>('');
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setPriceMin(localStorage.getItem('sale_price_min') ?? '');
+      setPriceMax(localStorage.getItem('sale_price_max') ?? '');
+    }
+  }, []);
+
+  useEffect(() => {
     fetch('/api/categories/sale')
       .then((r) => r.json())
       .then((d) => setCategories(d.categories ?? []));
@@ -208,25 +215,39 @@ export default function SalePage() {
           </div>
         )}
 
-        {/* Price range filter */}
+        {/* Price range filter - OLX style */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <span className="text-sm text-stone-500">Price range:</span>
           <input
             type="number"
-            placeholder="Min"
+            placeholder="Min Rs"
             value={priceMin}
-            onChange={(e) => setPriceMin(e.target.value)}
-            className="w-24 px-3 py-2 rounded-lg border border-stone-200 text-sm"
+            onChange={(e) => {
+              const v = e.target.value;
+              setPriceMin(v);
+              if (typeof window !== 'undefined') {
+                if (v) localStorage.setItem('sale_price_min', v);
+                else localStorage.removeItem('sale_price_min');
+              }
+            }}
+            className="w-28 px-3 py-2 rounded-lg border border-stone-200 text-sm"
           />
           <span className="text-stone-400">–</span>
           <input
             type="number"
-            placeholder="Max"
+            placeholder="Max Rs"
             value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
-            className="w-24 px-3 py-2 rounded-lg border border-stone-200 text-sm"
+            onChange={(e) => {
+              const v = e.target.value;
+              setPriceMax(v);
+              if (typeof window !== 'undefined') {
+                if (v) localStorage.setItem('sale_price_max', v);
+                else localStorage.removeItem('sale_price_max');
+              }
+            }}
+            className="w-28 px-3 py-2 rounded-lg border border-stone-200 text-sm"
           />
-          <span className="text-xs text-stone-400">(Rs)</span>
+          <span className="text-xs text-stone-400">(saved)</span>
         </div>
 
         {/* Mobiles → price bands (Facebook / OLX style quick filters) */}

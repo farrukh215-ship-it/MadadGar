@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
 
   const accepterName = accepterProfile?.display_name || 'Someone';
   try {
+    const { data: pref } = await supabase.from('notification_preferences').select('friend_requests').eq('user_id', req.from_user_id).single();
+    if ((pref as { friend_requests?: boolean } | null)?.friend_requests === false) return Response.json({ ok: true });
     const admin = createAdminClient();
     await admin.from('notifications').insert({
       user_id: req.from_user_id,

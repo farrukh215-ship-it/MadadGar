@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { FeedHeader } from '@/components/FeedHeader';
 import { CitySelect } from '@/components/CitySelect';
+import { useCity } from '@/contexts/CityContext';
 
 const MAX_IMAGES = 5;
 const SALE_ICONS: Record<string, string> = {
@@ -16,6 +17,7 @@ const SALE_ICONS: Record<string, string> = {
 
 export default function AddSalePage() {
   const router = useRouter();
+  const { city: contextCity, setCity: setContextCity } = useCity();
   const [categories, setCategories] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [subcategories, setSubcategories] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [title, setTitle] = useState('');
@@ -25,6 +27,7 @@ export default function AddSalePage() {
   const [description, setDescription] = useState('');
   const [city, setCity] = useState<string | null>(null);
   const [areaDetail, setAreaDetail] = useState('');
+  const [detectingLocation, setDetectingLocation] = useState(false);
   const [phone, setPhone] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,6 +39,45 @@ export default function AddSalePage() {
       .then((r) => r.json())
       .then((d) => setCategories(d.categories ?? []));
   }, []);
+
+  useEffect(() => {
+    if (contextCity && !city) {
+      setCity(contextCity);
+    }
+  }, [contextCity, city]);
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) return;
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          const data = await res.json();
+          const addr = data?.address || {};
+          const cityName = addr.city || addr.town || addr.village || addr.state_district || addr.state;
+          const area = addr.suburb || addr.neighbourhood || addr.road;
+          if (cityName) {
+            setCity(cityName);
+            setContextCity(cityName);
+          }
+          if (area) setAreaDetail(area);
+        } catch {
+          if (contextCity) setCity(contextCity);
+        } finally {
+          setDetectingLocation(false);
+        }
+      },
+      () => {
+        if (contextCity) setCity(contextCity);
+        setDetectingLocation(false);
+      }
+    );
+  };
 
   useEffect(() => {
     if (!categoryId) {
@@ -248,7 +290,26 @@ export default function AddSalePage() {
 
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">City</label>
-            <CitySelect value={city} onChange={setCity} placeholder="Select city" />
+            <div className="flex gap-2">
+              <CitySelect
+                value={city}
+                onChange={(c) => {
+                  setCity(c);
+                  if (c) setContextCity(c);
+                }}
+                placeholder="Select city"
+                className="flex-1"
+              />
+              <button
+                type="button"
+                onClick={detectLocation}
+                disabled={detectingLocation}
+                className="px-4 py-3 rounded-xl border border-brand-300 bg-brand-50 text-brand-700 text-sm font-medium hover:bg-brand-100 transition shrink-0"
+              >
+                {detectingLocation ? '...' : '📍 Detect'}
+              </button>
+            </div>
+            <p className="text-xs text-stone-500 mt-1">Auto-filled from your last selection. Tap Detect for GPS.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">Area (optional)</label>

@@ -41,33 +41,53 @@ export async function POST(request: NextRequest) {
   }
 
   const fcmServerKey = process.env.FCM_SERVER_KEY;
-  if (!fcmServerKey) {
-    return Response.json({ ok: true, skipped: 'FCM_SERVER_KEY not configured' });
+  const expoTokens = tokens.filter((t) => t.token?.startsWith('ExponentPushToken['));
+  const fcmTokens = tokens.filter((t) => !t.token?.startsWith('ExponentPushToken['));
+
+  let sent = 0;
+
+  if (expoTokens.length > 0) {
+    const expoPayload = expoTokens.map((t) => ({
+      to: t.token,
+      title,
+      body,
+      data: { url: link, type: record?.type || 'notification' },
+      sound: 'default',
+      channelId: 'default',
+    }));
+    const expoRes = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(expoPayload),
+    });
+    if (expoRes.ok) {
+      const data = await expoRes.json();
+      const tickets = Array.isArray(data.data) ? data.data : [data];
+      sent += tickets.filter((t: { status?: string }) => t.status === 'ok').length;
+    }
   }
 
-  const results = await Promise.allSettled(
-    tokens.map(async (t) => {
-      const res = await fetch('https://fcm.googleapis.com/fcm/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `key=${fcmServerKey}`,
-        },
-        body: JSON.stringify({
-          to: t.token,
-          notification: { title, body, click_action: link },
-          data: { url: link, type: record?.type || 'notification' },
-        }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
-    })
-  );
+  if (fcmTokens.length > 0 && fcmServerKey) {
+    const fcmResults = await Promise.allSettled(
+      fcmTokens.map(async (t) => {
+        const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `key=${fcmServerKey}`,
+          },
+          body: JSON.stringify({
+            to: t.token,
+            notification: { title, body, click_action: link },
+            data: { url: link, type: record?.type || 'notification' },
+          }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      })
+    );
+    sent += fcmResults.filter((r) => r.status === 'fulfilled').length;
+  }
 
-  const failures = results.filter((r) => r.status === 'rejected');
-  return Response.json({
-    ok: true,
-    sent: tokens.length - failures.length,
-    failed: failures.length,
-  });
+  return Response.json({ ok: true, sent, total: tokens.length });
 }
