@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { CoverCropModal } from '@/components/CoverCropModal';
 import { NOTIFICATION_SOUNDS, playNotificationSound } from '@/lib/notificationSounds';
+import { CitySelect } from '@/components/CitySelect';
 
 type Interest = { slug: string; name: string; icon: string; parent_group: string };
 
@@ -26,6 +27,7 @@ export default function EditProfilePage() {
   const [bioVisibility, setBioVisibility] = useState<'public' | 'private'>('public');
   const [availability, setAvailability] = useState(true);
   const [serviceRadiusKm, setServiceRadiusKm] = useState<number | ''>('');
+  const [city, setCity] = useState<string | null>(null);
   const [notifPrefs, setNotifPrefs] = useState({ friend_requests: true, messages: true, recommendations: true, updates: true });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -66,7 +68,7 @@ export default function EditProfilePage() {
         return;
       }
       setUser(u);
-      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, marital_status, bio, notification_sound, about_visibility, phone_visibility, email_visibility, bio_visibility, availability, service_radius_km').eq('user_id', u.id).single();
+      const { data: p } = await supabase.from('profiles').select('display_name, avatar_url, cover_url, gender, date_of_birth, marital_status, bio, notification_sound, about_visibility, phone_visibility, email_visibility, bio_visibility, availability, service_radius_km, city').eq('user_id', u.id).single();
       setProfile(p ?? null);
       setDisplayName(p?.display_name || '');
       setGender((p as { gender?: string })?.gender ?? '');
@@ -80,6 +82,7 @@ export default function EditProfilePage() {
       setBioVisibility(((p as { bio_visibility?: 'public' | 'private' })?.bio_visibility) ?? 'public');
       setAvailability((p as { availability?: boolean })?.availability ?? true);
       setServiceRadiusKm((p as { service_radius_km?: number | null })?.service_radius_km ?? '');
+      setCity((p as { city?: string | null })?.city ?? null);
       fetch('/api/profile/notification-preferences')
         .then((r) => r.json())
         .then((d) => setNotifPrefs({ friend_requests: d.friend_requests ?? true, messages: d.messages ?? true, recommendations: d.recommendations ?? true, updates: d.updates ?? true }))
@@ -154,6 +157,7 @@ export default function EditProfilePage() {
           bio_visibility: bioVisibility,
           availability,
           service_radius_km: serviceRadiusKm === '' ? null : Number(serviceRadiusKm),
+          city: city || undefined,
         }),
       });
       if (res.ok) {
@@ -225,6 +229,12 @@ export default function EditProfilePage() {
             className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
           />
           <p className="text-xs text-stone-500 mt-1">Age will be shown to people you chat with</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">City</label>
+          <CitySelect value={city} onChange={setCity} placeholder="Select city" />
+          <p className="text-xs text-stone-500 mt-1">Shown on Interested People & profile</p>
         </div>
 
         <div>

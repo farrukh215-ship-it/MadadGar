@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FeedHeader } from '@/components/FeedHeader';
+import { CitySelect } from '@/components/CitySelect';
 
 const MAX_IMAGES = 5;
 const SALE_ICONS: Record<string, string> = {
@@ -22,7 +23,8 @@ export default function AddSalePage() {
   const [subcategoryId, setSubcategoryId] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [areaText, setAreaText] = useState('');
+  const [city, setCity] = useState<string | null>(null);
+  const [areaDetail, setAreaDetail] = useState('');
   const [phone, setPhone] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -82,7 +84,7 @@ export default function AddSalePage() {
           subcategory_id: subcategoryId || null,
           price: parseFloat(price),
           description: description || null,
-          area_text: areaText || null,
+          area_text: city ? (areaDetail ? `${city}, ${areaDetail}` : city) : (areaDetail || null),
           phone: phone || null,
           images,
         }),
@@ -214,12 +216,16 @@ export default function AddSalePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">Location</label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">City</label>
+            <CitySelect value={city} onChange={setCity} placeholder="Select city" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1">Area (optional)</label>
             <input
               type="text"
-              value={areaText}
-              onChange={(e) => setAreaText(e.target.value)}
-              placeholder="e.g. Lahore, DHA"
+              value={areaDetail}
+              onChange={(e) => setAreaDetail(e.target.value)}
+              placeholder="e.g. DHA Phase 5, Model Town"
               className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
             />
           </div>

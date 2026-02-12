@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const subcategoryId = searchParams.get('subcategory_id') || null;
   const priceMin = searchParams.get('price_min') ? parseFloat(searchParams.get('price_min')!) : null;
   const priceMax = searchParams.get('price_max') ? parseFloat(searchParams.get('price_max')!) : null;
+  const city = searchParams.get('city') || null;
 
   const supabase = await createClient();
   let query = supabase
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
   if (subcategoryId) query = query.eq('subcategory_id', subcategoryId);
   if (priceMin != null && !isNaN(priceMin)) query = query.gte('price', priceMin);
   if (priceMax != null && !isNaN(priceMax)) query = query.lte('price', priceMax);
+  if (city && city.trim()) query = query.ilike('area_text', '%' + city.trim() + '%');
 
   const { data: listings, error } = await query;
 

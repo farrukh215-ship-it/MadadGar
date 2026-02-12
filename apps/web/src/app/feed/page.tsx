@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { UtensilsCrossed, Beef, Cookie, Soup, Flame, Wrench, Zap, Droplets, Snowflake, Car, Sparkles, Hammer, Plug, Smartphone, Laptop, AlertCircle, Package, ShoppingBag, Search } from 'lucide-react';
 import { FeedHeader } from '@/components/FeedHeader';
+import { useCity } from '@/contexts/CityContext';
 import { FeedSidebar, type SidebarFilter } from '@/components/FeedSidebar';
 import { FeedSkeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
@@ -125,6 +126,7 @@ export default function FeedPage() {
   const [loadError, setLoadError] = useState(false);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
+  const { city } = useCity();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const { recent: recentSearches, addSearch } = useRecentSearches();
@@ -223,6 +225,7 @@ export default function FeedPage() {
       if (sidebarFilter === 'all' || sidebarFilter === 'trusted-helpers' || sidebarFilter === 'food-points' || sidebarFilter === 'nearby' || sidebarFilter === 'top-rated' || sidebarFilter === 'verified') {
         if (sidebarFilter === 'all') {
           url = `/api/feed/all-combined?lat=${latVal}&lng=${lngVal}`;
+          if (city) url += `&city=${encodeURIComponent(city)}`;
         } else if (sidebarFilter === 'top-rated') {
           url = '/api/feed/top-rated';
         } else {
@@ -234,7 +237,8 @@ export default function FeedPage() {
         const newItems = data.items ?? [];
         setItems((prev) => (newItems.length > 0 ? newItems : prev));
       } else if (sidebarFilter === 'sale') {
-        const res = await fetch('/api/sale');
+        const saleUrl = city ? `/api/sale?city=${encodeURIComponent(city)}` : '/api/sale';
+        const res = await fetch(saleUrl);
         const data = await res.json();
         if (id !== fetchIdRef.current) return;
         const sales = (data.items ?? []).map((s: Record<string, unknown>) => ({ ...s, item_type: 'sale' }));
@@ -246,7 +250,7 @@ export default function FeedPage() {
     } finally {
       if (id === fetchIdRef.current) setLoading(false);
     }
-  }, [sidebarFilter, lat, lng]);
+  }, [sidebarFilter, lat, lng, city]);
 
   useEffect(() => {
     refetchFeed();

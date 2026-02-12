@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { ChatDropdown } from './ChatDropdown';
+import { CitySelect } from './CitySelect';
+import { useCity } from '@/contexts/CityContext';
 
 type UserInfo = {
   id: string;
@@ -22,10 +24,10 @@ export function FeedHeader({
   onMenuClick?: () => void;
   chatOpen?: boolean;
   onChatOpenChange?: (open: boolean) => void;
-  chatButtonRef?: React.RefObject<HTMLButtonElement | null>;
+  chatButtonRef?: React.RefObject<HTMLButtonElement>;
 }) {
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [location, setLocation] = useState<string | null>(null);
+  const { city, setCity } = useCity();
   const internalChatRef = useRef<HTMLButtonElement>(null);
   const chatRef = chatButtonRef ?? internalChatRef;
   const isControlled = onChatOpenChange !== undefined;
@@ -49,23 +51,6 @@ export function FeedHeader({
       const displayName = profile?.display_name || (u.email?.split('@')[0] ?? null);
       setUser({ id: u.id, avatarUrl: avatar, displayName: displayName || null });
     })();
-  }, []);
-
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const isLahore = Math.abs(lat - 31.52) < 0.5 && Math.abs(lng - 74.35) < 0.5;
-          setLocation(isLahore ? 'Lahore' : 'Nearby');
-        },
-        () => setLocation('Lahore'),
-        { enableHighAccuracy: false, maximumAge: 300000 }
-      );
-    } else {
-      setLocation('Lahore');
-    }
   }, []);
 
   useEffect(() => {
@@ -100,12 +85,14 @@ export function FeedHeader({
             </Link>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            {location && (
-              <span className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 text-white/95 text-xs font-medium backdrop-blur-sm border border-white/10">
-                <span>📍</span>
-                {location}
-              </span>
-            )}
+            <div className="hidden sm:block">
+              <CitySelect
+                value={city}
+                onChange={setCity}
+                placeholder="Select city"
+                variant="header"
+              />
+            </div>
             <NotificationsDropdown />
             <div className="relative flex-shrink-0">
               <button

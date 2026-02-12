@@ -4,6 +4,7 @@ import '@fontsource/noto-nastaliq-urdu';
 import './globals.css';
 import { IdleLogoutProvider } from '@/components/IdleLogoutProvider';
 import { ChatToast } from '@/components/ChatToast';
+import { CityProvider } from '@/contexts/CityContext';
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -31,10 +32,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={plusJakarta.variable}>
       <body className={`${plusJakarta.variable} font-sans antialiased bg-surface-base`} suppressHydrationWarning>
-        <IdleLogoutProvider>
-          {children}
-          <ChatToast />
-        </IdleLogoutProvider>
+        <CityProvider>
+          <IdleLogoutProvider>
+            {children}
+            <ChatToast />
+          </IdleLogoutProvider>
+        </CityProvider>
       </body>
     </html>
   );

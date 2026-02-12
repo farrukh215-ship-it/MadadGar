@@ -46,7 +46,7 @@ export async function GET(
 
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('user_id, display_name, avatar_url, gender, date_of_birth, marital_status')
+    .select('user_id, display_name, avatar_url, gender, date_of_birth, marital_status, city')
     .in('user_id', userIds);
 
   let premiumRows: { user_id: string }[] = [];
@@ -74,6 +74,7 @@ export async function GET(
       gender: (p as { gender?: string }).gender ?? null,
       age: age != null && age >= 0 && age <= 120 ? age : null,
       marital_status: (p as { marital_status?: string }).marital_status ?? null,
+      city: (p as { city?: string | null }).city ?? null,
       is_premium: premiumIds.has(p.user_id),
       shared_count: sharedByUser.get(p.user_id) ?? 0,
     };

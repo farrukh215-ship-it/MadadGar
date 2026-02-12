@@ -22,7 +22,7 @@ export function ChatDropdown({
 }: {
   open: boolean;
   onClose: () => void;
-  anchorRef?: React.RefObject<HTMLButtonElement | null>;
+  anchorRef?: React.RefObject<HTMLButtonElement>;
 }) {
   const router = useRouter();
   const [threads, setThreads] = useState<Thread[]>([]);

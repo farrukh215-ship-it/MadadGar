@@ -27,6 +27,7 @@ type ChatUser = {
   gender?: string | null;
   age?: number | null;
   marital_status?: string | null;
+  city?: string | null;
   is_premium?: boolean;
   shared_count?: number;
   distance_km?: number;
@@ -561,6 +562,7 @@ export default function InterestedPeoplePage() {
                                         </span>
                                         <span className="text-[10px] text-stone-500 block">
                                           {[
+                                            u.city ?? null,
                                             u.gender === 'female'
                                               ? 'Female'
                                               : u.gender === 'male'
@@ -765,6 +767,7 @@ export default function InterestedPeoplePage() {
                               u.gender === 'female' ? 'Female' : u.gender === 'male' ? 'Male' : null,
                               u.age != null ? `${u.age} yrs` : null,
                               formatMaritalStatus(u.marital_status) ? `(${formatMaritalStatus(u.marital_status)})` : null,
+                              u.city ?? null,
                               `${u.shared_count ?? 0} shared interests`,
                             ]
                               .filter(Boolean)

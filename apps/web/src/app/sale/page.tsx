@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FeedHeader } from '@/components/FeedHeader';
+import { CitySelect } from '@/components/CitySelect';
+import { useCity } from '@/contexts/CityContext';
 
 const SALE_ICONS: Record<string, string> = {
   mobiles: '📱', laptops: '💻', electronics: '🔌', furniture: '🪑', vehicles: '🚗',
@@ -45,6 +47,7 @@ type SaleItem = {
 };
 
 export default function SalePage() {
+  const { city, setCity } = useCity();
   const [categories, setCategories] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [items, setItems] = useState<SaleItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,11 +85,12 @@ export default function SalePage() {
     const pMax = priceMax ? parseFloat(priceMax) : null;
     if (pMin != null && !isNaN(pMin)) url += (url.includes('?') ? '&' : '?') + `price_min=${pMin}`;
     if (pMax != null && !isNaN(pMax)) url += (url.includes('?') ? '&' : '?') + `price_max=${pMax}`;
+    if (city) url += (url.includes('?') ? '&' : '?') + `city=${encodeURIComponent(city)}`;
     fetch(url)
       .then((r) => r.json())
       .then((d) => setItems(d.items ?? []))
       .finally(() => setLoading(false));
-  }, [selectedCategory, selectedSubcategoryId, priceMin, priceMax]);
+  }, [selectedCategory, selectedSubcategoryId, priceMin, priceMax, city]);
 
   const filteredItems = items
     // Text search
@@ -135,6 +139,11 @@ export default function SalePage() {
             <span className="text-lg">+</span>
             Sell Item
           </Link>
+        </div>
+
+        {/* City Filter */}
+        <div className="mb-4 max-w-xs">
+          <CitySelect value={city} onChange={setCity} placeholder="All cities" />
         </div>
 
         {/* Search */}

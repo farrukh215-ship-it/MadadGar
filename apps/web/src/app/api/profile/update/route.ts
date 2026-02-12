@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { avatar_url, cover_url, display_name, gender, date_of_birth, bio, notification_sound, about_visibility, phone_visibility, email_visibility, bio_visibility, marital_status, availability, service_radius_km, lat, lng } = body as {
+  const { avatar_url, cover_url, display_name, gender, date_of_birth, bio, notification_sound, about_visibility, phone_visibility, email_visibility, bio_visibility, marital_status, availability, service_radius_km, city, lat, lng } = body as {
     avatar_url?: string;
     cover_url?: string | null;
     display_name?: string;
@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
     marital_status?: string;
     availability?: boolean;
     service_radius_km?: number | null | string;
+    city?: string | null;
     lat?: number;
     lng?: number;
   };
@@ -48,6 +49,8 @@ export async function POST(request: NextRequest) {
   if (typeof availability === 'boolean') updates.availability = availability;
   if (typeof service_radius_km === 'number' && service_radius_km >= 1 && service_radius_km <= 100) updates.service_radius_km = service_radius_km;
   else if (service_radius_km === null || service_radius_km === '') updates.service_radius_km = null;
+  if (typeof city === 'string') updates.city = city.trim() || null;
+  else if (city === null || city === '') updates.city = null;
 
   const { error } = await supabase
     .from('profiles')
