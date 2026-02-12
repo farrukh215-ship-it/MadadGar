@@ -76,11 +76,13 @@ export async function GET(request: NextRequest) {
   scored.sort((a: { _score: number }, b: { _score: number }) => b._score - a._score);
 
   const filtered = scored
-    .filter((s) => s.shadow_hidden !== true)
-    .map(({ _score, ...rest }) => rest)
+    .map((s) => {
+      const { _score, ...rest } = s as Record<string, unknown> & { _score: number };
+      return rest as Record<string, unknown>;
+    })
     .slice(0, limit);
 
-  const authorIds = [...new Set(filtered.map((i: { author_id: string }) => i.author_id).filter(Boolean))];
+  const authorIds = [...new Set(filtered.map((i: Record<string, unknown>) => i.author_id as string).filter(Boolean))];
   const serverSupabase = await createClient();
   const { data: profiles } = await serverSupabase
     .from('profiles')

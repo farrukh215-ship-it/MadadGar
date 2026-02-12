@@ -9,9 +9,9 @@ CREATE TABLE IF NOT EXISTS public.help_requests (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_help_requests_author ON public.help_requests(author_id);
-CREATE INDEX idx_help_requests_created ON public.help_requests(created_at DESC);
-CREATE INDEX idx_help_requests_category ON public.help_requests(category_slug) WHERE category_slug IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_help_requests_author ON public.help_requests(author_id);
+CREATE INDEX IF NOT EXISTS idx_help_requests_created ON public.help_requests(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_help_requests_category ON public.help_requests(category_slug) WHERE category_slug IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS public.help_suggestions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -21,8 +21,8 @@ CREATE TABLE IF NOT EXISTS public.help_suggestions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_help_suggestions_request ON public.help_suggestions(request_id);
-CREATE INDEX idx_help_suggestions_author ON public.help_suggestions(author_id);
+CREATE INDEX IF NOT EXISTS idx_help_suggestions_request ON public.help_suggestions(request_id);
+CREATE INDEX IF NOT EXISTS idx_help_suggestions_author ON public.help_suggestions(author_id);
 
 CREATE TABLE IF NOT EXISTS public.help_suggestion_likes (
   suggestion_id UUID NOT NULL REFERENCES public.help_suggestions(id) ON DELETE CASCADE,
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS public.help_suggestion_likes (
   PRIMARY KEY (suggestion_id, user_id)
 );
 
-CREATE INDEX idx_help_suggestion_likes_suggestion ON public.help_suggestion_likes(suggestion_id);
+CREATE INDEX IF NOT EXISTS idx_help_suggestion_likes_suggestion ON public.help_suggestion_likes(suggestion_id);
 
 CREATE TABLE IF NOT EXISTS public.help_suggestion_shares (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS public.help_suggestion_shares (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_help_suggestion_shares_suggestion ON public.help_suggestion_shares(suggestion_id);
+CREATE INDEX IF NOT EXISTS idx_help_suggestion_shares_suggestion ON public.help_suggestion_shares(suggestion_id);
 
 -- RLS
 ALTER TABLE public.help_requests ENABLE ROW LEVEL SECURITY;

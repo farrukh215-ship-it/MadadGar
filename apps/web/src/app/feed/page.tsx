@@ -299,7 +299,7 @@ export default function FeedPage() {
   }, [debouncedSearch]);
 
   const displayItems = searchResults != null && debouncedSearch.trim().length >= 2
-    ? searchResults.filter((r) => ['post', 'product', 'sale'].includes((r.item_type ?? r._type) as string))
+    ? searchResults.filter((r) => ['post', 'product', 'sale'].includes(((r as Record<string, unknown>).item_type ?? (r as Record<string, unknown>)._type) as string))
     : items;
 
   const filteredItems = displayItems.filter((i) => {
