@@ -59,17 +59,35 @@ export function ChatDropdown({
 
   const sectionClass = 'border-b border-stone-100 last:border-b-0';
   const sectionTitleClass = 'text-[10px] font-semibold text-stone-400 uppercase tracking-wide px-3 py-2';
-  const linkClass = 'flex items-center gap-3 px-3 py-2.5 hover:bg-stone-50 transition text-left w-full';
+  const linkClass = 'flex items-center gap-3 px-3 py-2.5 hover:bg-stone-50 active:bg-stone-100 transition text-left w-full';
 
   return (
-    <div
-      ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-[min(90vw,320px)] max-h-[70vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-stone-200/80 z-[100] animate-slide-up"
-      role="dialog"
-      aria-label="Chat menu"
-    >
+    <>
+      {/* Backdrop - mobile only */}
+      <div
+        className="fixed inset-0 z-[99] bg-black/40 lg:hidden"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        ref={dropdownRef}
+        className="fixed left-4 right-4 top-[72px] bottom-[max(5rem,env(safe-area-inset-bottom))] lg:absolute lg:left-auto lg:right-0 lg:top-full lg:mt-2 lg:bottom-auto lg:inset-auto w-auto lg:w-[min(90vw,320px)] max-h-[calc(100vh-8rem)] lg:max-h-[70vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-stone-200/80 z-[100] animate-slide-up"
+        role="dialog"
+        aria-label="Chat menu"
+      >
+        {/* Close button - mobile */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="lg:hidden absolute top-3 right-3 p-2 rounded-lg hover:bg-stone-100 text-stone-500"
+          aria-label="Close"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       {/* Chats */}
-      <div className={sectionClass}>
+      <div className={`${sectionClass} pt-12 lg:pt-0`}>
         <p className={sectionTitleClass}>💬 Chats</p>
         {loading ? (
           <div className="px-4 py-6 text-center">
@@ -171,5 +189,6 @@ export function ChatDropdown({
         </Link>
       </div>
     </div>
+    </>
   );
 }
