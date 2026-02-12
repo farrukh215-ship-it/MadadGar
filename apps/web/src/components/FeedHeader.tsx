@@ -30,6 +30,7 @@ export function FeedHeader({
   const { city, setCity } = useCity();
   const internalChatRef = useRef<HTMLButtonElement>(null);
   const chatRef = chatButtonRef ?? internalChatRef;
+  const handledByPointerRef = useRef(false);
   const isControlled = onChatOpenChange !== undefined;
   const [internalChatOpen, setInternalChatOpen] = useState(false);
   const chatOpenState = isControlled ? (chatOpen ?? false) : internalChatOpen;
@@ -98,7 +99,20 @@ export function FeedHeader({
               <button
                 ref={chatRef}
                 type="button"
-                onClick={() => setChatOpenState(!chatOpenState)}
+                onPointerDown={(e) => {
+                  if (e.pointerType === 'touch') {
+                    e.preventDefault();
+                    handledByPointerRef.current = true;
+                    setChatOpenState(!chatOpenState);
+                  }
+                }}
+                onClick={() => {
+                  if (handledByPointerRef.current) {
+                    handledByPointerRef.current = false;
+                    return;
+                  }
+                  setChatOpenState(!chatOpenState);
+                }}
                 className="flex flex-col items-center gap-0.5 p-1.5 rounded-xl hover:bg-white/10 transition group"
                 aria-expanded={chatOpenState}
                 aria-haspopup="true"

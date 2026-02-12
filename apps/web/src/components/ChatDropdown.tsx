@@ -28,6 +28,11 @@ export function ChatDropdown({
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const openedAtRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (open) openedAtRef.current = Date.now();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -41,6 +46,8 @@ export function ChatDropdown({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      // Ignore synthetic mousedown from touch (~300ms delay) - prevents immediate close on mobile
+      if (Date.now() - openedAtRef.current < 350) return;
       if (
         open &&
         dropdownRef.current &&
@@ -63,10 +70,13 @@ export function ChatDropdown({
 
   return (
     <>
-      {/* Backdrop - mobile only */}
+      {/* Backdrop - mobile only; ignore synthetic click from touch (~300ms) */}
       <div
         className="fixed inset-0 z-[99] bg-black/40 lg:hidden"
-        onClick={onClose}
+        onClick={() => {
+          if (Date.now() - openedAtRef.current < 350) return;
+          onClose();
+        }}
         aria-hidden="true"
       />
       <div
