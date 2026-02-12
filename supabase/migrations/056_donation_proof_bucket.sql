@@ -9,10 +9,12 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
+DROP POLICY IF EXISTS "donation_proof_upload" ON storage.objects;
 CREATE POLICY "donation_proof_upload" ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (bucket_id = 'donation-proof');
 
+DROP POLICY IF EXISTS "donation_proof_public_read" ON storage.objects;
 CREATE POLICY "donation_proof_public_read" ON storage.objects
   FOR SELECT TO public
   USING (bucket_id = 'donation-proof');
