@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -29,10 +30,16 @@ export function ChatDropdown({
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const openedAtRef = useRef<number>(0);
+  const [anchorRect, setAnchorRect] = useState<{ top: number; right: number } | null>(null);
 
   useEffect(() => {
-    if (open) openedAtRef.current = Date.now();
-  }, [open]);
+    if (open) {
+      openedAtRef.current = Date.now();
+      const rect = anchorRef?.current?.getBoundingClientRect();
+      if (rect) setAnchorRect({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+      else setAnchorRect(null);
+    } else setAnchorRect(null);
+  }, [open, anchorRef]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,11 +75,11 @@ export function ChatDropdown({
   const sectionTitleClass = 'text-[10px] font-semibold text-stone-400 uppercase tracking-wide px-3 py-2';
   const linkClass = 'flex items-center gap-3 px-3 py-2.5 hover:bg-stone-50 active:bg-stone-100 transition text-left w-full';
 
-  return (
+  const content = (
     <>
       {/* Backdrop - mobile only; ignore synthetic click from touch (~300ms) */}
       <div
-        className="fixed inset-0 z-[99] bg-black/40 lg:hidden"
+        className="fixed inset-0 z-[9998] bg-black/40 lg:hidden"
         onClick={() => {
           if (Date.now() - openedAtRef.current < 350) return;
           onClose();
@@ -81,7 +88,12 @@ export function ChatDropdown({
       />
       <div
         ref={dropdownRef}
-        className="fixed left-4 right-4 top-[72px] bottom-[max(5rem,env(safe-area-inset-bottom))] lg:absolute lg:left-auto lg:right-0 lg:top-full lg:mt-2 lg:bottom-auto lg:inset-auto w-auto lg:w-[min(90vw,320px)] max-h-[calc(100vh-8rem)] lg:max-h-[70vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-stone-200/80 z-[100] animate-slide-up"
+        className="fixed left-4 right-4 top-[72px] bottom-[max(5rem,env(safe-area-inset-bottom))] w-auto lg:w-[min(90vw,320px)] max-h-[calc(100vh-8rem)] lg:max-h-[70vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-stone-200/80 z-[9999] animate-slide-up"
+        style={
+          typeof window !== 'undefined' && window.innerWidth >= 1024 && anchorRect
+            ? { left: 'auto', top: anchorRect.top, right: anchorRect.right, bottom: 'auto' }
+            : undefined
+        }
         role="dialog"
         aria-label="Chat menu"
       >
@@ -96,8 +108,23 @@ export function ChatDropdown({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-      {/* Chats */}
+      {/* Interested People - first */}
       <div className={`${sectionClass} pt-12 lg:pt-0`}>
+        <p className={sectionTitleClass}>❤️ Interested People</p>
+        <Link href="/chat/interests" onClick={onClose} className={linkClass}>
+          <span className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center text-base shrink-0">❤️</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-stone-900 text-sm">Same interests • Chat</p>
+            <p className="text-xs text-stone-500">Connect with like-minded people</p>
+          </div>
+          <svg className="w-4 h-4 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+      </div>
+
+      {/* Chats */}
+      <div className={sectionClass}>
         <p className={sectionTitleClass}>💬 Chats</p>
         {loading ? (
           <div className="px-4 py-6 text-center">
@@ -174,21 +201,6 @@ export function ChatDropdown({
         </Link>
       </div>
 
-      {/* Interested People */}
-      <div className={sectionClass}>
-        <p className={sectionTitleClass}>❤️ Interested People</p>
-        <Link href="/chat/interests" onClick={onClose} className={linkClass}>
-          <span className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center text-base shrink-0">❤️</span>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-stone-900 text-sm">Same interests • Chat</p>
-            <p className="text-xs text-stone-500">Connect with like-minded people</p>
-          </div>
-          <svg className="w-4 h-4 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-      </div>
-
       <div className="p-3 border-t border-stone-100">
         <Link
           href="/chat"
@@ -201,4 +213,8 @@ export function ChatDropdown({
     </div>
     </>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(content, document.body)
+    : content;
 }

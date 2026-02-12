@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { FeedHeader } from '@/components/FeedHeader';
 import { CitySelect } from '@/components/CitySelect';
+import { ImageCarousel } from '@/components/ImageCarousel';
 import { useCity } from '@/contexts/CityContext';
 
 const SALE_ICONS: Record<string, string> = {
@@ -323,29 +323,15 @@ export default function SalePage() {
                         href={`/sale/${item.id}`}
                         className="group bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand-200/50 transition-all duration-300"
                       >
-                        <div className="aspect-square bg-stone-100 relative overflow-hidden">
-                          {item.images?.[0] ? (
-                            <Image
-                              src={item.images[0]}
-                              alt={item.title}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                              unoptimized
-                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-4xl text-stone-300">
-                              {SALE_ICONS[item.category_slug ?? ''] ?? '📦'}
-                            </div>
-                          )}
-                          <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end">
-                            {item.images && item.images.length > 1 && (
-                              <span className="px-2 py-0.5 rounded-lg bg-black/50 text-white text-[10px] font-medium">
-                                {item.images.length} photos
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        <ImageCarousel
+                          images={item.images ?? []}
+                          alt={item.title}
+                          fallbackIcon={SALE_ICONS[item.category_slug ?? ''] ?? '📦'}
+                          variant="compact"
+                          objectFit="cover"
+                          aspectClass="aspect-square"
+                          className="group-hover:scale-105 transition-transform duration-300"
+                        />
                         <div className="p-3">
                           <h3 className="font-semibold text-stone-900 text-sm line-clamp-2 min-h-[2.25rem] group-hover:text-brand-600 transition">
                             {item.title}

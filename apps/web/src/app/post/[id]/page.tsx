@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { FeedHeader } from '@/components/FeedHeader';
+import { ImageCarousel } from '@/components/ImageCarousel';
 import { hapticLight } from '@/lib/haptic';
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -112,9 +113,19 @@ export default function PostDetailPage() {
       <FeedHeader />
       <main className="max-w-2xl mx-auto px-4 py-6">
         <article className="bg-white rounded-2xl border border-slate-100 shadow-premium overflow-hidden">
-          {post.images?.length > 0 && (
+          {post.images && post.images.length > 0 && (
             <div className="aspect-video bg-stone-100 relative">
-              <Image src={post.images[0]} alt="" fill className="object-cover" unoptimized loading="lazy" />
+              {post.images.length >= 2 ? (
+                <ImageCarousel
+                  images={post.images}
+                  alt=""
+                  variant="full"
+                  objectFit="cover"
+                  aspectClass="aspect-video"
+                />
+              ) : (
+                <Image src={post.images[0]} alt="" fill className="object-cover" unoptimized loading="lazy" />
+              )}
             </div>
           )}
           <div className="p-6">

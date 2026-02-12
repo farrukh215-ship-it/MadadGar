@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ImageLightbox } from '@/components/ImageLightbox';
+import { ImageCarousel } from '@/components/ImageCarousel';
 
 function SkillBar({ name, percent, delay }: { name: string; percent: number; delay: number }) {
   const [width, setWidth] = useState(0);
@@ -350,11 +351,13 @@ export default function ProfilePage() {
                           href={`/sale/${s.id}`}
                           className="block p-3 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-md transition"
                         >
-                          <div className="aspect-square rounded-lg bg-stone-100 overflow-hidden mb-2">
-                            {s.images?.[0] ? (
+                          <div className="aspect-square rounded-lg overflow-hidden mb-2">
+                            {(s.images?.length ?? 0) >= 2 ? (
+                              <ImageCarousel images={s.images!} alt={s.title} fallbackIcon="💰" variant="compact" objectFit="cover" />
+                            ) : s.images?.[0] ? (
                               <Image src={s.images[0]} alt="" width={120} height={120} className="w-full h-full object-cover" unoptimized />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-2xl">💰</div>
+                              <div className="w-full h-full flex items-center justify-center text-2xl bg-stone-100">💰</div>
                             )}
                           </div>
                           <p className="font-medium text-stone-900 text-sm line-clamp-1">{s.title}</p>
@@ -381,11 +384,13 @@ export default function ProfilePage() {
                         href={`/products/${p.id}`}
                         className="block p-3 rounded-xl bg-white border border-stone-100 hover:border-brand-200 hover:shadow-md transition"
                       >
-                        <div className="aspect-square rounded-lg bg-stone-100 overflow-hidden mb-2">
-                          {p.images?.[0] ? (
+                        <div className="aspect-square rounded-lg overflow-hidden mb-2">
+                          {(p.images?.length ?? 0) >= 2 ? (
+                            <ImageCarousel images={p.images!} alt={p.name} fallbackIcon="📦" variant="compact" objectFit="cover" />
+                          ) : p.images?.[0] ? (
                             <Image src={p.images[0]} alt="" width={120} height={120} className="w-full h-full object-cover" unoptimized />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-2xl">📦</div>
+                            <div className="w-full h-full flex items-center justify-center text-2xl bg-stone-100">📦</div>
                           )}
                         </div>
                         <p className="font-medium text-stone-900 text-sm line-clamp-1">{p.name}</p>

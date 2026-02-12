@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { UtensilsCrossed, Beef, Cookie, Soup, Flame, Wrench, Zap, Droplets, Snowflake, Car, Sparkles, Hammer, Plug, Smartphone, Laptop, AlertCircle, Package, ShoppingBag, Search } from 'lucide-react';
 import { FeedHeader } from '@/components/FeedHeader';
+import { ImageCarousel } from '@/components/ImageCarousel';
 import { useCity } from '@/contexts/CityContext';
 import { FeedSidebar, type SidebarFilter } from '@/components/FeedSidebar';
 import { FeedSkeleton } from '@/components/Skeleton';
@@ -546,7 +547,16 @@ export default function FeedPage() {
                                 <Link href={`/products/${item.id}`} className="block touch-feedback touch-feedback-smooth active:scale-[0.99]">
                                   <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-stone-100/80 hover:border-stone-200 h-full flex flex-col">
                                     <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
-                                      {hasImage ? (
+                                      {(item.images?.length ?? 0) >= 2 ? (
+                                        <ImageCarousel
+                                          images={item.images!}
+                                          alt={item.name ?? ''}
+                                          variant="compact"
+                                          objectFit="cover"
+                                          aspectClass="aspect-[4/3]"
+                                          className="group-hover:scale-105 transition-transform duration-200"
+                                        />
+                                      ) : hasImage ? (
                                         <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
                                       ) : (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-50">
@@ -598,13 +608,18 @@ export default function FeedPage() {
                                 <Link href={`/sale/${item.id}`} className="block">
                                   <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-stone-100/80 hover:border-stone-200 h-full flex flex-col">
                                     <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
-                                      {hasImage ? (
-                                        <>
-                                          <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
-                                          {item.images && item.images.length > 1 && (
-                                            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-white text-[10px] font-medium">{item.images.length}</span>
-                                          )}
-                                        </>
+                                      {(item.images?.length ?? 0) >= 2 ? (
+                                        <ImageCarousel
+                                          images={item.images!}
+                                          alt={item.title ?? ''}
+                                          fallbackIcon="📦"
+                                          variant="compact"
+                                          objectFit="cover"
+                                          aspectClass="aspect-[4/3]"
+                                          className="group-hover:scale-105 transition-transform duration-200"
+                                        />
+                                      ) : hasImage ? (
+                                        <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
                                       ) : (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50">
                                           <CategoryIcon slug="used-products" size="lg" className="shadow-md" />
@@ -660,7 +675,16 @@ export default function FeedPage() {
                                 <Link href={`/post/${item.id}`} className="block">
                                   <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200">
                                     <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
-                                    {hasImage ? (
+                                    {(item.images?.length ?? 0) >= 2 ? (
+                                      <ImageCarousel
+                                        images={item.images!}
+                                        alt={item.worker_name || item.category_name || ''}
+                                        variant="compact"
+                                        objectFit="cover"
+                                        aspectClass="aspect-[4/3]"
+                                        className="group-hover:scale-105 transition-transform duration-200"
+                                      />
+                                    ) : hasImage ? (
                                       <>
                                         <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
                                         <div className="absolute top-1 left-1 flex gap-0.5">
@@ -674,7 +698,20 @@ export default function FeedPage() {
                                           <span className="absolute bottom-1 right-1 px-1 py-0.5 rounded text-[9px] bg-black/40 text-white">{formatDistance(item.distance_m)}</span>
                                         )}
                                       </>
-                                    ) : (
+                                    ) : null}
+                                    {((item.images?.length ?? 0) >= 2 || hasImage) && (
+                                      <div className="absolute top-1 left-1 flex gap-0.5 z-10">
+                                        {item.post_type === 'recommendation' ? (
+                                          <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-amber-100/95 text-amber-800">👍</span>
+                                        ) : (
+                                          <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-brand-100/95 text-brand-800">🍽️</span>
+                                        )}
+                                      </div>
+                                    )}
+                                    {((item.images?.length ?? 0) >= 2 || hasImage) && formatDistance(item.distance_m) && (
+                                      <span className="absolute bottom-1 right-1 px-1 py-0.5 rounded text-[9px] bg-black/40 text-white z-10">{formatDistance(item.distance_m)}</span>
+                                    )}
+                                    {!hasImage && (item.images?.length ?? 0) < 2 && (
                                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-violet-100/80 to-violet-50/80">
                                         <CategoryIcon slug={slug} size="lg" className="shadow-md" />
                                         <span className="mt-1.5 text-[10px] font-semibold text-stone-600 truncate max-w-full px-1">{item.category_name}</span>
@@ -730,7 +767,32 @@ export default function FeedPage() {
                               </div>
                               <Link href={`/post/${item.id}`} className="flex-1 flex flex-col block group min-h-0">
                                 <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
-                                  {hasImage ? (
+                                  {(item.images?.length ?? 0) >= 2 ? (
+                                    <>
+                                      <ImageCarousel
+                                        images={item.images!}
+                                        alt={item.worker_name || item.category_name || ''}
+                                        variant="compact"
+                                        objectFit="cover"
+                                        aspectClass="aspect-[4/3]"
+                                        className="group-hover:scale-105 transition-transform duration-200"
+                                      />
+                                      <div className="absolute top-1 left-1 flex gap-0.5 z-10">
+                                        {item.post_type === 'recommendation' ? (
+                                          <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-amber-100/95 text-amber-800">👍</span>
+                                        ) : (
+                                          <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-brand-100/95 text-brand-800">🔧</span>
+                                        )}
+                                        {item.avg_rating != null && <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-black/40 text-white">⭐{item.avg_rating}</span>}
+                                        {(item.rec_count ?? 0) > 0 && (
+                                          <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-blue-500/90 text-white" title="Verified recommendations">✓</span>
+                                        )}
+                                      </div>
+                                      {formatDistance(item.distance_m) && (
+                                        <span className="absolute bottom-1 right-1 px-1 py-0.5 rounded text-[9px] bg-black/40 text-white z-10">{formatDistance(item.distance_m)}</span>
+                                      )}
+                                    </>
+                                  ) : hasImage ? (
                                     <>
                                       <img src={item.images![0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy" />
                                       <div className="absolute top-1 left-1 flex gap-0.5">

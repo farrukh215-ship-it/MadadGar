@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { FeedHeader } from '@/components/FeedHeader';
+import { ImageCarousel } from '@/components/ImageCarousel';
 import { createClient } from '@/lib/supabase/client';
 
 const PRODUCT_ICONS: Record<string, string> = {
@@ -34,6 +35,7 @@ export default function ProductDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -77,33 +79,24 @@ export default function ProductDetailPage() {
       <main className="max-w-4xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
-            <div className="aspect-square bg-stone-100 relative">
-              {images[0] ? (
-                <button
-                  type="button"
-                  onClick={() => setLightboxIndex(0)}
-                  className="absolute inset-0 w-full h-full"
-                >
-                  <Image
-                    src={images[0]}
-                    alt={item.name}
-                    fill
-                    className="object-contain cursor-zoom-in"
-                    unoptimized
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                  />
-                </button>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-6xl">{icon}</div>
-              )}
-            </div>
+            <ImageCarousel
+              images={images}
+              alt={item.name}
+              fallbackIcon={icon}
+              variant="full"
+              objectFit="contain"
+              aspectClass="aspect-square"
+              index={carouselIndex}
+              onIndexChange={setCarouselIndex}
+              onImageClick={(i) => setLightboxIndex(i)}
+            />
             {images.length > 1 && (
               <div className="flex gap-2 p-3 overflow-x-auto border-t border-stone-100">
                 {images.map((img, i) => (
                   <button
                     key={i}
                     type="button"
-                    onClick={() => setLightboxIndex(i)}
+                    onClick={() => setCarouselIndex(i)}
                     className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 ring-2 ring-offset-1 ring-brand-500/50"
                   >
                     <Image src={img} alt="" fill className="object-cover" unoptimized sizes="64px" />
@@ -175,11 +168,26 @@ export default function ProductDetailPage() {
           <button
             type="button"
             onClick={() => setLightboxIndex(null)}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 z-10"
           >
             ✕
           </button>
-          <div className="relative max-w-4xl max-h-[90vh] w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            {images.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex((lightboxIndex - 1 + images.length) % images.length);
+                }}
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center z-10"
+                aria-label="Previous"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
             <Image
               src={images[lightboxIndex]}
               alt={item.name}
@@ -188,7 +196,37 @@ export default function ProductDetailPage() {
               className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
               unoptimized
             />
+            {images.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex((lightboxIndex + 1) % images.length);
+                }}
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center z-10"
+                aria-label="Next"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
           </div>
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex(i);
+                  }}
+                  className={`w-2 h-2 rounded-full ${i === lightboxIndex ? 'bg-white' : 'bg-white/40'}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
