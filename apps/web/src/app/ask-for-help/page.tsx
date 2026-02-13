@@ -30,6 +30,16 @@ type HelpRequest = {
   suggestions_count: number;
 };
 
+const TITLE_MIN_WORDS = 5;
+const TITLE_MAX_WORDS = 30;
+const BODY_MAX_WORDS = 200;
+const SUGGESTION_MIN_WORDS = 3;
+const SUGGESTION_MAX_WORDS = 100;
+
+function wordCount(s: string): number {
+  return s.trim().split(/\s+/).filter(Boolean).length;
+}
+
 const HELP_CATEGORIES: { slug: string; name: string; icon: string }[] = [
   { slug: 'beauty', name: 'Beauty & Parlour', icon: '💄' },
   { slug: 'food', name: 'Food & Restaurants', icon: '🍽️' },
@@ -94,7 +104,21 @@ export default function AskForHelpPage() {
 
   const submitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
+    const titleWords = wordCount(title);
+    const bodyWords = wordCount(body);
     if (!title.trim()) return;
+    if (titleWords < TITLE_MIN_WORDS) {
+      alert(`Title mein kam az kam ${TITLE_MIN_WORDS} words likhein.`);
+      return;
+    }
+    if (titleWords > TITLE_MAX_WORDS) {
+      alert(`Title zyada hai. Max ${TITLE_MAX_WORDS} words.`);
+      return;
+    }
+    if (body.trim() && bodyWords > BODY_MAX_WORDS) {
+      alert(`Details mein max ${BODY_MAX_WORDS} words.`);
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch('/api/help', {
@@ -130,6 +154,15 @@ export default function AskForHelpPage() {
   const submitSuggestion = async (requestId: string) => {
     const content = suggestionInput[requestId]?.trim();
     if (!content) return;
+    const words = wordCount(content);
+    if (words < SUGGESTION_MIN_WORDS) {
+      alert(`Suggestion mein kam az kam ${SUGGESTION_MIN_WORDS} words likhein.`);
+      return;
+    }
+    if (words > SUGGESTION_MAX_WORDS) {
+      alert(`Suggestion max ${SUGGESTION_MAX_WORDS} words.`);
+      return;
+    }
     setSubmittingSuggestion(requestId);
     try {
       const res = await fetch(`/api/help/${requestId}/suggestions`, {
@@ -221,21 +254,23 @@ export default function AskForHelpPage() {
           <form onSubmit={submitRequest} className="mb-6 p-4 rounded-2xl bg-white border border-stone-200 shadow-premium">
             <input
               type="text"
-              placeholder="e.g. Best beauty parlour in Lahore?"
+              placeholder={`e.g. Best beauty parlour in Lahore? (min ${TITLE_MIN_WORDS}, max ${TITLE_MAX_WORDS} words)`}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500/25 focus:border-brand-400 outline-none"
               maxLength={200}
               required
             />
+            <p className="text-xs text-stone-500 mt-1">{wordCount(title)} / {TITLE_MAX_WORDS} words</p>
             <textarea
-              placeholder="Optional details..."
+              placeholder={`Optional details (max ${BODY_MAX_WORDS} words)...`}
               value={body}
               onChange={(e) => setBody(e.target.value)}
               className="mt-3 w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-brand-500/25 focus:border-brand-400 outline-none resize-none"
               rows={2}
               maxLength={2000}
             />
+            {body.trim() && <p className="text-xs text-stone-500 mt-1">{wordCount(body)} / {BODY_MAX_WORDS} words</p>}
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -250,7 +285,7 @@ export default function AskForHelpPage() {
             </select>
             <button
               type="submit"
-              disabled={submitting || !title.trim()}
+              disabled={submitting || !title.trim() || wordCount(title) < TITLE_MIN_WORDS || wordCount(title) > TITLE_MAX_WORDS || (body.trim() && wordCount(body) > BODY_MAX_WORDS)}
               className="mt-4 w-full py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50"
             >
               {submitting ? 'Posting...' : 'Post'}
@@ -357,7 +392,7 @@ export default function AskForHelpPage() {
                   <div className="flex gap-2 mt-2">
                     <input
                       type="text"
-                      placeholder="Add your suggestion..."
+                      placeholder={`Add suggestion (${SUGGESTION_MIN_WORDS}-${SUGGESTION_MAX_WORDS} words)...`}
                       value={suggestionInput[req.id] ?? ''}
                       onChange={(e) =>
                         setSuggestionInput((prev) => ({ ...prev, [req.id]: e.target.value }))

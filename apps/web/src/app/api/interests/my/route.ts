@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 const FREE_INTEREST_LIMIT = 5;
+const PREMIUM_INTEREST_LIMIT = 10;
 
 async function isPremium(supabase: Awaited<ReturnType<typeof createClient>>, userId: string): Promise<boolean> {
   try {
@@ -48,17 +49,16 @@ export async function POST(request: NextRequest) {
   }
 
   const premium = await isPremium(supabase, user.id);
-  if (!premium) {
-    const { count } = await supabase
-      .from('user_interests')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
-    if ((count ?? 0) >= FREE_INTEREST_LIMIT) {
-      return Response.json(
-        { error: 'limit_reached', message: `Free users can add up to ${FREE_INTEREST_LIMIT} interests. Upgrade to Premium for unlimited.` },
-        { status: 403 }
-      );
-    }
+  const limit = premium ? PREMIUM_INTEREST_LIMIT : FREE_INTEREST_LIMIT;
+  const { count } = await supabase
+    .from('user_interests')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+  if ((count ?? 0) >= limit) {
+    return Response.json(
+      { error: 'limit_reached', message: premium ? `Premium users can add up to ${PREMIUM_INTEREST_LIMIT} interests.` : `Free users can add up to ${FREE_INTEREST_LIMIT} interests. Upgrade to Premium for ${PREMIUM_INTEREST_LIMIT}.` },
+      { status: 403 }
+    );
   }
 
   const { error } = await supabase

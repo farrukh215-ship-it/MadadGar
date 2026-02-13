@@ -60,11 +60,13 @@ export async function GET(_request: NextRequest) {
   const premiumIds = new Set(premiumRows.map((r) => r.user_id));
 
   const sharedCounts = new Map<string, number>();
+  const sharedSlugsByUser = new Map<string, string[]>();
   for (const uid of eligibleIds) {
     const theirSlugs = otherByUser.get(uid) ?? new Set();
-    let n = 0;
-    for (const s of theirSlugs) if (mySlugs.has(s)) n++;
-    sharedCounts.set(uid, n);
+    const shared: string[] = [];
+    for (const s of theirSlugs) if (mySlugs.has(s)) shared.push(s);
+    sharedCounts.set(uid, shared.length);
+    sharedSlugsByUser.set(uid, shared);
   }
 
   const now = new Date();
@@ -81,6 +83,7 @@ export async function GET(_request: NextRequest) {
       city: (p as { city?: string | null }).city ?? null,
       is_premium: premiumIds.has(p.user_id),
       shared_count: sharedCounts.get(p.user_id) ?? 0,
+      shared_interests: sharedSlugsByUser.get(p.user_id) ?? [],
     };
   });
   usersList.sort((a, b) => (b.shared_count - a.shared_count) || ((b.is_premium ? 1 : 0) - (a.is_premium ? 1 : 0)));

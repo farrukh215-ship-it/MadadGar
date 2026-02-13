@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
 
   const threadIds = [...new Set((participants ?? []).map((p) => p.thread_id))];
   if (threadIds.length === 0) {
-    return Response.json({ threads: [] });
+    const { data: myInt } = await supabase.from('user_interests').select('interest_slug').eq('user_id', user.id);
+    const { data: interestCats } = await supabase.from('interest_categories').select('slug, name, icon');
+    const interestMap = Object.fromEntries((interestCats ?? []).map((c) => [c.slug, { name: c.name, icon: c.icon ?? '' }]));
+    return Response.json({ threads: [], my_interests: (myInt ?? []).map((r) => r.interest_slug), interest_map: interestMap });
   }
 
   const { data: threads } = await supabase
@@ -55,6 +58,7 @@ export async function GET(request: NextRequest) {
   let directTitles: Record<string, string> = {};
   let otherUserByThread: Record<string, string> = {};
   let otherUserProfile: Record<string, { display_name: string; avatar_url: string | null; gender: string | null; age: number | null; marital_status: string | null }> = {};
+  let sharedInterestsByOtherId: Record<string, string[]> = {};
   let unreadByThread: Record<string, number> = {};
   if (directThreadIds.length > 0) {
     const { data: participants } = await supabase
@@ -89,6 +93,18 @@ export async function GET(request: NextRequest) {
   const { data: friendRows } = await supabase.from('friends').select('friend_id').eq('user_id', user.id);
   const friendIds = new Set((friendRows ?? []).map((r) => r.friend_id));
   const otherIdsForReq = [...new Set(Object.values(otherUserByThread))];
+  if (otherIdsForReq.length > 0) {
+    const { data: myInt } = await supabase.from('user_interests').select('interest_slug').eq('user_id', user.id);
+    const mySlugs = new Set((myInt ?? []).map((r) => r.interest_slug));
+    const { data: theirInt } = await supabase.from('user_interests').select('user_id, interest_slug').in('user_id', otherIdsForReq);
+    for (const r of theirInt ?? []) {
+      if (mySlugs.has(r.interest_slug)) {
+        const arr = sharedInterestsByOtherId[r.user_id] ?? [];
+        if (!arr.includes(r.interest_slug)) arr.push(r.interest_slug);
+        sharedInterestsByOtherId[r.user_id] = arr;
+      }
+    }
+  }
   let pendingSentIds = new Set<string>();
   if (otherIdsForReq.length > 0) {
     const { data: pendingSent } = await supabase
@@ -142,11 +158,17 @@ export async function GET(request: NextRequest) {
     last_message: lastPreview || null,
     is_friend: !!otherId && friendIds.has(otherId),
     friend_request_sent: !!otherId && pendingSentIds.has(otherId),
-    other_user: profile ? { id: otherId, display_name: profile.display_name, avatar_url: profile.avatar_url, gender: profile.gender, age: profile.age, marital_status: profile.marital_status } : null,
+    other_user: profile ? { id: otherId, display_name: profile.display_name, avatar_url: profile.avatar_url, gender: profile.gender, age: profile.age, marital_status: profile.marital_status, shared_interests: otherId ? (sharedInterestsByOtherId[otherId] ?? []) : [] } : null,
   };
   });
 
-  return Response.json({ threads: enriched });
+  const { data: myInt } = await supabase.from('user_interests').select('interest_slug').eq('user_id', user.id);
+  const myInterests = (myInt ?? []).map((r) => r.interest_slug);
+
+  const { data: interestCats } = await supabase.from('interest_categories').select('slug, name, icon');
+  const interestMap = Object.fromEntries((interestCats ?? []).map((c) => [c.slug, { name: c.name, icon: c.icon ?? '' }]));
+
+  return Response.json({ threads: enriched, my_interests: myInterests, interest_map: interestMap });
 }
 
 export async function POST(request: NextRequest) {

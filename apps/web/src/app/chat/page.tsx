@@ -16,7 +16,7 @@ type Thread = {
   last_message?: string | null;
   is_friend?: boolean;
   friend_request_sent?: boolean;
-  other_user?: { id: string; display_name: string; gender: string | null; age: number | null; marital_status?: string | null } | null;
+  other_user?: { id: string; display_name: string; gender: string | null; age: number | null; marital_status?: string | null; shared_interests?: string[] } | null;
 };
 
 function formatMaritalStatus(s: string | null | undefined): string {
@@ -43,6 +43,8 @@ export default function ChatListPage() {
   const [loading, setLoading] = useState(true);
   const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({});
   const [onlineMap, setOnlineMap] = useState<Record<string, boolean>>({});
+  const [myInterests, setMyInterests] = useState<string[]>([]);
+  const [interestMap, setInterestMap] = useState<Record<string, { name: string; icon: string }>>({});
 
   useEffect(() => {
     (async () => {
@@ -58,6 +60,8 @@ export default function ChatListPage() {
         const data = await res.json();
         const list = data.threads ?? [];
         setThreads(list);
+        setMyInterests(data.my_interests ?? []);
+        setInterestMap(data.interest_map ?? {});
         const otherIds = list.map((t: Thread) => t.other_user?.id).filter(Boolean) as string[];
         if (otherIds.length > 0) {
           const presRes = await fetch(`/api/presence?ids=${otherIds.join(',')}`);
@@ -125,7 +129,23 @@ export default function ChatListPage() {
             </div>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-4">
+            {myInterests.length > 0 && (
+              <div className="p-4 rounded-xl bg-brand-50/80 border border-brand-100">
+                <p className="text-xs font-bold text-brand-700 uppercase tracking-wide mb-2">Your interests</p>
+                <div className="flex flex-wrap gap-2">
+                  {myInterests.map((slug) => {
+                    const info = interestMap[slug];
+                    return (
+                      <span key={slug} className="px-2.5 py-1 rounded-lg bg-white border border-brand-200 text-xs font-medium text-brand-800">
+                        {info?.icon} {info?.name ?? slug}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            <div className="space-y-1">
             {threads.map((t) => {
               const ou = t.other_user;
               const online = ou ? onlineMap[ou.id] : false;
@@ -169,6 +189,22 @@ export default function ChatListPage() {
                         {meta.join(' • ')}
                       </p>
                     )}
+                    {ou?.shared_interests && ou.shared_interests.length > 0 && (
+                      <p className="text-xs text-brand-600 mt-1 flex flex-wrap gap-1">
+                        <span className="font-medium">Match:</span>
+                        {ou.shared_interests.slice(0, 5).map((slug) => {
+                          const info = interestMap[slug];
+                          return (
+                            <span key={slug} className="px-1.5 py-0.5 rounded bg-brand-100 text-brand-800">
+                              {info?.icon} {info?.name ?? slug}
+                            </span>
+                          );
+                        })}
+                        {ou.shared_interests.length > 5 && (
+                          <span className="text-stone-500">+{ou.shared_interests.length - 5}</span>
+                        )}
+                      </p>
+                    )}
                     <p className="text-sm text-stone-600 truncate mt-0.5">
                       {t.last_message || 'No messages yet'}
                     </p>
@@ -196,6 +232,7 @@ export default function ChatListPage() {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
       </main>

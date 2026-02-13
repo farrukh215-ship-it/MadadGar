@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -30,6 +30,7 @@ type ChatUser = {
   city?: string | null;
   is_premium?: boolean;
   shared_count?: number;
+  shared_interests?: string[];
   distance_km?: number;
 };
 
@@ -162,6 +163,16 @@ export default function InterestedPeoplePage() {
   useEffect(() => {
     if (!loading && grouped.length > 0) loadChatEligible();
   }, [loading, grouped.length, loadChatEligible]);
+
+  const interestNameMap = useMemo(() => {
+    const m: Record<string, { name: string; icon: string }> = {};
+    for (const g of grouped) {
+      for (const i of g.interests) {
+        m[i.slug] = { name: i.name, icon: i.icon ?? '' };
+      }
+    }
+    return m;
+  }, [grouped]);
 
   const loadTopProfiles = useCallback(async () => {
     setLoadingTopProfiles(true);
@@ -465,9 +476,9 @@ export default function InterestedPeoplePage() {
                     🟢 Most Active
                   </h3>
                   <div className="p-4 flex gap-3 overflow-x-auto pb-2">
-                    {topProfiles.most_active.filter((u) => !blockedUsers[u.id]).map((u) => (
+                    {topProfiles.most_active.filter((u) => !blockedUsers[u.id] && (u.shared_count ?? 0) >= 1).map((u) => (
                       <div key={u.id} className="flex-shrink-0 w-32">
-                        <Link href={`/profile/${u.id}`} className="block text-center">
+                        <button type="button" onClick={() => startChat(u)} disabled={startingChat === u.id} className="block text-center w-full">
                           <div className="relative w-14 h-14 mx-auto rounded-full bg-stone-200 overflow-hidden ring-2 ring-white shadow-sm">
                             {u.avatar_url ? (
                               <Image src={u.avatar_url} alt="" width={56} height={56} className="object-cover" unoptimized />
@@ -479,8 +490,8 @@ export default function InterestedPeoplePage() {
                             )}
                           </div>
                           <p className="mt-1.5 text-xs font-medium text-stone-800 truncate">{u.display_name}</p>
-                          <p className="text-[10px] text-stone-500">{(u.shared_count ?? 0)} shared</p>
-                        </Link>
+                          <p className="text-[10px] text-stone-500">{(u.shared_count ?? 0)} shared • Tap to chat</p>
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -492,9 +503,9 @@ export default function InterestedPeoplePage() {
                     👨 Male
                   </h3>
                   <div className="p-4 flex gap-3 overflow-x-auto pb-2">
-                    {topProfiles.male.filter((u) => !blockedUsers[u.id]).map((u) => (
+                    {topProfiles.male.filter((u) => !blockedUsers[u.id] && (u.shared_count ?? 0) >= 1).map((u) => (
                       <div key={u.id} className="flex-shrink-0 w-32">
-                        <Link href={`/profile/${u.id}`} className="block text-center">
+                        <button type="button" onClick={() => startChat(u)} disabled={startingChat === u.id} className="block text-center w-full">
                           <div className="relative w-14 h-14 mx-auto rounded-full bg-stone-200 overflow-hidden ring-2 ring-white shadow-sm">
                             {u.avatar_url ? (
                               <Image src={u.avatar_url} alt="" width={56} height={56} className="object-cover" unoptimized />
@@ -506,8 +517,8 @@ export default function InterestedPeoplePage() {
                             )}
                           </div>
                           <p className="mt-1.5 text-xs font-medium text-stone-800 truncate">{u.display_name}</p>
-                          <p className="text-[10px] text-stone-500">{(u.shared_count ?? 0)} shared</p>
-                        </Link>
+                          <p className="text-[10px] text-stone-500">{(u.shared_count ?? 0)} shared • Tap to chat</p>
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -519,9 +530,9 @@ export default function InterestedPeoplePage() {
                     👩 Female
                   </h3>
                   <div className="p-4 flex gap-3 overflow-x-auto pb-2">
-                    {topProfiles.female.filter((u) => !blockedUsers[u.id]).map((u) => (
+                    {topProfiles.female.filter((u) => !blockedUsers[u.id] && (u.shared_count ?? 0) >= 1).map((u) => (
                       <div key={u.id} className="flex-shrink-0 w-32">
-                        <Link href={`/profile/${u.id}`} className="block text-center">
+                        <button type="button" onClick={() => startChat(u)} disabled={startingChat === u.id} className="block text-center w-full">
                           <div className="relative w-14 h-14 mx-auto rounded-full bg-stone-200 overflow-hidden ring-2 ring-white shadow-sm">
                             {u.avatar_url ? (
                               <Image src={u.avatar_url} alt="" width={56} height={56} className="object-cover" unoptimized />
@@ -533,8 +544,8 @@ export default function InterestedPeoplePage() {
                             )}
                           </div>
                           <p className="mt-1.5 text-xs font-medium text-stone-800 truncate">{u.display_name}</p>
-                          <p className="text-[10px] text-stone-500">{(u.shared_count ?? 0)} shared</p>
-                        </Link>
+                          <p className="text-[10px] text-stone-500">{(u.shared_count ?? 0)} shared • Tap to chat</p>
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -703,6 +714,21 @@ export default function InterestedPeoplePage() {
                                             .filter(Boolean)
                                             .join(' • ') || '—'}
                                         </span>
+                                        {(u.shared_interests ?? []).length > 0 && (
+                                          <div className="flex flex-wrap gap-1 mt-1.5">
+                                            {u.shared_interests!.slice(0, 3).map((slug) => {
+                                              const info = interestNameMap[slug];
+                                              return (
+                                                <span key={slug} className="px-1.5 py-0.5 rounded bg-brand-100 text-brand-800 text-[10px] font-medium">
+                                                  {info?.icon} {info?.name ?? slug}
+                                                </span>
+                                              );
+                                            })}
+                                            {(u.shared_interests?.length ?? 0) > 3 && (
+                                              <span className="text-[10px] text-stone-500">+{(u.shared_interests?.length ?? 0) - 3}</span>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                     <div className="flex flex-col items-end gap-1 shrink-0">
@@ -782,6 +808,28 @@ export default function InterestedPeoplePage() {
           </div>
         )}
 
+        {/* AI Match Score - heuristic-based, expandable to real AI later */}
+        {!loading && chatEligible.length > 0 && (
+          <div className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-200/80">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-violet-800 mb-2">
+              <span>✨</span> AI Match Score
+            </h2>
+            <p className="text-xs text-violet-700 mb-3">
+              Users sorted by compatibility — more shared interests = higher match. (Advanced AI matching coming soon.)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {chatEligible.slice(0, 5).map((u) => {
+                const score = Math.min(99, (u.shared_count ?? 0) * 20 + (u.is_premium ? 10 : 0));
+                return (
+                  <span key={u.id} className="px-2.5 py-1 rounded-lg bg-white/80 border border-violet-200 text-xs font-medium text-violet-800">
+                    {u.display_name}: {score}% match
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {!loading && grouped.length > 0 && myInterests.size < 1 && (
           <div className="mt-6 p-4 rounded-2xl bg-brand-50/80 border border-brand-100 text-sm">
             <p className="font-semibold text-brand-900">Stronger matches with more interests</p>
@@ -797,7 +845,7 @@ export default function InterestedPeoplePage() {
               <span className="text-2xl">★</span>
               <div>
                 <p className="font-semibold text-amber-900">Upgrade to Premium</p>
-                <p className="text-sm text-amber-800 mt-0.5">Unlimited interests, top visibility, premium badges</p>
+                <p className="text-sm text-amber-800 mt-0.5">Up to 10 interests (vs 5 free), top visibility, premium badges</p>
                 <Link
                   href="/profile"
                   className="mt-2 inline-block px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 transition"
@@ -899,6 +947,21 @@ export default function InterestedPeoplePage() {
                               .filter(Boolean)
                               .join(' • ')}
                           </span>
+                          {(u.shared_interests ?? []).length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {u.shared_interests!.slice(0, 4).map((slug) => {
+                                const info = interestNameMap[slug];
+                                return (
+                                  <span key={slug} className="px-1.5 py-0.5 rounded bg-brand-100 text-brand-800 text-[10px] font-medium">
+                                    {info?.icon} {info?.name ?? slug}
+                                  </span>
+                                );
+                              })}
+                              {(u.shared_interests?.length ?? 0) > 4 && (
+                                <span className="text-[10px] text-stone-500">+{(u.shared_interests?.length ?? 0) - 4}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">

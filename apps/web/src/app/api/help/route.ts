@@ -123,6 +123,13 @@ export async function POST(request: NextRequest) {
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
     return Response.json({ error: 'Title required' }, { status: 400 });
   }
+  const titleWords = title.trim().split(/\s+/).filter(Boolean).length;
+  if (titleWords < 5) return Response.json({ error: 'Title mein kam az kam 5 words hon' }, { status: 400 });
+  if (titleWords > 30) return Response.json({ error: 'Title max 30 words' }, { status: 400 });
+  if (reqBody && typeof reqBody === 'string') {
+    const bodyWords = reqBody.trim().split(/\s+/).filter(Boolean).length;
+    if (bodyWords > 200) return Response.json({ error: 'Details max 200 words' }, { status: 400 });
+  }
 
   const { data: users } = await supabase.from('users').select('id').eq('id', user.id).limit(1);
   if (!users?.length) {

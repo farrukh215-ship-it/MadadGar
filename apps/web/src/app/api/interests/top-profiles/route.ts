@@ -86,9 +86,13 @@ export async function GET(request: NextRequest) {
     .select('user_id, interest_slug')
     .in('user_id', userIds);
   const sharedByUser = new Map<string, number>();
+  const sharedSlugsByUser = new Map<string, string[]>();
   for (const r of allTheirInterests ?? []) {
     if (mySlugs.has(r.interest_slug)) {
       sharedByUser.set(r.user_id, (sharedByUser.get(r.user_id) ?? 0) + 1);
+      const arr = sharedSlugsByUser.get(r.user_id) ?? [];
+      if (!arr.includes(r.interest_slug)) arr.push(r.interest_slug);
+      sharedSlugsByUser.set(r.user_id, arr);
     }
   }
 
@@ -109,6 +113,7 @@ export async function GET(request: NextRequest) {
       city: (p as { city?: string | null }).city ?? null,
       is_premium: premiumIds.has(p.user_id),
       shared_count: sharedByUser.get(p.user_id) ?? 0,
+      shared_interests: sharedSlugsByUser.get(p.user_id) ?? [],
       interest_count: interestCountByUser.get(p.user_id) ?? 0,
       last_seen_at: lastSeen ?? null,
       is_active: isActive,

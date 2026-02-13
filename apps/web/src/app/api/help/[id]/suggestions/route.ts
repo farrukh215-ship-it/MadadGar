@@ -18,6 +18,9 @@ export async function POST(
   if (!content || typeof content !== 'string' || content.trim().length === 0) {
     return Response.json({ error: 'Content required' }, { status: 400 });
   }
+  const words = content.trim().split(/\s+/).filter(Boolean).length;
+  if (words < 3) return Response.json({ error: 'Suggestion mein kam az kam 3 words hon' }, { status: 400 });
+  if (words > 100) return Response.json({ error: 'Suggestion max 100 words' }, { status: 400 });
 
   const { data: req, error: reqErr } = await supabase
     .from('help_requests')
