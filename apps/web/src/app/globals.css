@@ -76,6 +76,11 @@
   to { opacity: 1; }
 }
 
+@keyframes yaariSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 @layer utilities {
   .shadow-premium { box-shadow: var(--shadow-premium); }
   .shadow-premium-hover { box-shadow: var(--shadow-premium-hover); }

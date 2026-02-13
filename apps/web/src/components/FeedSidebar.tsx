@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { LayoutGrid } from 'lucide-react';
 
 export type SidebarFilter =
   | 'all'
@@ -15,9 +15,9 @@ export type SidebarFilter =
   | 'verified';
 
 // Yaari first, For You last; desktop only; mobile uses tabs + More sheet
-const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string; label: string; href?: string; badge?: string }[] = [
+const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string | React.ReactNode; label: string; href?: string; badge?: string }[] = [
   { id: 'all', icon: '💜', label: 'Yaari', href: '/chat/interests' },
-  { id: 'all', icon: '🌟', label: 'All' },
+  { id: 'all', icon: <LayoutGrid className="w-5 h-5" strokeWidth={2} />, label: 'All' },
   { id: 'trusted-helpers', icon: '🔧', label: 'Helpers' },
   { id: 'food-points', icon: '🍽️', label: 'Food' },
   { id: 'sale', icon: '📦', label: 'Products' },
@@ -86,7 +86,7 @@ export function FeedSidebar({
                         href={item.href}
                         className="flex items-center gap-3 px-4 py-3 rounded-xl text-stone-600 hover:bg-stone-100/80 hover:text-stone-900 font-medium transition-all duration-200"
                       >
-                        <span className="text-xl">{item.icon}</span>
+                        <span className={`flex items-center ${typeof item.icon === 'string' ? 'text-xl' : 'text-stone-600'}`}>{item.icon}</span>
                         {item.label}
                       </Link>
                     ) : (
@@ -99,7 +99,7 @@ export function FeedSidebar({
                             : 'text-stone-600 hover:bg-stone-100/80 hover:text-stone-900'
                         }`}
                       >
-                        <span className="text-xl">{item.icon}</span>
+                        <span className={`flex items-center ${typeof item.icon === 'string' ? 'text-xl' : 'text-inherit'}`}>{item.icon}</span>
                         {item.label}
                         {item.badge && (
                           <span className="ml-auto px-2 py-0.5 rounded-md text-[10px] font-bold bg-brand-600 text-white">{item.badge}</span>

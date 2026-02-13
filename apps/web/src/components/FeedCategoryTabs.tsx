@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { LayoutGrid } from 'lucide-react';
 import type { SidebarFilter } from './FeedSidebar';
 
 // Yaari first, For You last (find friends who vibe)
-const MAIN_TABS: { id: SidebarFilter | 'yaari'; label: string; icon: string; href?: string }[] = [
+const MAIN_TABS: { id: SidebarFilter | 'yaari'; label: string; icon: string | React.ReactNode; href?: string }[] = [
   { id: 'yaari', label: 'Yaari', icon: '💜', href: '/chat/interests' },
-  { id: 'all', label: 'All', icon: '🌟' },
+  { id: 'all', label: 'All', icon: <LayoutGrid className="w-4 h-4" strokeWidth={2} /> },
   { id: 'trusted-helpers', label: 'Helpers', icon: '🔧' },
   { id: 'food-points', label: 'Food', icon: '🍽️' },
   { id: 'sale', label: 'Products', icon: '📦' },
@@ -47,7 +48,7 @@ export function FeedCategoryTabs({
               href={tab.href}
               className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap touch-manipulation min-h-[44px] flex items-center bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span className="mr-1.5">{tab.icon}</span>
+              <span className={`mr-1.5 flex items-center ${typeof tab.icon === 'string' ? '' : 'text-current'}`}>{tab.icon}</span>
               {tab.label}
             </Link>
           );
@@ -63,7 +64,7 @@ export function FeedCategoryTabs({
                 : 'bg-white border border-stone-200 text-stone-600 hover:border-brand-200 hover:bg-brand-50'
             }`}
           >
-            <span className="mr-1.5">{tab.icon}</span>
+            <span className={`mr-1.5 flex items-center ${typeof tab.icon === 'string' ? '' : 'text-current'}`}>{tab.icon}</span>
             {tab.label}
           </button>
         );

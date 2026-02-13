@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { UtensilsCrossed, Beef, Cookie, Soup, Flame, Wrench, Zap, Droplets, Snowflake, Car, Sparkles, Hammer, Plug, Smartphone, Laptop, AlertCircle, Package, ShoppingBag, Search } from 'lucide-react';
 import { FeedHeader } from '@/components/FeedHeader';
 import { ImageCarousel } from '@/components/ImageCarousel';
+import { YaariFeedSection } from '@/components/YaariFeedSection';
 import { ProfileCompletionBanner } from '@/components/ProfileCompletionBanner';
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 import { useCity } from '@/contexts/CityContext';
@@ -542,6 +543,7 @@ export default function FeedPage() {
                     </div>
                   </section>
                 )}
+                {sidebarFilter === 'all' && <YaariFeedSection />}
                 {categoryOrder.map((categoryName) => {
                   const categoryItems = grouped[categoryName] ?? [];
                   const showAllInSection = isCategoryView || isSubcategoryView;
@@ -590,9 +592,37 @@ export default function FeedPage() {
                           const itemType = item.item_type ?? 'post';
                           const slug = (item.category_name ?? item.category_slug ?? '').toLowerCase().replace(/\s+/g, '-');
                           const hasImage = !!item.images?.[0];
+                          const useCompactCard = categoryName !== 'Used Products';
 
-                          // Product — OLX-style compact
+                          // Product — compact (Ask for Help size) or full
                           if (itemType === 'product') {
+                            if (useCompactCard) {
+                              return (
+                                <div key={item.id} className="relative group">
+                                  <Link href={`/products/${item.id}`} className="block">
+                                    <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200">
+                                      <div className="p-3 flex-1 flex items-start gap-2">
+                                        <CategoryIcon slug="products" size="sm" className="shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                          <h3 className="font-semibold text-stone-900 text-xs line-clamp-2">{item.name}</h3>
+                                          <p className="text-brand-600 font-bold mt-0.5 text-xs">Rs {item.price_min != null ? item.price_min.toLocaleString() : '0'}+</p>
+                                        </div>
+                                      </div>
+                                    </article>
+                                  </Link>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => toggleFavorite('product', item.id, e)}
+                                    className="absolute top-1 right-1 p-1.5 rounded-lg z-10 backdrop-blur shadow-sm bg-white/90 text-stone-600 hover:bg-stone-100"
+                                    title="Save"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill={favorites.has(`product:${item.id}`) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              );
+                            }
                             return (
                               <div key={item.id} className="relative group">
                                 <Link href={`/products/${item.id}`} className="block touch-feedback touch-feedback-smooth active:scale-[0.99]">
@@ -719,8 +749,35 @@ export default function FeedPage() {
                           const isEmergency = item.category_name?.toLowerCase().includes('emergency');
                           const isFoodPost = FOOD_SLUGS.some((s) => slug.includes(s)) || [item.category_name, item.worker_name, item.area_text, item.reason].join(' ').toLowerCase().includes('food');
 
-                          // Food Points: only location, Save button
+                          // Food Points: compact or full
                           if (isFoodPost) {
+                            if (useCompactCard) {
+                              return (
+                                <div key={item.id} className="relative group">
+                                  <Link href={`/post/${item.id}`} className="block">
+                                    <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200">
+                                      <div className="p-3 flex-1 flex items-start gap-2">
+                                        <CategoryIcon slug={slug} size="sm" className="shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                          <h3 className="font-semibold text-stone-900 text-xs line-clamp-2">{item.worker_name || item.category_name}</h3>
+                                          {item.area_text && <p className="text-[10px] text-stone-500 mt-0.5 truncate">📍 {item.area_text}</p>}
+                                        </div>
+                                      </div>
+                                    </article>
+                                  </Link>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => toggleFavorite('post', item.id, e)}
+                                    className="absolute top-1 right-1 p-1.5 rounded-lg z-10 backdrop-blur shadow-sm transition-all bg-white/90 text-stone-600 hover:bg-stone-100"
+                                    title="Save"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill={favorites.has(`post:${item.id}`) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              );
+                            }
                             return (
                               <div key={item.id} className="relative group">
                                 <Link href={`/post/${item.id}`} className="block">
@@ -795,7 +852,35 @@ export default function FeedPage() {
                             );
                           }
 
-                          // Trusted Helpers: Call + optional Chat
+                          // Trusted Helpers: compact or full
+                          if (useCompactCard) {
+                            return (
+                              <div key={item.id} className="relative group">
+                                <Link href={`/post/${item.id}`} className="block">
+                                  <article className={`rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200 ${isEmergency ? 'ring-1 ring-red-200' : ''}`}>
+                                    <div className="p-3 flex-1 flex items-start gap-2">
+                                      <CategoryIcon slug={slug} size="sm" className="shrink-0" />
+                                      <div className="min-w-0 flex-1">
+                                        <h3 className="font-semibold text-stone-900 text-xs line-clamp-2">{item.worker_name || 'Helper'} — {item.category_name}</h3>
+                                        {(item.reason || item.relation_tag) && <p className="text-[10px] text-stone-500 line-clamp-1 mt-0.5">{item.reason ?? item.relation_tag}</p>}
+                                        <p className="text-[10px] text-brand-600 mt-0.5">❤️ Madad {item.like_count ?? item.madad_count ?? 0}</p>
+                                      </div>
+                                    </div>
+                                  </article>
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={(e) => toggleFavorite('post', item.id, e)}
+                                  className="absolute top-1 right-1 p-1.5 rounded-lg z-10 backdrop-blur shadow-sm transition-all bg-white/90 text-stone-600 hover:bg-stone-100"
+                                  title="Save"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill={favorites.has(`post:${item.id}`) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                  </svg>
+                                </button>
+                              </div>
+                            );
+                          }
                           return (
                             <article
                               key={item.id}
