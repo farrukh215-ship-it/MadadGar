@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 type YaariUser = {
   id: string;
@@ -14,9 +15,33 @@ type YaariUser = {
 };
 
 export function YaariFeedSection() {
+  const router = useRouter();
   const [data, setData] = useState<{ most_active: YaariUser[]; online: YaariUser[] } | null>(null);
   const [slide, setSlide] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [startingChat, setStartingChat] = useState<string | null>(null);
+
+  const startChat = async (userId: string) => {
+    if (!userId) return;
+    setStartingChat(userId);
+    try {
+      const res = await fetch('/api/chat/threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      const data = await res.json();
+      if (res.status === 401) {
+        router.push(`/login?next=${encodeURIComponent('/feed')}`);
+        return;
+      }
+      if (data.thread?.id) {
+        router.push(`/chat/${data.thread.id}`);
+      }
+    } finally {
+      setStartingChat(null);
+    }
+  };
 
   useEffect(() => {
     fetch('/api/interests/top-profiles')
@@ -53,8 +78,14 @@ export function YaariFeedSection() {
   if (slides.length === 0) return null;
 
   function Avatar({ u }: { u: YaariUser }) {
+    const isLoading = startingChat === u.id;
     return (
-      <Link href={`/profile/${u.id}`} className="flex flex-col items-center gap-1.5 shrink-0 group min-w-[72px]">
+      <button
+        type="button"
+        onClick={() => startChat(u.id)}
+        disabled={isLoading}
+        className="flex flex-col items-center gap-1.5 shrink-0 group min-w-[72px] disabled:opacity-70 cursor-pointer"
+      >
         <div className="relative w-14 h-14 rounded-full overflow-visible flex-shrink-0">
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/80 to-stone-200/40 blur-sm scale-110 -z-10" />
           <div className="relative w-14 h-14 rounded-full overflow-hidden ring-2 ring-white shadow-[0_8px_24px_-4px_rgba(0,0,0,0.2),0_4px_12px_-2px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.8)_inset] group-hover:shadow-[0_12px_32px_-6px_rgba(0,0,0,0.25),0_6px_16px_-4px_rgba(0,0,0,0.15),0_1px_0_rgba(255,255,255,0.6)_inset] group-hover:ring-violet-300 transition-all duration-200">
@@ -73,7 +104,7 @@ export function YaariFeedSection() {
         <span className="text-[11px] font-medium text-stone-700 truncate max-w-[72px] text-center group-hover:text-brand-600 leading-tight">
           {u.display_name}
         </span>
-      </Link>
+      </button>
     );
   }
 
