@@ -54,7 +54,7 @@ export function YaariFeedSection() {
 
   function Avatar({ u }: { u: YaariUser }) {
     return (
-      <Link href={`/profile/${u.id}`} className="flex flex-col items-center gap-2 shrink-0 group min-w-[64px]">
+      <Link href={`/profile/${u.id}`} className="flex flex-col items-center gap-1.5 shrink-0 group min-w-[72px]">
         <div className="relative w-14 h-14 rounded-full overflow-visible flex-shrink-0">
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/80 to-stone-200/40 blur-sm scale-110 -z-10" />
           <div className="relative w-14 h-14 rounded-full overflow-hidden ring-2 ring-white shadow-[0_8px_24px_-4px_rgba(0,0,0,0.2),0_4px_12px_-2px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.8)_inset] group-hover:shadow-[0_12px_32px_-6px_rgba(0,0,0,0.25),0_6px_16px_-4px_rgba(0,0,0,0.15),0_1px_0_rgba(255,255,255,0.6)_inset] group-hover:ring-violet-300 transition-all duration-200">
@@ -70,7 +70,7 @@ export function YaariFeedSection() {
             )}
           </div>
         </div>
-        <span className="text-[11px] font-medium text-stone-700 truncate max-w-[64px] text-center group-hover:text-brand-600 leading-tight">
+        <span className="text-[11px] font-medium text-stone-700 truncate max-w-[72px] text-center group-hover:text-brand-600 leading-tight">
           {u.display_name}
         </span>
       </Link>
@@ -104,11 +104,11 @@ export function YaariFeedSection() {
           </div>
         )}
         {/* Slides */}
-        <div className="relative min-h-[120px] overflow-visible">
+        <div className="relative min-h-[165px] overflow-visible">
           {slides.map((s, i) => (
             <div
               key={s.label}
-              className={`absolute inset-0 px-4 pt-3 pb-3 flex flex-col gap-2 justify-start transition-all duration-500 ease-out ${
+              className={`absolute inset-0 px-4 pt-4 pb-4 flex flex-col gap-3 justify-start transition-all duration-500 ease-out ${
                 slide === i ? 'opacity-100 translate-x-0 z-[1]' : 'opacity-0 translate-x-full pointer-events-none z-0'
               }`}
             >
