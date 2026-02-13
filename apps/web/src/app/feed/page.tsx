@@ -10,6 +10,7 @@ import { ProfileCompletionBanner } from '@/components/ProfileCompletionBanner';
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 import { useCity } from '@/contexts/CityContext';
 import { FeedSidebar, type SidebarFilter } from '@/components/FeedSidebar';
+import { FeedCategoryTabs, FeedMoreSheet } from '@/components/FeedCategoryTabs';
 import { FeedSkeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -119,6 +120,7 @@ export default function FeedPage() {
   const initialFilter = (catFromUrl && CATEGORY_TO_FILTER[catFromUrl]) ? CATEGORY_TO_FILTER[catFromUrl] : 'all';
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>(initialFilter);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [quickFilter2km, setQuickFilter2km] = useState(false);
   const [quickFilterAvailable, setQuickFilterAvailable] = useState(false);
   const [quickFilterTopRated, setQuickFilterTopRated] = useState(false);
@@ -370,7 +372,7 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-surface-base">
-      <FeedHeader onMenuClick={() => setSidebarOpen(true)} />
+      <FeedHeader onMenuClick={() => setMoreSheetOpen(true)} />
 
       <div className="flex">
         <FeedSidebar
@@ -422,6 +424,15 @@ export default function FeedPage() {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Mobile: horizontal category tabs (replaces sidebar) */}
+            <div className="lg:hidden mb-4">
+              <FeedCategoryTabs
+                activeFilter={sidebarFilter}
+                onFilterChange={setSidebarFilter}
+                onMoreClick={() => setMoreSheetOpen(true)}
+              />
             </div>
 
             {/* Quick filters */}
@@ -925,6 +936,13 @@ export default function FeedPage() {
           <span className="text-xs">Profile</span>
         </Link>
       </nav>
+
+      <FeedMoreSheet
+        open={moreSheetOpen}
+        onClose={() => setMoreSheetOpen(false)}
+        onFilterChange={setSidebarFilter}
+        activeFilter={sidebarFilter}
+      />
       <div className="h-20 lg:hidden" />
     </div>
   );
