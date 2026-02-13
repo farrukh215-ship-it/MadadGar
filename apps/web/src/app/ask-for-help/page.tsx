@@ -285,7 +285,7 @@ export default function AskForHelpPage() {
             </select>
             <button
               type="submit"
-              disabled={submitting || !title.trim() || wordCount(title) < TITLE_MIN_WORDS || wordCount(title) > TITLE_MAX_WORDS || (body.trim() && wordCount(body) > BODY_MAX_WORDS)}
+              disabled={submitting || !title.trim() || wordCount(title) < TITLE_MIN_WORDS || wordCount(title) > TITLE_MAX_WORDS || (!!body.trim() && wordCount(body) > BODY_MAX_WORDS)}
               className="mt-4 w-full py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50"
             >
               {submitting ? 'Posting...' : 'Post'}
