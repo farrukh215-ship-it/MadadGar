@@ -2,6 +2,7 @@
   "name": "madadgar",
   "private": true,
   "scripts": {
+    "eas-build-pre-install": "corepack enable",
     "dev": "pnpm --filter web dev",
     "dev:web": "pnpm --filter web dev",
     "dev:3000": "pnpm --filter web dev:3000",
