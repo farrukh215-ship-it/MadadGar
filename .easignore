@@ -1,0 +1,4 @@
+# EAS Build: exclude from upload (in addition to .gitignore)
+# Keep pnpm workspace files - required for monorepo
+apps/mobile/eas-inspect/
+*.log
