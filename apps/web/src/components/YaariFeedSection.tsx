@@ -104,19 +104,19 @@ export function YaariFeedSection() {
           </div>
         )}
         {/* Slides */}
-        <div className="relative min-h-[130px] overflow-visible">
+        <div className="relative min-h-[120px] overflow-visible">
           {slides.map((s, i) => (
             <div
               key={s.label}
-              className={`absolute inset-0 p-4 pt-5 pb-4 flex flex-col gap-3 transition-all duration-500 ease-out ${
+              className={`absolute inset-0 px-4 pt-3 pb-3 flex flex-col gap-2 justify-start transition-all duration-500 ease-out ${
                 slide === i ? 'opacity-100 translate-x-0 z-[1]' : 'opacity-0 translate-x-full pointer-events-none z-0'
               }`}
             >
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/90 shadow-[0_4px_14px_-3px_rgba(0,0,0,0.1),0_2px_6px_-2px_rgba(0,0,0,0.06)] border border-violet-100 w-fit">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/90 shadow-[0_4px_14px_-3px_rgba(0,0,0,0.1),0_2px_6px_-2px_rgba(0,0,0,0.06)] border border-violet-100 w-fit shrink-0">
                 <span className="text-sm">{s.icon}</span>
                 <span className="text-xs font-bold text-violet-800">{s.label}</span>
               </div>
-              <div className="flex gap-8 overflow-x-auto scrollbar-hide px-1 items-start">
+              <div className="flex gap-6 overflow-x-auto scrollbar-hide px-0.5 items-center">
                 {s.users.map((u) => (
                   <Avatar key={u.id} u={u} />
                 ))}
