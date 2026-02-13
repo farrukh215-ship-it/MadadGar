@@ -5,7 +5,6 @@
   "main": "expo-router/entry",
   "scripts": {
     "eas-build-pre-install": "corepack enable",
-    "postinstall": "cd ../.. && pnpm --filter @madadgar/shared build",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -14,7 +13,6 @@
     "build:apk:prod": "eas build --platform android --profile production"
   },
   "dependencies": {
-    "@madadgar/shared": "workspace:*",
     "@supabase/supabase-js": "^2.45.0",
     "expo": "~52.0.0",
     "expo-device": "~7.0.3",
