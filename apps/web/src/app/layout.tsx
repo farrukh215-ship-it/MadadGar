@@ -5,6 +5,7 @@ import './globals.css';
 import { IdleLogoutProvider } from '@/components/IdleLogoutProvider';
 import { ChatToast } from '@/components/ChatToast';
 import { ReferralApply } from '@/components/ReferralApply';
+import { AppOpenExperience } from '@/components/AppOpenExperience';
 import { CityProvider } from '@/contexts/CityContext';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body className={`${plusJakarta.variable} font-sans antialiased bg-surface-base overflow-x-hidden max-w-[100vw]`} suppressHydrationWarning>
         <CityProvider>
           <IdleLogoutProvider>
+            <AppOpenExperience />
             <ReferralApply />
             {children}
             <ChatToast />
