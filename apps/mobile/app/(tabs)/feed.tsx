@@ -41,6 +41,10 @@ export default function FeedScreen() {
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
+          removeClippedSubviews
+          maxToRenderPerBatch={8}
+          initialNumToRender={6}
+          windowSize={5}
           renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.category}>{item.category_name}</Text>
