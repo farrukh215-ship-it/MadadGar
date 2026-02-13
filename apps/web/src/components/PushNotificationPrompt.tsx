@@ -36,13 +36,14 @@ export function PushNotificationPrompt() {
     }
     setRegistering(true);
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js');
-      await ('ready' in reg ? (reg as { ready: Promise<unknown> }).ready : Promise.resolve());
+      // Must request permission FIRST – same call stack as user gesture (required on mobile)
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         setStatus('denied');
         return;
       }
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      await ('ready' in reg ? (reg as { ready: Promise<unknown> }).ready : Promise.resolve());
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
@@ -75,7 +76,7 @@ export function PushNotificationPrompt() {
           type="button"
           onClick={handleEnable}
           disabled={registering}
-          className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 disabled:opacity-50"
+          className="px-4 py-2.5 min-h-[44px] rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 touch-manipulation cursor-pointer btn-tap"
         >
           {registering ? '...' : 'Enable'}
         </button>
