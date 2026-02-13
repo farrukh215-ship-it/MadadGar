@@ -25,6 +25,7 @@ const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string; label: string; href?: st
   { id: 'trusted-helpers', icon: '🔧', label: 'Trusted Helpers' },
   { id: 'food-points', icon: '🍽️', label: 'Food Points' },
   { id: 'nearby', icon: '📍', label: 'Nearby' },
+  { id: 'all', icon: '🗺️', label: 'Map View', href: '/feed/map' },
   { id: 'top-rated', icon: '⭐', label: 'Top Rated' },
   { id: 'verified', icon: '✓', label: 'Verified' },
 ];

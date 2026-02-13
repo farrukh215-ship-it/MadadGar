@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { UtensilsCrossed, Beef, Cookie, Soup, Flame, Wrench, Zap, Droplets, Snowflake, Car, Sparkles, Hammer, Plug, Smartphone, Laptop, AlertCircle, Package, ShoppingBag, Search } from 'lucide-react';
 import { FeedHeader } from '@/components/FeedHeader';
 import { ImageCarousel } from '@/components/ImageCarousel';
+import { ProfileCompletionBanner } from '@/components/ProfileCompletionBanner';
+import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 import { useCity } from '@/contexts/CityContext';
 import { FeedSidebar, type SidebarFilter } from '@/components/FeedSidebar';
 import { FeedSkeleton } from '@/components/Skeleton';
@@ -117,6 +119,9 @@ export default function FeedPage() {
   const initialFilter = (catFromUrl && CATEGORY_TO_FILTER[catFromUrl]) ? CATEGORY_TO_FILTER[catFromUrl] : 'all';
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>(initialFilter);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [quickFilter2km, setQuickFilter2km] = useState(false);
+  const [quickFilterAvailable, setQuickFilterAvailable] = useState(false);
+  const [quickFilterTopRated, setQuickFilterTopRated] = useState(false);
 
   useEffect(() => {
     if (catFromUrl && CATEGORY_TO_FILTER[catFromUrl]) {
@@ -229,14 +234,17 @@ export default function FeedPage() {
       let url = '';
       if (sidebarFilter === 'all' || sidebarFilter === 'recommended' || sidebarFilter === 'trusted-helpers' || sidebarFilter === 'food-points' || sidebarFilter === 'nearby' || sidebarFilter === 'top-rated' || sidebarFilter === 'verified') {
         if (sidebarFilter === 'all') {
-          url = `/api/feed/all-combined?lat=${latVal}&lng=${lngVal}`;
+          const radius = quickFilter2km ? 2000 : 100000;
+          url = `/api/feed/all-combined?lat=${latVal}&lng=${lngVal}&radius=${radius}`;
           if (city) url += `&city=${encodeURIComponent(city)}`;
         } else if (sidebarFilter === 'recommended') {
-          url = `/api/feed/recommended?lat=${latVal}&lng=${lngVal}`;
+          const radius = quickFilter2km ? 2000 : 50000;
+          url = `/api/feed/recommended?lat=${latVal}&lng=${lngVal}&radius=${radius}`;
         } else if (sidebarFilter === 'top-rated') {
           url = '/api/feed/top-rated';
         } else {
-          url = `/api/feed/nearby?lat=${latVal}&lng=${lngVal}&radius=${sidebarFilter === 'nearby' ? 5000 : 100000}`;
+          const radius = quickFilter2km ? 2000 : (sidebarFilter === 'nearby' ? 5000 : 100000);
+          url = `/api/feed/nearby?lat=${latVal}&lng=${lngVal}&radius=${radius}`;
         }
         const res = await fetch(url);
         const data = await res.json();
@@ -267,7 +275,7 @@ export default function FeedPage() {
     } finally {
       if (id === fetchIdRef.current) setLoading(false);
     }
-  }, [sidebarFilter, lat, lng, city]);
+  }, [sidebarFilter, lat, lng, city, quickFilter2km]);
 
   useEffect(() => {
     refetchFeed();
@@ -309,7 +317,7 @@ export default function FeedPage() {
     const itemType = i.item_type ?? 'post';
     const catSlug = (i.category_name ?? i.category_slug ?? '').toLowerCase().replace(/\s+/g, '-');
     const isFoodPost = FOOD_SLUGS.some((s) => catSlug.includes(s)) || [i.category_name, i.worker_name, i.area_text, i.reason].join(' ').toLowerCase().includes('food');
-    const isWorkerPost = itemType === 'post' && !isFoodPost;
+    const nearbyRadius = quickFilter2km ? 2000 : 5000;
 
     if (sidebarFilter === 'trusted-helpers') {
       if (itemType !== 'post' || isFoodPost) return false;
@@ -318,7 +326,7 @@ export default function FeedPage() {
     } else if (sidebarFilter === 'sale') {
       if (itemType !== 'sale') return false;
     } else if (sidebarFilter === 'nearby') {
-      if (itemType !== 'post' || (i.distance_m == null || i.distance_m > 5000)) return false;
+      if (itemType !== 'post' || (i.distance_m == null || i.distance_m > nearbyRadius)) return false;
     } else if (sidebarFilter === 'top-rated') {
       if (itemType !== 'post' || (i.avg_rating == null || i.avg_rating < 4)) return false;
     } else if (sidebarFilter === 'verified') {
@@ -326,6 +334,8 @@ export default function FeedPage() {
     } else if (sidebarFilter === 'recommended') {
       // Recommended shows personalized mix - same as all for display
     }
+    if (quickFilterAvailable && itemType === 'post' && i.availability === false) return false;
+    if (quickFilterTopRated && itemType === 'post' && (i.avg_rating == null || i.avg_rating < 4)) return false;
     return matchSearch;
   });
 
@@ -413,6 +423,36 @@ export default function FeedPage() {
                 </div>
               )}
             </div>
+
+            {/* Quick filters */}
+            {(sidebarFilter === 'all' || sidebarFilter === 'recommended' || sidebarFilter === 'nearby' || sidebarFilter === 'trusted-helpers' || sidebarFilter === 'food-points') && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setQuickFilterAvailable((v) => !v)}
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition btn-tap ${quickFilterAvailable ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-stone-100 text-stone-600 hover:bg-stone-200 border border-transparent'}`}
+                >
+                  Available abhi
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickFilter2km((v) => !v)}
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition btn-tap ${quickFilter2km ? 'bg-brand-100 text-brand-800 border border-brand-300' : 'bg-stone-100 text-stone-600 hover:bg-stone-200 border border-transparent'}`}
+                >
+                  2 km range
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickFilterTopRated((v) => !v)}
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition btn-tap ${quickFilterTopRated ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-stone-100 text-stone-600 hover:bg-stone-200 border border-transparent'}`}
+                >
+                  Top rated
+                </button>
+              </div>
+            )}
+
+            <ProfileCompletionBanner />
+            <PushNotificationPrompt />
 
             {/* Feed */}
             {loading ? (

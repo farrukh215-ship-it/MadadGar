@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { FeedHeader } from '@/components/FeedHeader';
 import { ImageCarousel } from '@/components/ImageCarousel';
+import { ShareButton } from '@/components/ShareButton';
 import { createClient } from '@/lib/supabase/client';
 
 const PRODUCT_ICONS: Record<string, string> = {
@@ -139,6 +140,17 @@ export default function ProductDetailPage() {
                 View Product →
               </a>
             )}
+
+            <div className="flex gap-2 items-center">
+              <ShareButton
+                title={item.name}
+                description={item.description ? (item.description.length > 80 ? item.description.slice(0, 80) + '...' : item.description) : undefined}
+                url={`/products/${item.id}`}
+                className="flex-1"
+                size="md"
+                label="Share"
+              />
+            </div>
 
             {currentUserId && item.author_id === currentUserId && (
               <Link

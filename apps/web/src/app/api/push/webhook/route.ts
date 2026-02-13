@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import webpush from 'web-push';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
@@ -41,10 +42,25 @@ export async function POST(request: NextRequest) {
   }
 
   const fcmServerKey = process.env.FCM_SERVER_KEY;
-  const expoTokens = tokens.filter((t) => t.token?.startsWith('ExponentPushToken['));
-  const fcmTokens = tokens.filter((t) => !t.token?.startsWith('ExponentPushToken['));
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+  const expoTokens = tokens.filter((t) => t.platform !== 'web' && t.token?.startsWith('ExponentPushToken['));
+  const fcmTokens = tokens.filter((t) => t.platform !== 'web' && !t.token?.startsWith('ExponentPushToken['));
+  const webTokens = tokens.filter((t) => t.platform === 'web' && t.token);
 
   let sent = 0;
+
+  if (webTokens.length > 0 && vapidPublicKey && vapidPrivateKey) {
+    webpush.setVapidDetails('mailto:support@madadgar.app', vapidPublicKey, vapidPrivateKey);
+    const webPayload = JSON.stringify({ title, body, url: link });
+    const webResults = await Promise.allSettled(
+      webTokens.map(async (t) => {
+        const sub = typeof t.token === 'string' ? JSON.parse(t.token) : t.token;
+        await webpush.sendNotification(sub, webPayload);
+      })
+    );
+    sent += webResults.filter((r) => r.status === 'fulfilled').length;
+  }
 
   if (expoTokens.length > 0) {
     const expoPayload = expoTokens.map((t) => ({

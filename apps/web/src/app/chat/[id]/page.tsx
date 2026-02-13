@@ -58,6 +58,9 @@ export default function ChatScreen() {
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [postId, setPostId] = useState<string | null>(null);
+  const [hasRatedPost, setHasRatedPost] = useState(false);
+  const [showJobDoneReminder, setShowJobDoneReminder] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -72,6 +75,7 @@ export default function ChatScreen() {
       const threadData = await res.json();
       if (res.ok && threadData.other_user) {
         setOtherUser(threadData.other_user);
+        setPostId(threadData.post_id ?? null);
         const presRes = await fetch(`/api/presence?ids=${threadData.other_user.id}`);
         const presData = await presRes.json();
         setOnline(!!presData.online?.[threadData.other_user.id]);
@@ -83,6 +87,11 @@ export default function ChatScreen() {
         const premRes = await fetch('/api/premium/status');
         const premData = await premRes.json();
         setIsPremium(!!premData.is_premium);
+        if (threadData.post_id) {
+          fetch(`/api/ratings/check?post_id=${encodeURIComponent(threadData.post_id)}`)
+            .then((r) => r.json())
+            .then((d) => setHasRatedPost(d.has_rated ?? false));
+        }
       }
       const { data } = await supabase
         .from('messages')
@@ -99,6 +108,14 @@ export default function ChatScreen() {
       }
     })();
   }, [threadId, router]);
+
+  useEffect(() => {
+    if (postId && !hasRatedPost && messages.length >= 6) {
+      setShowJobDoneReminder(true);
+    } else if (hasRatedPost) {
+      setShowJobDoneReminder(false);
+    }
+  }, [postId, hasRatedPost, messages.length]);
 
   useEffect(() => {
     const unsub = subscribeToMessages(
@@ -488,6 +505,25 @@ export default function ChatScreen() {
         </div>
       )}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-0" ref={messagesEndRef}>
+        {showJobDoneReminder && postId && !hasRatedPost && (
+          <div className="max-w-[85%] mx-auto p-4 rounded-2xl bg-amber-50 border border-amber-200 text-center">
+            <p className="text-sm font-medium text-amber-900">Kya kaam ho gaya?</p>
+            <p className="text-xs text-amber-700 mt-0.5">Review do – helpers ko madad milti hai</p>
+            <Link
+              href={`/post/${postId}?rate=1`}
+              className="mt-3 inline-block px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 transition"
+            >
+              Review do
+            </Link>
+            <button
+              type="button"
+              onClick={() => setShowJobDoneReminder(false)}
+              className="block mx-auto mt-2 text-xs text-amber-600 hover:underline"
+            >
+              Baad mein
+            </button>
+          </div>
+        )}
         {messages.length === 0 && !otherUserTyping && (
           <p className="text-center text-stone-500 text-sm py-8">No messages yet. Say hello!</p>
         )}

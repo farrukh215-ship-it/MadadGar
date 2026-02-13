@@ -9,7 +9,7 @@ export async function GET() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, gender, date_of_birth, bio, avatar_url, marital_status')
+    .select('display_name, gender, date_of_birth, bio, avatar_url, marital_status, city')
     .eq('user_id', user.id)
     .single();
 
@@ -26,9 +26,21 @@ export async function GET() {
     .map(([k]) => k);
   const is_complete = missing.length === 0;
 
+  // Profile completion % for trust + engagement prompt (avatar, name, area, bio)
+  const completionFields = {
+    avatar: !!profile?.avatar_url,
+    display_name: !!profile?.display_name?.trim(),
+    area: !!(profile as { city?: string })?.city?.trim(),
+    bio: !!profile?.bio?.trim(),
+  };
+  const filled = Object.values(completionFields).filter(Boolean).length;
+  const percent = Math.round((filled / 4) * 100);
+
   return Response.json({
     is_complete,
     missing,
     required,
+    percent,
+    completion_fields: completionFields,
   });
 }

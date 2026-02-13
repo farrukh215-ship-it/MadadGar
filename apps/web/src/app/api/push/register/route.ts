@@ -9,11 +9,21 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const token = body.token as string | undefined;
+  let token = body.token as string | undefined;
   const platform = body.platform as 'ios' | 'android' | 'web' | undefined;
 
-  if (!token || !platform || !['ios', 'android', 'web'].includes(platform)) {
-    return Response.json({ error: 'token and platform (ios|android|web) required' }, { status: 400 });
+  if (!platform || !['ios', 'android', 'web'].includes(platform)) {
+    return Response.json({ error: 'platform (ios|android|web) required' }, { status: 400 });
+  }
+
+  if (platform === 'web') {
+    const subscription = body.subscription as PushSubscription | undefined;
+    if (!subscription) {
+      return Response.json({ error: 'subscription required for web push' }, { status: 400 });
+    }
+    token = JSON.stringify(subscription);
+  } else if (!token) {
+    return Response.json({ error: 'token required for ios/android' }, { status: 400 });
   }
 
   await supabase.from('push_tokens').upsert(

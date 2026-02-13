@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { FeedHeader } from '@/components/FeedHeader';
 import { ImageCarousel } from '@/components/ImageCarousel';
+import { ShareButton } from '@/components/ShareButton';
 import { hapticLight } from '@/lib/haptic';
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -63,6 +64,11 @@ export default function PostDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [hasRated, setHasRated] = useState<boolean | null>(null);
+  const [ratingForm, setRatingForm] = useState({ rating: 0, review_text: '' });
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const searchParams = useSearchParams();
+  const showRatePrompt = searchParams.get('rate') === '1';
 
   useEffect(() => {
     if (!id) return;
@@ -87,6 +93,16 @@ export default function PostDetailPage() {
       fetch(`/api/posts/${id}/view`, { method: 'POST' }).catch(() => {});
     }
   }, [post, id]);
+
+  useEffect(() => {
+    if (currentUserId && post && currentUserId !== post.author_id) {
+      fetch(`/api/ratings/check?post_id=${encodeURIComponent(id)}`)
+        .then((r) => r.json())
+        .then((d) => setHasRated(d.has_rated ?? false));
+    } else {
+      setHasRated(null);
+    }
+  }, [currentUserId, id, post]);
 
   if (loading) {
     return (
@@ -214,6 +230,60 @@ export default function PostDetailPage() {
               </button>
               <span className="text-stone-500">Reviews {post.reviews_count}</span>
             </div>
+            {showRatePrompt && currentUserId && currentUserId !== post.author_id && hasRated === false && (
+              <div className="mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                <h3 className="font-semibold text-amber-900 mb-2">Kya kaam ho gaya? Review do</h3>
+                <div className="flex gap-2 mb-3">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRatingForm((f) => ({ ...f, rating: r }))}
+                      className={`w-9 h-9 rounded-lg text-sm font-bold transition ${ratingForm.rating === r ? 'bg-amber-600 text-white' : 'bg-white border border-amber-200 text-amber-800 hover:border-amber-400'}`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  placeholder="Optional: Apna experience share karein..."
+                  value={ratingForm.review_text}
+                  onChange={(e) => setRatingForm((f) => ({ ...f, review_text: e.target.value.slice(0, 500) }))}
+                  className="w-full px-3 py-2 rounded-lg border border-amber-200 text-sm mb-3 resize-none"
+                  rows={2}
+                  maxLength={500}
+                />
+                <button
+                  type="button"
+                  disabled={ratingForm.rating === 0 || submittingRating}
+                  onClick={async () => {
+                    if (ratingForm.rating === 0) return;
+                    setSubmittingRating(true);
+                    try {
+                      const res = await fetch('/api/ratings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ post_id: id, rating: ratingForm.rating, review_text: ratingForm.review_text || null }),
+                      });
+                      if (res.ok) {
+                        setHasRated(true);
+                        fetch(`/api/posts/${id}/detail`)
+                          .then((r) => r.json())
+                          .then((d) => { if (d.post) setPost(d.post); });
+                        router.replace(`/post/${id}`, { scroll: false });
+                      } else if (res.status === 401) {
+                        router.push(`/login?next=/post/${id}?rate=1`);
+                      }
+                    } finally {
+                      setSubmittingRating(false);
+                    }
+                  }}
+                  className="w-full py-3 rounded-xl bg-amber-600 text-white font-semibold hover:bg-amber-700 disabled:opacity-50 transition"
+                >
+                  {submittingRating ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </div>
+            )}
             {post.reviews?.length > 0 && (
               <div className="mt-6 space-y-3">
                 <h3 className="font-semibold text-stone-900">Reviews</h3>
@@ -348,15 +418,25 @@ export default function PostDetailPage() {
                   Get directions
                 </a>
               )}
-              <a
-                href={`tel:${post.phone}`}
-                className="block w-full py-4 rounded-xl bg-brand-600 text-white text-center font-semibold hover:bg-brand-700 shadow-premium-brand hover:shadow-premium-brand-hover transition-all flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                Call
-              </a>
+              <div className="flex gap-2">
+                <a
+                  href={`tel:${post.phone}`}
+                  className="flex-1 py-4 rounded-xl bg-brand-600 text-white text-center font-semibold hover:bg-brand-700 shadow-premium-brand hover:shadow-premium-brand-hover transition-all flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  Call
+                </a>
+                <ShareButton
+                  title={`${post.worker_name || 'Helper'} — ${post.category_name}`}
+                  description={post.area_text ? `📍 ${post.area_text}` : undefined}
+                  url={`/post/${post.id}`}
+                  className="shrink-0"
+                  size="md"
+                  label="Share"
+                />
+              </div>
             </div>
           </div>
         </article>

@@ -7,7 +7,6 @@ import { MapPin, Star, Phone, ShieldCheck } from 'lucide-react';
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
-
   const [nextUrl, setNextUrl] = useState('/feed');
 
   useEffect(() => {

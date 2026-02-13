@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { ImageCarousel } from '@/components/ImageCarousel';
+import { ReferralInvite } from '@/components/ReferralInvite';
 
 function SkillBar({ name, percent, delay }: { name: string; percent: number; delay: number }) {
   const [width, setWidth] = useState(0);
@@ -202,6 +203,9 @@ export default function ProfilePage() {
             <p className="text-sm mt-1 opacity-90">Add name, photo & bio to get the most from Madadgar</p>
           </Link>
         )}
+        <div className="mb-6">
+          <ReferralInvite />
+        </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100 mb-6">
           <h2 className="text-lg font-semibold text-stone-900">{displayName}</h2>
           <div className="mt-4 flex flex-wrap gap-3">

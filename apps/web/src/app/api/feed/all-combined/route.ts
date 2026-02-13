@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const lng = parseFloat(searchParams.get('lng') ?? '74.35');
   const limit = parseInt(searchParams.get('limit') ?? '50', 10);
   const city = searchParams.get('city') || null;
+  const radius = parseInt(searchParams.get('radius') ?? '100000', 10);
 
   const supabase = await createClient();
 
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     fetch(`${SUPABASE_URL}/rest/v1/rpc/feed_nearby`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
-      body: JSON.stringify({ p_lat: lat, p_lng: lng, p_radius: 100000, p_limit: limit }),
+      body: JSON.stringify({ p_lat: lat, p_lng: lng, p_radius: radius, p_limit: limit }),
     }).then((r) => r.json()).catch(() => []),
     supabase.from('products').select('id, name, price_min, price_max, images, link_url, created_at, category_id, author_id').order('created_at', { ascending: false }).limit(limit),
     (city && city.trim()

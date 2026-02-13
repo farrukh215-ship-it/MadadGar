@@ -28,6 +28,8 @@ export async function GET(
     return Response.json({ other_user: null, title: 'Chat' });
   }
 
+  const { data: thread } = await supabase.from('chat_threads').select('post_id').eq('id', threadId).single();
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('user_id, display_name, avatar_url, gender, date_of_birth, marital_status, bio')
@@ -43,6 +45,7 @@ export async function GET(
 
   const age = profile?.date_of_birth ? Math.floor((Date.now() - new Date(profile.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
   return Response.json({
+    post_id: (thread as { post_id?: string })?.post_id ?? null,
     other_user: profile ? {
       id: profile.user_id,
       display_name: profile.display_name || 'User',

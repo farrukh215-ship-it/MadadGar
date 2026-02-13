@@ -17,11 +17,12 @@ export async function GET(request: NextRequest) {
   const lat = parseFloat(searchParams.get('lat') ?? '31.52');
   const lng = parseFloat(searchParams.get('lng') ?? '74.35');
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '30', 10), 50);
+  const radius = parseInt(searchParams.get('radius') ?? '50000', 10);
 
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/feed_nearby`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
-    body: JSON.stringify({ p_lat: lat, p_lng: lng, p_radius: 100000, p_limit: limit * 2 }),
+    body: JSON.stringify({ p_lat: lat, p_lng: lng, p_radius: radius, p_limit: limit * 2 }),
   });
   const rawItems = await res.json().catch(() => []);
   const items = Array.isArray(rawItems) ? rawItems : [];
