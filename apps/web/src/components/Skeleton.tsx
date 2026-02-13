@@ -41,7 +41,7 @@ export function FeedSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="animate-slide-up" style={{ animationDelay: `${i * 45}ms`, animationFillMode: 'backwards' }}>
+        <div key={i} className="animate-slide-up" style={{ animationDelay: `${i * 18}ms`, animationFillMode: 'backwards' }}>
           <FeedCardSkeleton />
         </div>
       ))}
@@ -53,7 +53,9 @@ export function ChatListSkeleton({ count = 5 }: { count?: number }) {
   return (
     <div className="space-y-1">
       {Array.from({ length: count }).map((_, i) => (
-        <ChatRowSkeleton key={i} />
+        <div key={i} className="animate-slide-up" style={{ animationDelay: `${i * 15}ms`, animationFillMode: 'backwards' }}>
+          <ChatRowSkeleton />
+        </div>
       ))}
     </div>
   );

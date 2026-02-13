@@ -548,7 +548,7 @@ export default function InterestedPeoplePage() {
             <p className="text-sm text-stone-500 mt-1 max-w-xs mx-auto">Add interests to discover people who share your passions</p>
             <Link
               href="/profile/edit"
-              className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 shadow-premium-brand transition-all duration-200"
+              className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 shadow-premium-brand transition-all duration-150"
             >
               Add interests in Profile
             </Link>
@@ -571,7 +571,7 @@ export default function InterestedPeoplePage() {
                     return (
                       <div
                         key={int.slug}
-                        className="bg-white rounded-2xl border border-stone-100 shadow-premium overflow-hidden transition-all duration-300 hover:shadow-premium-hover hover:-translate-y-0.5"
+                        className="bg-white rounded-2xl border border-stone-100 shadow-premium overflow-hidden transition-all duration-150 hover:shadow-premium-hover hover:-translate-y-0.5"
                       >
                         <div
                           className="flex items-center justify-between p-4 cursor-pointer hover:bg-stone-50/80 transition-colors duration-200"
@@ -600,7 +600,7 @@ export default function InterestedPeoplePage() {
                                 e.stopPropagation();
                                 toggleInterest(int.slug);
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 ${
+                              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 ${
                                 has
                                   ? 'bg-brand-600 text-white shadow-sm'
                                   : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
@@ -643,7 +643,7 @@ export default function InterestedPeoplePage() {
                                 {users.filter((u) => !blockedUsers[u.id]).map((u) => (
                                   <div
                                     key={u.id}
-                                    className="flex items-center justify-between p-3 rounded-xl bg-white border border-stone-100 hover:border-brand-200 shadow-sm transition-all duration-200"
+                                    className="flex items-center justify-between p-3 rounded-xl bg-white border border-stone-100 hover:border-brand-200 shadow-sm transition-all duration-150"
                                   >
                                     <div className="flex items-center gap-3">
                                       <div className="relative w-10 h-10 rounded-full bg-stone-200 overflow-hidden shrink-0 ring-2 ring-white shadow-sm">
@@ -736,7 +736,7 @@ export default function InterestedPeoplePage() {
                                           type="button"
                                         onClick={() => startChat(u)}
                                         disabled={startingChat === u.id}
-                                          className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 shadow-premium-brand transition-all duration-200"
+                                          className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 shadow-premium-brand transition-all duration-150"
                                         >
                                           {startingChat === u.id ? '...' : 'Chat'}
                                         </button>

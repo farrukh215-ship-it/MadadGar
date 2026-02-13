@@ -42,12 +42,12 @@ const config: Config = {
         'elevated': '0 20px 50px -12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.02)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-out',
-        'slide-up': 'slideUp 0.35s ease-out',
-        'slide-in-right': 'slideInRight 0.25s ease-out',
-        'shimmer': 'shimmer 1.5s infinite',
-        'bounce-in': 'bounceIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        'scale-in': 'scaleIn 0.25s ease-out',
+        'fade-in': 'fadeIn 0.15s ease-out',
+        'slide-up': 'slideUp 0.18s ease-out',
+        'slide-in-right': 'slideInRight 0.15s ease-out',
+        'shimmer': 'shimmer 0.85s infinite',
+        'bounce-in': 'bounceIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'scale-in': 'scaleIn 0.15s ease-out',
         'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite',
       },
       keyframes: {

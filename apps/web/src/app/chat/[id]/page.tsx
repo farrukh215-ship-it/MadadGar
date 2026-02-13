@@ -71,39 +71,36 @@ export default function ChatScreen() {
         return;
       }
       setUserId(user.id);
-      const res = await fetch(`/api/chat/threads/${threadId}`);
-      const threadData = await res.json();
-      if (res.ok && threadData.other_user) {
+      const [threadRes, { data: messagesData }] = await Promise.all([
+        fetch(`/api/chat/threads/${threadId}`),
+        supabase.from('messages').select('id, content, message_type, sender_id, created_at, read_at, deleted_at, metadata').eq('thread_id', threadId).order('created_at', { ascending: true }),
+      ]);
+      const threadData = await threadRes.json();
+      setMessages(messagesData ?? []);
+      if (threadRes.ok && threadData.other_user) {
         setOtherUser(threadData.other_user);
         setPostId(threadData.post_id ?? null);
-        const presRes = await fetch(`/api/presence?ids=${threadData.other_user.id}`);
-        const presData = await presRes.json();
-        setOnline(!!presData.online?.[threadData.other_user.id]);
-        setLastSeenAt(presData.last_seen?.[threadData.other_user.id] ?? null);
-        const statusRes = await fetch(`/api/friends/status?user_id=${threadData.other_user.id}`);
-        const statusData = await statusRes.json();
-        setFriendStatus(statusData.status ?? 'none');
-        setFriendRequestId(statusData.request_id ?? null);
-        const premRes = await fetch('/api/premium/status');
-        const premData = await premRes.json();
-        setIsPremium(!!premData.is_premium);
+        const oid = threadData.other_user.id;
+        Promise.all([
+          fetch(`/api/presence?ids=${oid}`).then((r) => r.json())
+            .then((d) => { setOnline(!!d.online?.[oid]); setLastSeenAt(d.last_seen?.[oid] ?? null); }),
+          fetch(`/api/friends/status?user_id=${oid}`).then((r) => r.json())
+            .then((d) => { setFriendStatus(d.status ?? 'none'); setFriendRequestId(d.request_id ?? null); }),
+          fetch('/api/premium/status').then((r) => r.json())
+            .then((d) => setIsPremium(!!d.is_premium)),
+        ]).catch(() => {});
         if (threadData.post_id) {
           fetch(`/api/ratings/check?post_id=${encodeURIComponent(threadData.post_id)}`)
             .then((r) => r.json())
-            .then((d) => setHasRatedPost(d.has_rated ?? false));
+            .then((d) => setHasRatedPost(d.has_rated ?? false))
+            .catch(() => {});
         }
       }
-      const { data } = await supabase
-        .from('messages')
-        .select('id, content, message_type, sender_id, created_at, read_at, deleted_at, metadata')
-        .eq('thread_id', threadId)
-        .order('created_at', { ascending: true });
-      setMessages(data ?? []);
-      const unreadFromOther = (data ?? []).filter((m) => m.sender_id !== user.id && !m.read_at);
+      const unreadFromOther = (messagesData ?? []).filter((m: Message) => m.sender_id !== user.id && !m.read_at);
       if (unreadFromOther.length > 0) {
         const now = new Date().toISOString();
         for (const m of unreadFromOther) {
-          await supabase.from('messages').update({ read_at: now }).eq('id', m.id);
+          supabase.from('messages').update({ read_at: now }).eq('id', m.id).then(() => {});
         }
       }
     })();

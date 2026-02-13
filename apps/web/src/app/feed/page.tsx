@@ -107,7 +107,7 @@ const CATEGORY_TO_SLUG: Record<string, string> = {
   'Ask for Help': 'ask-for-help',
 };
 
-const SECTION_PREMIUM_STYLE = 'rounded-2xl bg-gradient-to-br from-violet-50 via-fuchsia-50/50 to-violet-50 border border-violet-200/60 shadow-[0_8px_32px_-8px_rgba(139,92,246,0.2),0_4px_12px_-4px_rgba(139,92,246,0.1)] p-4 transition-all duration-300 hover:shadow-[0_12px_40px_-10px_rgba(139,92,246,0.25),0_6px_16px_-6px_rgba(139,92,246,0.12)] hover:-translate-y-0.5';
+const SECTION_PREMIUM_STYLE = 'rounded-2xl bg-gradient-to-br from-violet-50 via-fuchsia-50/50 to-violet-50 border border-violet-200/60 shadow-[0_8px_32px_-8px_rgba(139,92,246,0.2),0_4px_12px_-4px_rgba(139,92,246,0.1)] p-4 transition-all duration-150 hover:shadow-[0_12px_40px_-10px_rgba(139,92,246,0.25),0_6px_16px_-6px_rgba(139,92,246,0.12)] hover:-translate-y-0.5';
 
 function getParentCategorySlug(categoryName: string): string | null {
   const slug = categoryName.toLowerCase().replace(/\s+/g, '-');
@@ -251,21 +251,22 @@ export default function FeedPage() {
           const radius = quickFilter2km ? 2000 : (sidebarFilter === 'nearby' ? 5000 : 100000);
           url = `/api/feed/nearby?lat=${latVal}&lng=${lngVal}&radius=${radius}`;
         }
+        const needHelpDonations = sidebarFilter === 'all' || sidebarFilter === 'recommended';
+        if (needHelpDonations) {
+          fetch('/api/help?limit=5').then((r) => r.json()).then((d: { requests?: { id: string; title: string; author_name: string; suggestions_count: number }[] }) => {
+            if (id !== fetchIdRef.current) return;
+            setHelpRequests((d.requests ?? []).map((r) => ({ id: r.id, title: r.title, author_name: r.author_name, suggestions_count: r.suggestions_count ?? 0 })));
+          }).catch(() => setHelpRequests([]));
+          fetch('/api/donations?limit=6').then((r) => r.json()).then((d: { donations?: { id: string; title: string; category_name: string; received: number; amount_requested: number | null }[] }) => {
+            if (id !== fetchIdRef.current) return;
+            setDonationItems((d.donations ?? []).map((x) => ({ id: x.id, title: x.title, category_name: x.category_name, received: x.received ?? 0, amount_requested: x.amount_requested })));
+          }).catch(() => setDonationItems([]));
+        }
         const res = await fetch(url);
         const data = await res.json();
         if (id !== fetchIdRef.current) return;
         const newItems = data.items ?? [];
         setItems((prev) => (newItems.length > 0 ? newItems : prev));
-        if (sidebarFilter === 'all' || sidebarFilter === 'recommended') {
-          fetch('/api/help?limit=5')
-            .then((r) => r.json())
-            .then((d) => setHelpRequests((d.requests ?? []).map((r: { id: string; title: string; author_name: string; suggestions_count: number }) => ({ id: r.id, title: r.title, author_name: r.author_name, suggestions_count: r.suggestions_count ?? 0 }))))
-            .catch(() => setHelpRequests([]));
-          fetch('/api/donations?limit=6')
-            .then((r) => r.json())
-            .then((d) => setDonationItems((d.donations ?? []).map((x: { id: string; title: string; category_name: string; received: number; amount_requested: number | null }) => ({ id: x.id, title: x.title, category_name: x.category_name, received: x.received ?? 0, amount_requested: x.amount_requested }))))
-            .catch(() => setDonationItems([]));
-        }
       } else if (sidebarFilter === 'sale') {
         const saleUrl = city ? `/api/sale?city=${encodeURIComponent(city)}` : '/api/sale';
         const res = await fetch(saleUrl);

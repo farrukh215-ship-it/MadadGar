@@ -139,7 +139,7 @@ export function YaariFeedSection() {
           {slides.map((s, i) => (
             <div
               key={s.label}
-              className={`absolute inset-0 px-4 pt-4 pb-4 flex flex-col gap-3 justify-start transition-all duration-500 ease-out ${
+              className={`absolute inset-0 px-4 pt-4 pb-4 flex flex-col gap-3 justify-start transition-all duration-150 ease-out ${
                 slide === i ? 'opacity-100 translate-x-0 z-[1]' : 'opacity-0 translate-x-full pointer-events-none z-0'
               }`}
             >

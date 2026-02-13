@@ -64,10 +64,13 @@ export default function ChatListPage() {
         setInterestMap(data.interest_map ?? {});
         const otherIds = list.map((t: Thread) => t.other_user?.id).filter(Boolean) as string[];
         if (otherIds.length > 0) {
-          const presRes = await fetch(`/api/presence?ids=${otherIds.join(',')}`);
-          const presData = await presRes.json();
-          setOnlineMap(presData.online ?? {});
-          setLastSeenMap(presData.last_seen ?? {});
+          fetch(`/api/presence?ids=${otherIds.join(',')}`)
+            .then((r) => r.json())
+            .then((d) => {
+              setOnlineMap(d.online ?? {});
+              setLastSeenMap(d.last_seen ?? {});
+            })
+            .catch(() => {});
         }
       } catch {
         setThreads([]);

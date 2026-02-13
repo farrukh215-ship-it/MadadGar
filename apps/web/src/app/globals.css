@@ -97,10 +97,10 @@
   .animate-shimmer {
     background: linear-gradient(90deg, #f5f5f4 25%, #e7e5e4 50%, #f5f5f4 75%);
     background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+    animation: shimmer 0.85s infinite;
   }
   .animate-fade-in {
-    animation: fade-in 0.3s ease-out;
+    animation: fade-in 0.15s ease-out;
   }
   .btn-tap:active {
     transform: scale(0.98);
@@ -115,12 +115,12 @@
   .touch-feedback-smooth {
     transition: transform 0.15s ease-out;
   }
-  /* Staggered list animation */
-  .stagger-1 { animation-delay: 0.05s; }
-  .stagger-2 { animation-delay: 0.1s; }
-  .stagger-3 { animation-delay: 0.15s; }
-  .stagger-4 { animation-delay: 0.2s; }
-  .stagger-5 { animation-delay: 0.25s; }
+  /* Staggered list animation - fast like FB/WhatsApp */
+  .stagger-1 { animation-delay: 0.02s; }
+  .stagger-2 { animation-delay: 0.04s; }
+  .stagger-3 { animation-delay: 0.06s; }
+  .stagger-4 { animation-delay: 0.08s; }
+  .stagger-5 { animation-delay: 0.1s; }
 }
 
 @layer base {
