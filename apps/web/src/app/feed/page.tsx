@@ -107,12 +107,7 @@ const CATEGORY_TO_SLUG: Record<string, string> = {
   'Ask for Help': 'ask-for-help',
 };
 
-const CATEGORY_PREMIUM_STYLES: Record<string, string> = {
-  'Trusted Helpers': 'rounded-2xl bg-gradient-to-br from-teal-50 via-emerald-50/50 to-teal-50 border border-teal-200/60 shadow-[0_8px_32px_-8px_rgba(20,184,166,0.15)] p-4',
-  'Food Points': 'rounded-2xl bg-gradient-to-br from-orange-50 via-amber-50/50 to-orange-50 border border-orange-200/60 shadow-[0_8px_32px_-8px_rgba(249,115,22,0.15)] p-4',
-  'Products': 'rounded-2xl bg-gradient-to-br from-indigo-50 via-blue-50/50 to-indigo-50 border border-indigo-200/60 shadow-[0_8px_32px_-8px_rgba(99,102,241,0.15)] p-4',
-  'Used Products': 'rounded-2xl bg-gradient-to-br from-amber-50 via-orange-50/50 to-amber-50 border border-amber-200/60 shadow-[0_8px_32px_-8px_rgba(245,158,11,0.15)] p-4',
-};
+const SECTION_PREMIUM_STYLE = 'rounded-2xl bg-gradient-to-br from-violet-50 via-fuchsia-50/50 to-violet-50 border border-violet-200/60 shadow-[0_8px_32px_-8px_rgba(139,92,246,0.2),0_4px_12px_-4px_rgba(139,92,246,0.1)] p-4 transition-all duration-300 hover:shadow-[0_12px_40px_-10px_rgba(139,92,246,0.25),0_6px_16px_-6px_rgba(139,92,246,0.12)] hover:-translate-y-0.5';
 
 function getParentCategorySlug(categoryName: string): string | null {
   const slug = categoryName.toLowerCase().replace(/\s+/g, '-');
@@ -513,11 +508,11 @@ export default function FeedPage() {
                       <h2 className="text-base font-bold text-stone-800 group-hover/head:text-brand-600">Donations</h2>
                       <span className="text-xs text-stone-400 group-hover/head:text-brand-500 ml-0.5">View all →</span>
                     </Link>
-                    <div className="rounded-2xl bg-gradient-to-br from-rose-50 via-pink-50/50 to-rose-50 border border-rose-200/60 shadow-[0_8px_32px_-8px_rgba(244,63,94,0.15)] p-4">
+                    <div className={SECTION_PREMIUM_STYLE}>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                       {donationItems.slice(0, 6).map((d) => (
                         <Link key={d.id} href="/donation" className="block">
-                          <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-rose-200">
+                          <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-violet-300">
                             <div className="p-3 flex-1">
                               <h3 className="font-semibold text-stone-900 text-xs line-clamp-2">{d.title}</h3>
                               <p className="text-[10px] text-stone-500 mt-1">{d.category_name}</p>
@@ -537,11 +532,11 @@ export default function FeedPage() {
                       <h2 className="text-base font-bold text-stone-800 group-hover/head:text-brand-600">Ask for Help</h2>
                       <span className="text-xs text-stone-400 group-hover/head:text-brand-500 ml-0.5">View all →</span>
                     </Link>
-                    <div className="rounded-2xl bg-gradient-to-br from-amber-50 via-yellow-50/50 to-amber-50 border border-amber-200/60 shadow-[0_8px_32px_-8px_rgba(245,158,11,0.15)] p-4">
+                    <div className={SECTION_PREMIUM_STYLE}>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                       {helpRequests.slice(0, 6).map((hr) => (
                         <Link key={hr.id} href={`/ask-for-help#${hr.id}`} className="block">
-                          <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-amber-200">
+                          <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-violet-300">
                             <div className="p-3 flex-1">
                               <h3 className="font-semibold text-stone-900 text-xs line-clamp-2">{hr.title}</h3>
                               <p className="text-[10px] text-stone-500 mt-1 truncate">{hr.author_name}</p>
@@ -598,7 +593,7 @@ export default function FeedPage() {
                           </Link>
                         )}
                       </div>
-                      <div className={CATEGORY_PREMIUM_STYLES[categoryName] ?? 'rounded-2xl bg-gradient-to-br from-stone-50 via-stone-50/80 to-stone-50 border border-stone-200/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] p-4'}>
+                      <div className={SECTION_PREMIUM_STYLE}>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                         {displayItems.map((item) => {
                           const itemType = item.item_type ?? 'post';
@@ -612,7 +607,7 @@ export default function FeedPage() {
                               return (
                                 <div key={item.id} className="relative group">
                                   <Link href={`/products/${item.id}`} className="block">
-                                    <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200">
+                                    <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-violet-300">
                                       <div className="p-3 flex-1 flex items-start gap-2">
                                         <CategoryIcon slug="products" size="sm" className="shrink-0" />
                                         <div className="min-w-0 flex-1">
@@ -638,7 +633,7 @@ export default function FeedPage() {
                             return (
                               <div key={item.id} className="relative group">
                                 <Link href={`/products/${item.id}`} className="block touch-feedback touch-feedback-smooth active:scale-[0.99]">
-                                  <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-stone-100/80 hover:border-stone-200 h-full flex flex-col">
+                                  <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-stone-100/80 hover:border-violet-300 h-full flex flex-col">
                                     <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
                                       {(item.images?.length ?? 0) >= 2 ? (
                                         <ImageCarousel
@@ -699,7 +694,7 @@ export default function FeedPage() {
                             return (
                               <div key={item.id} className="relative group">
                                 <Link href={`/sale/${item.id}`} className="block">
-                                  <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-stone-100/80 hover:border-stone-200 h-full flex flex-col">
+                                  <article className="bg-white rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 border border-stone-100/80 hover:border-violet-300 h-full flex flex-col">
                                     <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
                                       {(item.images?.length ?? 0) >= 2 ? (
                                         <ImageCarousel
@@ -767,7 +762,7 @@ export default function FeedPage() {
                               return (
                                 <div key={item.id} className="relative group">
                                   <Link href={`/post/${item.id}`} className="block">
-                                    <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200">
+                                    <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-violet-300">
                                       <div className="p-3 flex-1 flex items-start gap-2">
                                         <CategoryIcon slug={slug} size="sm" className="shrink-0" />
                                         <div className="min-w-0 flex-1">
@@ -793,7 +788,7 @@ export default function FeedPage() {
                             return (
                               <div key={item.id} className="relative group">
                                 <Link href={`/post/${item.id}`} className="block">
-                                  <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200">
+                                  <article className="rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-violet-300">
                                     <div className="aspect-[4/3] bg-stone-50 relative overflow-hidden min-h-[72px]">
                                     {(item.images?.length ?? 0) >= 2 ? (
                                       <ImageCarousel
@@ -869,7 +864,7 @@ export default function FeedPage() {
                             return (
                               <div key={item.id} className="relative group">
                                 <Link href={`/post/${item.id}`} className="block">
-                                  <article className={`rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200 ${isEmergency ? 'ring-1 ring-red-200' : ''}`}>
+                                  <article className={`rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-violet-300 ${isEmergency ? 'ring-1 ring-red-200' : ''}`}>
                                     <div className="p-3 flex-1 flex items-start gap-2">
                                       <CategoryIcon slug={slug} size="sm" className="shrink-0" />
                                       <div className="min-w-0 flex-1">
@@ -896,7 +891,7 @@ export default function FeedPage() {
                           return (
                             <article
                               key={item.id}
-                              className={`rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-stone-200 ${
+                              className={`rounded-xl overflow-hidden shadow-3d hover:shadow-3d-hover hover:-translate-y-1 transition-all duration-200 h-full flex flex-col bg-white border border-stone-100/80 hover:border-violet-300 ${
                                 isEmergency ? 'ring-1 ring-red-200' : ''
                               }`}
                             >

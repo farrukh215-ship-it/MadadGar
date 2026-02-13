@@ -86,7 +86,7 @@ export function YaariFeedSection() {
         <h2 className="text-base font-bold text-stone-800 group-hover/head:text-brand-600">Yaari</h2>
         <span className="text-xs text-stone-400 group-hover/head:text-brand-500 ml-0.5">View all →</span>
       </Link>
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-50 via-fuchsia-50/50 to-violet-50 border border-violet-200/60 shadow-[0_8px_32px_-8px_rgba(139,92,246,0.2)]">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-50 via-fuchsia-50/50 to-violet-50 border border-violet-200/60 shadow-[0_8px_32px_-8px_rgba(139,92,246,0.2),0_4px_12px_-4px_rgba(139,92,246,0.1)] transition-all duration-300 hover:shadow-[0_12px_40px_-10px_rgba(139,92,246,0.25),0_6px_16px_-6px_rgba(139,92,246,0.12)] hover:-translate-y-0.5">
         {/* Slide indicators */}
         {slides.length > 1 && (
           <div className="absolute top-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
@@ -108,7 +108,7 @@ export function YaariFeedSection() {
           {slides.map((s, i) => (
             <div
               key={s.label}
-              className={`absolute inset-0 p-4 pt-10 pb-4 flex flex-col gap-3 transition-all duration-500 ease-out ${
+              className={`absolute inset-0 p-4 pt-5 pb-4 flex flex-col gap-3 transition-all duration-500 ease-out ${
                 slide === i ? 'opacity-100 translate-x-0 z-[1]' : 'opacity-0 translate-x-full pointer-events-none z-0'
               }`}
             >
