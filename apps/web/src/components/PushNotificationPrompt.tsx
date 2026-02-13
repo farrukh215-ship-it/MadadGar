@@ -28,10 +28,15 @@ export function PushNotificationPrompt() {
   }, [isLoggedIn]);
 
   const handleEnable = async () => {
-    if (status !== 'prompt') return;
+    console.log('[PushPrompt] handleEnable called', { status, hasVapid: !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY });
+    if (status !== 'prompt') {
+      console.warn('[PushPrompt] early return: status is', status);
+      return;
+    }
     const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!vapidKey) {
-      console.warn('VAPID public key not set');
+      console.warn('[PushPrompt] VAPID public key not set');
+      alert('Notifications not configured. Add NEXT_PUBLIC_VAPID_PUBLIC_KEY to env.');
       return;
     }
     setRegistering(true);
@@ -66,7 +71,7 @@ export function PushNotificationPrompt() {
   if (!isLoggedIn || status !== 'prompt' || dismissed) return null;
 
   return (
-    <div className="mb-4 p-4 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-between gap-3">
+    <div className="relative z-10 mb-4 p-4 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-between gap-3">
       <div>
         <p className="text-sm font-medium text-brand-900">Notifications enable karein</p>
         <p className="text-xs text-brand-700 mt-0.5">Naya chat, reply, madad request — sab pehle se pata chalega</p>
@@ -75,6 +80,12 @@ export function PushNotificationPrompt() {
         <button
           type="button"
           onClick={handleEnable}
+          onPointerDown={(e) => {
+            if (e.pointerType === 'touch') {
+              e.preventDefault();
+              handleEnable();
+            }
+          }}
           disabled={registering}
           className="px-4 py-2.5 min-h-[44px] rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 touch-manipulation cursor-pointer btn-tap"
         >
