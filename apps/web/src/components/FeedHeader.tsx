@@ -44,11 +44,9 @@ export function FeedHeader({
         setUser(null);
         return;
       }
-      const avatar =
-        (u.user_metadata as Record<string, string> | undefined)?.avatar_url ??
-        (u.user_metadata as Record<string, string> | undefined)?.picture ??
-        null;
-      const { data: profile } = await supabase.from('profiles').select('display_name').eq('user_id', u.id).single();
+      const { data: profile } = await supabase.from('profiles').select('display_name, avatar_url').eq('user_id', u.id).single();
+      // Use saved profile pic only — not Google/oauth picture
+      const avatar = profile?.avatar_url ?? null;
       const displayName = profile?.display_name || (u.email?.split('@')[0] ?? null);
       setUser({ id: u.id, avatarUrl: avatar, displayName: displayName || null });
     })();
