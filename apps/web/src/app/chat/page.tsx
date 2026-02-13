@@ -108,7 +108,7 @@ export default function ChatListPage() {
                 href="/chat/interests"
                 className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 shadow-premium-brand transition-all hover:shadow-premium-brand-hover btn-tap"
               >
-                Interested People
+                Squad
               </Link>
               <Link
                 href="/chat/friends"

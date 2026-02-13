@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 const PREMIUM_FEATURES = [
   { icon: '∞', title: 'Unlimited Interests', desc: 'Add jitne marzi interests — no 4-item limit' },
-  { icon: '★', title: 'Premium Badge', desc: 'Profile pe Premium badge, top visibility in Interested People' },
+  { icon: '★', title: 'Premium Badge', desc: 'Profile pe Premium badge, top visibility in Squad' },
   { icon: '📹', title: '100MB Video Chat', desc: '25MB se upgrade — voice/video messages up to 100MB' },
   { icon: '🗑️', title: 'Delete for Everyone', desc: 'Sent messages delete kar sakte ho sab ke liye' },
   { icon: '📺', title: 'Premium Interest Categories', desc: 'Selected lifestyle & entertainment interests unlock' },

@@ -371,7 +371,7 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-base">
+    <div className="min-h-screen bg-surface-base overflow-x-hidden">
       <FeedHeader onMenuClick={() => setMoreSheetOpen(true)} />
 
       <div className="flex">
@@ -382,8 +382,8 @@ export default function FeedPage() {
           open={sidebarOpen}
         />
 
-        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 py-5 sm:py-8 pb-28 lg:pb-10">
-          <div className="max-w-5xl mx-auto">
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 py-5 sm:py-8 pb-28 lg:pb-10 overflow-x-hidden">
+          <div className="max-w-5xl mx-auto w-full">
             {(isCategoryView || isSubcategoryView) && (
               <Link
                 href={isSubcategoryView && categoryFromUrl ? `/feed?c=${categoryFromUrl}` : '/feed'}

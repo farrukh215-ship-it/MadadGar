@@ -56,14 +56,13 @@ git push -u origin main
 ### Step 3: Configure Project
 
 1. **Framework Preset:** Next.js (auto-detected)
-2. **Root Directory:** `apps/web`
-3. **Build Command:** `pnpm build` or `cd ../.. && pnpm build:web`
+2. **Root Directory:** `apps/web` — **CRITICAL: Must be set, otherwise you get "No Next.js version detected"**
+3. **Build Command:** `pnpm build` (default)
 4. **Output Directory:** `.next` (default)
 5. **Install Command:** `pnpm install`
 
 **Vercel settings:**
-- Root Directory: `apps/web` — use only the web app
-- Or keep root as `.` and set Root Directory to `apps/web` so Vercel builds from there
+- **Root Directory:** `apps/web` — **REQUIRED** for monorepo. The root `package.json` has no `next`; only `apps/web/package.json` has it.
 
 ### Step 4: Environment Variables
 
@@ -138,6 +137,7 @@ This way Vercel uses `apps/web` as the project root and runs `next build` correc
 
 | Issue | Solution |
 |-------|----------|
+| "No Next.js version detected" / "Could not identify Next.js version" | Set **Root Directory** to `apps/web` in Vercel → Project Settings → General |
 | Build fails | Ensure Root Directory is `apps/web` |
 | Auth redirect fails | Add Vercel URL in Supabase redirect URLs |
 | Chat not working | Set `SUPABASE_SERVICE_ROLE_KEY` |

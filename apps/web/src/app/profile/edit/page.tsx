@@ -234,7 +234,7 @@ export default function EditProfilePage() {
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-2">City</label>
           <CitySelect value={city} onChange={setCity} placeholder="Select city" />
-          <p className="text-xs text-stone-500 mt-1">Shown on Interested People & profile</p>
+          <p className="text-xs text-stone-500 mt-1">Shown on Squad & profile</p>
         </div>
 
         <div>
@@ -471,7 +471,7 @@ export default function EditProfilePage() {
           <label className="block text-sm font-medium text-stone-700 mb-2">Interests</label>
           <p className="text-xs text-stone-500 mb-2">
             Add interests to connect with like-minded people. You can also manage them from{' '}
-            <Link href="/chat/interests" className="text-brand-600 font-medium hover:underline">Interested People</Link>.
+            <Link href="/chat/interests" className="text-brand-600 font-medium hover:underline">Squad</Link>.
           </p>
           <div className="flex flex-wrap gap-2">
             {allInterests.slice(0, 20).map((int) => {

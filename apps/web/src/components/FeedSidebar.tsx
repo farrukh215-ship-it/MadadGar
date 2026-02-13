@@ -14,19 +14,19 @@ export type SidebarFilter =
   | 'top-rated'
   | 'verified';
 
-// Simplified: 5 main filters + 3 extra filters + 5 quick links (desktop only; mobile uses tabs + More sheet)
+// Squad first, For You last; desktop only; mobile uses tabs + More sheet
 const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string; label: string; href?: string; badge?: string }[] = [
+  { id: 'all', icon: '💜', label: 'Squad', href: '/chat/interests' },
   { id: 'all', icon: '🌟', label: 'All' },
-  { id: 'recommended', icon: '✨', label: 'For You', badge: 'AI' },
   { id: 'trusted-helpers', icon: '🔧', label: 'Helpers' },
   { id: 'food-points', icon: '🍽️', label: 'Food' },
   { id: 'sale', icon: '📦', label: 'Products' },
   { id: 'nearby', icon: '📍', label: 'Nearby' },
   { id: 'top-rated', icon: '⭐', label: 'Top Rated' },
   { id: 'verified', icon: '✓', label: 'Verified' },
+  { id: 'recommended', icon: '✨', label: 'For You', badge: 'AI' },
   { id: 'all', icon: '📌', label: 'Saved', href: '/saved' },
   { id: 'all', icon: '💡', label: 'Ask for Help', href: '/ask-for-help' },
-  { id: 'all', icon: '❤️', label: 'Interested People', href: '/chat/interests' },
   { id: 'all', icon: '💝', label: 'Donations', href: '/donation' },
   { id: 'all', icon: '🗺️', label: 'Map', href: '/feed/map' },
 ];
@@ -80,7 +80,7 @@ export function FeedSidebar({
                 const key = item.href ? item.href : `${item.id}-${item.label}`;
                 return (
                   <li key={key}>
-                    {idx === 8 && <div className="my-3 border-t border-stone-200" aria-hidden />}
+                    {idx === 9 && <div className="my-3 border-t border-stone-200" aria-hidden />}
                     {item.href ? (
                       <Link
                         href={item.href}

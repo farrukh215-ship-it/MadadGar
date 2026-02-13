@@ -151,7 +151,7 @@ export function MessengerPanel({ open, onClose }: { open: boolean; onClose: () =
               <div className="p-3">
                 <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Contacts</p>
                 {users.length === 0 ? (
-                  <p className="text-sm text-stone-500">Add contacts from Interested People, profiles, or feed. Then start chatting.</p>
+                  <p className="text-sm text-stone-500">Add contacts from Squad, profiles, or feed. Then start chatting.</p>
                 ) : (
                   <div className="space-y-1">
                     {users.map((u) => (

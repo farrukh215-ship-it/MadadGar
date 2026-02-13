@@ -3,18 +3,20 @@
 import Link from 'next/link';
 import type { SidebarFilter } from './FeedSidebar';
 
-const MAIN_TABS: { id: SidebarFilter; label: string; icon: string }[] = [
+// Squad first, For You last (Gen Z: find friends who vibe)
+const MAIN_TABS: { id: SidebarFilter | 'squad'; label: string; icon: string; href?: string }[] = [
+  { id: 'squad', label: 'Squad', icon: '💜', href: '/chat/interests' },
   { id: 'all', label: 'All', icon: '🌟' },
-  { id: 'recommended', label: 'For You', icon: '✨' },
   { id: 'trusted-helpers', label: 'Helpers', icon: '🔧' },
   { id: 'food-points', label: 'Food', icon: '🍽️' },
   { id: 'sale', label: 'Products', icon: '📦' },
+  { id: 'recommended', label: 'For You', icon: '✨' },
 ];
 
 const MORE_LINKS: { label: string; href: string; icon: string }[] = [
+  { label: 'Squad', href: '/chat/interests', icon: '💜' },
   { label: 'Saved', href: '/saved', icon: '📌' },
   { label: 'Ask for Help', href: '/ask-for-help', icon: '💡' },
-  { label: 'Interested People', href: '/chat/interests', icon: '❤️' },
   { label: 'Donations', href: '/donation', icon: '💝' },
   { label: 'Map View', href: '/feed/map', icon: '🗺️' },
 ];
@@ -35,14 +37,26 @@ export function FeedCategoryTabs({
   onMoreClick: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 scrollbar-hide">
+    <div className="flex items-center gap-2 overflow-x-auto overflow-y-hidden pb-1 scrollbar-hide overscroll-x-contain">
       {MAIN_TABS.map((tab) => {
-        const isActive = activeFilter === tab.id;
+        const isActive = !tab.href && activeFilter === tab.id;
+        if (tab.href) {
+          return (
+            <Link
+              key={tab.id}
+              href={tab.href}
+              className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap touch-manipulation min-h-[44px] flex items-center bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span className="mr-1.5">{tab.icon}</span>
+              {tab.label}
+            </Link>
+          );
+        }
         return (
           <button
             key={tab.id}
             type="button"
-            onClick={() => onFilterChange(tab.id)}
+            onClick={() => onFilterChange(tab.id as SidebarFilter)}
             className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap touch-manipulation min-h-[44px] ${
               isActive
                 ? 'bg-brand-600 text-white shadow-md shadow-brand-600/25'

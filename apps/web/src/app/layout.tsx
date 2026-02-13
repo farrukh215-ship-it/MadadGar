@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className={plusJakarta.variable}>
-      <body className={`${plusJakarta.variable} font-sans antialiased bg-surface-base`} suppressHydrationWarning>
+      <body className={`${plusJakarta.variable} font-sans antialiased bg-surface-base overflow-x-hidden max-w-[100vw]`} suppressHydrationWarning>
         <CityProvider>
           <IdleLogoutProvider>
             <ReferralApply />

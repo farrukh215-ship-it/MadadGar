@@ -11,9 +11,9 @@ const FEATURES = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-[linear-gradient(165deg,_#f0fdf9_0%,_#ffffff_35%,_#f8fafc_70%,_#ecfdf5_100%)]">
+    <div className="min-h-screen min-h-[100dvh] bg-[linear-gradient(165deg,_#f0fdf9_0%,_#ffffff_35%,_#f8fafc_70%,_#ecfdf5_100%)] overflow-x-hidden">
       <Header />
-      <main className="relative overflow-hidden">
+      <main className="relative overflow-x-hidden">
         {/* Premium decorative elements */}
         <div className="absolute top-0 right-0 w-[min(90vw,480px)] h-[min(90vw,480px)] bg-gradient-to-br from-brand-200/30 to-teal-200/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3" />
         <div className="absolute bottom-0 left-0 w-[min(70vw,360px)] h-[min(70vw,360px)] bg-gradient-to-tr from-emerald-200/25 to-brand-100/30 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3" />
@@ -61,6 +61,16 @@ export default function Home() {
                 Get Started
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+              <Link
+                href="/login?next=/chat/interests"
+                className="mt-5 sm:mt-6 inline-flex items-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold hover:from-violet-600 hover:to-fuchsia-600 transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              >
+                <span className="text-lg">💜</span>
+                Find Your Squad — Youth & Gen Z
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </Link>
             </div>
