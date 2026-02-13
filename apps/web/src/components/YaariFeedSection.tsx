@@ -89,7 +89,7 @@ export function YaariFeedSection() {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-50 via-fuchsia-50/50 to-violet-50 border border-violet-200/60 shadow-[0_8px_32px_-8px_rgba(139,92,246,0.2)]">
         {/* Slide indicators */}
         {slides.length > 1 && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
             {slides.map((_, i) => (
               <button
                 key={i}
@@ -104,11 +104,11 @@ export function YaariFeedSection() {
           </div>
         )}
         {/* Slides */}
-        <div className="relative min-h-[180px] overflow-visible">
+        <div className="relative min-h-[130px] overflow-visible">
           {slides.map((s, i) => (
             <div
               key={s.label}
-              className={`absolute inset-0 p-5 pt-12 pb-5 flex flex-col gap-4 transition-all duration-500 ease-out ${
+              className={`absolute inset-0 p-4 pt-10 pb-4 flex flex-col gap-3 transition-all duration-500 ease-out ${
                 slide === i ? 'opacity-100 translate-x-0 z-[1]' : 'opacity-0 translate-x-full pointer-events-none z-0'
               }`}
             >

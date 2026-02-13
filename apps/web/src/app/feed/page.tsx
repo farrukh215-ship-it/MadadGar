@@ -107,6 +107,13 @@ const CATEGORY_TO_SLUG: Record<string, string> = {
   'Ask for Help': 'ask-for-help',
 };
 
+const CATEGORY_PREMIUM_STYLES: Record<string, string> = {
+  'Trusted Helpers': 'rounded-2xl bg-gradient-to-br from-teal-50 via-emerald-50/50 to-teal-50 border border-teal-200/60 shadow-[0_8px_32px_-8px_rgba(20,184,166,0.15)] p-4',
+  'Food Points': 'rounded-2xl bg-gradient-to-br from-orange-50 via-amber-50/50 to-orange-50 border border-orange-200/60 shadow-[0_8px_32px_-8px_rgba(249,115,22,0.15)] p-4',
+  'Products': 'rounded-2xl bg-gradient-to-br from-indigo-50 via-blue-50/50 to-indigo-50 border border-indigo-200/60 shadow-[0_8px_32px_-8px_rgba(99,102,241,0.15)] p-4',
+  'Used Products': 'rounded-2xl bg-gradient-to-br from-amber-50 via-orange-50/50 to-amber-50 border border-amber-200/60 shadow-[0_8px_32px_-8px_rgba(245,158,11,0.15)] p-4',
+};
+
 function getParentCategorySlug(categoryName: string): string | null {
   const slug = categoryName.toLowerCase().replace(/\s+/g, '-');
   if (CATEGORY_TO_SLUG[categoryName]) return null;
@@ -506,6 +513,7 @@ export default function FeedPage() {
                       <h2 className="text-base font-bold text-stone-800 group-hover/head:text-brand-600">Donations</h2>
                       <span className="text-xs text-stone-400 group-hover/head:text-brand-500 ml-0.5">View all →</span>
                     </Link>
+                    <div className="rounded-2xl bg-gradient-to-br from-rose-50 via-pink-50/50 to-rose-50 border border-rose-200/60 shadow-[0_8px_32px_-8px_rgba(244,63,94,0.15)] p-4">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                       {donationItems.slice(0, 6).map((d) => (
                         <Link key={d.id} href="/donation" className="block">
@@ -519,6 +527,7 @@ export default function FeedPage() {
                         </Link>
                       ))}
                     </div>
+                    </div>
                   </section>
                 )}
                 {helpRequests.length > 0 && sidebarFilter === 'all' && (
@@ -528,6 +537,7 @@ export default function FeedPage() {
                       <h2 className="text-base font-bold text-stone-800 group-hover/head:text-brand-600">Ask for Help</h2>
                       <span className="text-xs text-stone-400 group-hover/head:text-brand-500 ml-0.5">View all →</span>
                     </Link>
+                    <div className="rounded-2xl bg-gradient-to-br from-amber-50 via-yellow-50/50 to-amber-50 border border-amber-200/60 shadow-[0_8px_32px_-8px_rgba(245,158,11,0.15)] p-4">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                       {helpRequests.slice(0, 6).map((hr) => (
                         <Link key={hr.id} href={`/ask-for-help#${hr.id}`} className="block">
@@ -540,6 +550,7 @@ export default function FeedPage() {
                           </article>
                         </Link>
                       ))}
+                    </div>
                     </div>
                   </section>
                 )}
@@ -587,6 +598,7 @@ export default function FeedPage() {
                           </Link>
                         )}
                       </div>
+                      <div className={CATEGORY_PREMIUM_STYLES[categoryName] ?? 'rounded-2xl bg-gradient-to-br from-stone-50 via-stone-50/80 to-stone-50 border border-stone-200/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] p-4'}>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                         {displayItems.map((item) => {
                           const itemType = item.item_type ?? 'post';
@@ -984,6 +996,7 @@ export default function FeedPage() {
                             </article>
                           );
                         })}
+                      </div>
                       </div>
                     </section>
                   );
