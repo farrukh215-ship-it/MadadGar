@@ -54,20 +54,23 @@ export function YaariFeedSection() {
 
   function Avatar({ u }: { u: YaariUser }) {
     return (
-      <Link href={`/profile/${u.id}`} className="flex flex-col items-center gap-1.5 shrink-0 group">
-        <div className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white shadow-lg group-hover:ring-brand-300 transition-all">
-          {u.avatar_url ? (
-            <Image src={u.avatar_url} alt="" width={48} height={48} className="object-cover" unoptimized />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-violet-200 to-fuchsia-200 flex items-center justify-center text-lg">
-              {u.gender === 'female' ? '👩' : u.gender === 'male' ? '👨' : '👤'}
-            </div>
-          )}
-          {u.is_active && (
-            <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white" />
-          )}
+      <Link href={`/profile/${u.id}`} className="flex flex-col items-center gap-2 shrink-0 group min-w-[64px]">
+        <div className="relative w-14 h-14 rounded-full overflow-visible flex-shrink-0">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/80 to-stone-200/40 blur-sm scale-110 -z-10" />
+          <div className="relative w-14 h-14 rounded-full overflow-hidden ring-2 ring-white shadow-[0_8px_24px_-4px_rgba(0,0,0,0.2),0_4px_12px_-2px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.8)_inset] group-hover:shadow-[0_12px_32px_-6px_rgba(0,0,0,0.25),0_6px_16px_-4px_rgba(0,0,0,0.15),0_1px_0_rgba(255,255,255,0.6)_inset] group-hover:ring-violet-300 transition-all duration-200">
+            {u.avatar_url ? (
+              <Image src={u.avatar_url} alt="" width={56} height={56} className="object-cover w-full h-full" unoptimized />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-violet-200 to-fuchsia-200 flex items-center justify-center text-xl">
+                {u.gender === 'female' ? '👩' : u.gender === 'male' ? '👨' : '👤'}
+              </div>
+            )}
+            {u.is_active && (
+              <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white shadow-md" />
+            )}
+          </div>
         </div>
-        <span className="text-[10px] font-medium text-stone-700 truncate max-w-[56px] group-hover:text-brand-600">
+        <span className="text-[11px] font-medium text-stone-700 truncate max-w-[64px] text-center group-hover:text-brand-600 leading-tight">
           {u.display_name}
         </span>
       </Link>
@@ -101,19 +104,19 @@ export function YaariFeedSection() {
           </div>
         )}
         {/* Slides */}
-        <div className="relative min-h-[140px] overflow-hidden">
+        <div className="relative min-h-[180px] overflow-visible">
           {slides.map((s, i) => (
             <div
               key={s.label}
-              className={`absolute inset-0 p-4 pt-10 flex flex-col gap-3 transition-all duration-500 ease-out ${
+              className={`absolute inset-0 p-5 pt-12 pb-5 flex flex-col gap-4 transition-all duration-500 ease-out ${
                 slide === i ? 'opacity-100 translate-x-0 z-[1]' : 'opacity-0 translate-x-full pointer-events-none z-0'
               }`}
             >
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/90 shadow-md border border-violet-100 w-fit">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/90 shadow-[0_4px_14px_-3px_rgba(0,0,0,0.1),0_2px_6px_-2px_rgba(0,0,0,0.06)] border border-violet-100 w-fit">
                 <span className="text-sm">{s.icon}</span>
                 <span className="text-xs font-bold text-violet-800">{s.label}</span>
               </div>
-              <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-1 -mx-1">
+              <div className="flex gap-8 overflow-x-auto scrollbar-hide px-1 items-start">
                 {s.users.map((u) => (
                   <Avatar key={u.id} u={u} />
                 ))}

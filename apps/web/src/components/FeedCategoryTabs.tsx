@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { LayoutGrid } from 'lucide-react';
 import type { SidebarFilter } from './FeedSidebar';
 
-// Yaari first, For You last (find friends who vibe)
+// All first, Yaari below; For You last (find friends who vibe)
 const MAIN_TABS: { id: SidebarFilter | 'yaari'; label: string; icon: string | React.ReactNode; href?: string }[] = [
-  { id: 'yaari', label: 'Yaari', icon: '💜', href: '/chat/interests' },
   { id: 'all', label: 'All', icon: <LayoutGrid className="w-4 h-4" strokeWidth={2} /> },
+  { id: 'yaari', label: 'Yaari', icon: '💜', href: '/chat/interests' },
   { id: 'trusted-helpers', label: 'Helpers', icon: '🔧' },
   { id: 'food-points', label: 'Food', icon: '🍽️' },
   { id: 'sale', label: 'Products', icon: '📦' },

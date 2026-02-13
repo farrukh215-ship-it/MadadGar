@@ -14,10 +14,10 @@ export type SidebarFilter =
   | 'top-rated'
   | 'verified';
 
-// Yaari first, For You last; desktop only; mobile uses tabs + More sheet
+// All first, Yaari below; desktop only; mobile uses tabs + More sheet
 const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string | React.ReactNode; label: string; href?: string; badge?: string }[] = [
-  { id: 'all', icon: '💜', label: 'Yaari', href: '/chat/interests' },
   { id: 'all', icon: <LayoutGrid className="w-5 h-5" strokeWidth={2} />, label: 'All' },
+  { id: 'all', icon: '💜', label: 'Yaari', href: '/chat/interests' },
   { id: 'trusted-helpers', icon: '🔧', label: 'Helpers' },
   { id: 'food-points', icon: '🍽️', label: 'Food' },
   { id: 'sale', icon: '📦', label: 'Products' },
