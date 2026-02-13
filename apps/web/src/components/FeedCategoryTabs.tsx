@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import type { SidebarFilter } from './FeedSidebar';
 
-// Squad first, For You last (Gen Z: find friends who vibe)
-const MAIN_TABS: { id: SidebarFilter | 'squad'; label: string; icon: string; href?: string }[] = [
-  { id: 'squad', label: 'Squad', icon: '💜', href: '/chat/interests' },
+// Yaari first, For You last (find friends who vibe)
+const MAIN_TABS: { id: SidebarFilter | 'yaari'; label: string; icon: string; href?: string }[] = [
+  { id: 'yaari', label: 'Yaari', icon: '💜', href: '/chat/interests' },
   { id: 'all', label: 'All', icon: '🌟' },
   { id: 'trusted-helpers', label: 'Helpers', icon: '🔧' },
   { id: 'food-points', label: 'Food', icon: '🍽️' },
@@ -14,7 +14,7 @@ const MAIN_TABS: { id: SidebarFilter | 'squad'; label: string; icon: string; hre
 ];
 
 const MORE_LINKS: { label: string; href: string; icon: string }[] = [
-  { label: 'Squad', href: '/chat/interests', icon: '💜' },
+  { label: 'Yaari', href: '/chat/interests', icon: '💜' },
   { label: 'Saved', href: '/saved', icon: '📌' },
   { label: 'Ask for Help', href: '/ask-for-help', icon: '💡' },
   { label: 'Donations', href: '/donation', icon: '💝' },

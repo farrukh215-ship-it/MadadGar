@@ -14,9 +14,9 @@ export type SidebarFilter =
   | 'top-rated'
   | 'verified';
 
-// Squad first, For You last; desktop only; mobile uses tabs + More sheet
+// Yaari first, For You last; desktop only; mobile uses tabs + More sheet
 const SIDEBAR_ITEMS: { id: SidebarFilter; icon: string; label: string; href?: string; badge?: string }[] = [
-  { id: 'all', icon: '💜', label: 'Squad', href: '/chat/interests' },
+  { id: 'all', icon: '💜', label: 'Yaari', href: '/chat/interests' },
   { id: 'all', icon: '🌟', label: 'All' },
   { id: 'trusted-helpers', icon: '🔧', label: 'Helpers' },
   { id: 'food-points', icon: '🍽️', label: 'Food' },

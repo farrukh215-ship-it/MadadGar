@@ -299,8 +299,8 @@ export default function InterestedPeoplePage() {
     e.stopPropagation();
     if (addingFriendFor) return;
     const shared = user.shared_count ?? 0;
-    if (shared < 3) {
-      alert('Kam se kam 3 shared interests hon tou hi friend request bheji ja sakti hai.');
+    if (shared < 1) {
+      alert('Kam az kam 1 shared interest hon tou hi friend request bheji ja sakti hai.');
       return;
     }
     setAddingFriendFor(user.id);
@@ -327,8 +327,8 @@ export default function InterestedPeoplePage() {
 
   const startChat = async (user: ChatUser) => {
     const shared = user.shared_count ?? 0;
-    if (shared < 3) {
-      alert('Kam se kam 3 shared interests hon tou hi Interested People se chat start ho sakti hai.');
+    if (shared < 1) {
+      alert('Kam az kam 1 shared interest hon tou hi Yaari se chat start ho sakti hai.');
       return;
     }
     setStartingChat(user.id);
@@ -368,7 +368,7 @@ export default function InterestedPeoplePage() {
               <Image src="/logo.png" alt="Madadgar" width={26} height={26} className="rounded shrink-0" />
               <span className="font-bold text-sm sm:text-base truncate hidden sm:inline">Madadgar</span>
             </Link>
-            <h1 className="text-sm sm:text-lg font-semibold truncate flex-1 text-center min-w-0 px-1">Squad</h1>
+            <h1 className="text-sm sm:text-lg font-semibold truncate flex-1 text-center min-w-0 px-1">Yaari</h1>
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <Link href="/chat/friends" className="px-2 py-1.5 rounded-lg text-xs sm:text-sm text-brand-100 hover:text-white hover:bg-white/10 font-medium">
                 Friends
@@ -403,14 +403,14 @@ export default function InterestedPeoplePage() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] overflow-y-auto border border-stone-200" onClick={(e) => e.stopPropagation()}>
             <div className="sticky top-0 bg-gradient-to-br from-brand-600 to-brand-800 text-white p-5 rounded-t-2xl">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <span>📋</span> Squad Chat Rules
+                <span>📋</span> Yaari Chat Rules
               </h2>
               <p className="text-brand-100 text-sm mt-1">In rules ko follow karein aur safe chat karein</p>
             </div>
             <div className="p-5 space-y-3 text-stone-700 text-sm">
               <div className="flex gap-3 p-3 rounded-xl bg-brand-50 border border-brand-100">
                 <span className="text-lg shrink-0">1.</span>
-                <p><strong>Minimum 3 shared interests:</strong> Sirf wohi logse chat kar sakte hain jin ke saath kam se kam 3 interests match hon.</p>
+                <p><strong>Minimum 1 shared interest:</strong> Sirf wohi logse chat kar sakte hain jin ke saath kam az kam 1 interest match ho.</p>
               </div>
               <div className="flex gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
                 <span className="text-lg shrink-0">2.</span>
@@ -680,9 +680,9 @@ export default function InterestedPeoplePage() {
                                               Premium
                                             </span>
                                           )}
-                                          {(u.shared_count ?? 0) >= 3 && (
+                                          {(u.shared_count ?? 0) >= 1 && (
                                             <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-brand-50 text-brand-800 border border-brand-100">
-                                              Strong match
+                                              Match
                                             </span>
                                           )}
                                         </span>
@@ -782,11 +782,11 @@ export default function InterestedPeoplePage() {
           </div>
         )}
 
-        {!loading && grouped.length > 0 && myInterests.size < 3 && (
+        {!loading && grouped.length > 0 && myInterests.size < 1 && (
           <div className="mt-6 p-4 rounded-2xl bg-brand-50/80 border border-brand-100 text-sm">
             <p className="font-semibold text-brand-900">Stronger matches with more interests</p>
             <p className="text-xs text-brand-800 mt-1">
-              Kam az kam 3 interests add karein taake aapko zyada behtar, strong matches mil saken.
+              Kam az kam 1 interest add karein taake aapko matches mil saken.
             </p>
           </div>
         )}
@@ -836,7 +836,7 @@ export default function InterestedPeoplePage() {
         </div>
       </main>
 
-      {/* Right sidebar: Available for Chat (3+ shared interests) */}
+      {/* Right sidebar: Available for Chat (1+ shared interests) */}
       {sidebarOpen && (
         <>
           <div className="fixed inset-0 z-[80] bg-black/30" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
@@ -848,7 +848,7 @@ export default function InterestedPeoplePage() {
             <div className="flex items-center justify-between p-4 border-b border-stone-200 bg-brand-600 text-white">
               <div>
                 <h2 className="font-semibold text-lg">Available for Chat</h2>
-                <p className="text-sm text-brand-100">Same interests • Chat anytime</p>
+                <p className="text-sm text-brand-100">1+ shared interest • Chat anytime</p>
               </div>
               <button type="button" onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-white/10 transition">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -882,9 +882,9 @@ export default function InterestedPeoplePage() {
                         <div>
                           <span className="font-medium text-stone-900 flex items-center gap-1.5 flex-wrap">
                             {u.display_name}
-                            {(u.shared_count ?? 0) >= 3 && (
+                            {(u.shared_count ?? 0) >= 1 && (
                               <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-brand-50 text-brand-800 border border-brand-100">
-                                Strong match
+                                Match
                               </span>
                             )}
                           </span>

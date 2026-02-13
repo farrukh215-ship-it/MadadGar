@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Invalid user' }, { status: 400 });
   }
 
-  // Enforce at least 3 shared interests before allowing friend requests
+  // Enforce at least 1 shared interest before allowing friend requests
   try {
     const [{ data: myInterests }, { data: theirInterests }] = await Promise.all([
       supabase.from('user_interests').select('interest_slug').eq('user_id', user.id),
@@ -26,16 +26,16 @@ export async function POST(request: NextRequest) {
     for (const r of theirInterests ?? []) {
       if (mySet.has(r.interest_slug as string)) {
         shared++;
-        if (shared >= 3) break;
+        if (shared >= 1) break;
       }
     }
-    if (shared < 3) {
+    if (shared < 1) {
       return Response.json(
         {
-          error: 'At least 3 shared interests required to send friend request.',
+          error: 'At least 1 shared interest required to send friend request.',
           code: 'shared_interests_minimum',
           shared_count: shared,
-          required: 3,
+          required: 1,
         },
         { status: 403 },
       );

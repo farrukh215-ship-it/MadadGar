@@ -135,7 +135,7 @@ export default function FriendsPage() {
             </Link>
             <h1 className="text-lg font-semibold">Friends</h1>
             <Link href="/chat/interests" className="text-sm text-brand-200 hover:text-white">
-              Squad
+              Yaari
             </Link>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function FriendsPage() {
                   <p className="text-stone-600">No friends yet</p>
                   <p className="text-sm text-stone-500 mt-1">Add people as friends from your chats</p>
                   <Link href="/chat/interests" className="mt-4 inline-block px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700">
-                    Find Squad
+                    Find Yaari
                   </Link>
                 </div>
               ) : (

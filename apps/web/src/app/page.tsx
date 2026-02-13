@@ -68,7 +68,7 @@ export default function Home() {
                 className="mt-5 sm:mt-6 inline-flex items-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold hover:from-violet-600 hover:to-fuchsia-600 transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
               >
                 <span className="text-lg">💜</span>
-                Find Your Squad — Youth & Gen Z
+                Find Your Yaari — Youth & Gen Z
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>

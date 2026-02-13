@@ -108,9 +108,9 @@ export function ChatDropdown({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-      {/* Squad - first */}
+      {/* Yaari - first */}
       <div className={`${sectionClass} pt-12 lg:pt-0`}>
-        <p className={sectionTitleClass}>💜 Squad</p>
+        <p className={sectionTitleClass}>💜 Yaari</p>
         <Link href="/chat/interests" onClick={onClose} className={linkClass}>
           <span className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center text-base shrink-0">❤️</span>
           <div className="flex-1 min-w-0">

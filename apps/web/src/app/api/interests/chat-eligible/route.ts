@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-const MIN_SHARED_INTERESTS = 3;
+const MIN_SHARED_INTERESTS = 1;
 
 export async function GET(_request: NextRequest) {
   const supabase = await createClient();

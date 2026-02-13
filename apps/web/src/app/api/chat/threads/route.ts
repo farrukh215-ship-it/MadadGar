@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Cannot chat with yourself' }, { status: 400 });
   }
 
-  // If chat is coming from Interested People, enforce at least 3 shared interests
+  // If chat is coming from Yaari, enforce at least 1 shared interest
   if (source === 'interests') {
     try {
       const [{ data: myInterests }, { data: theirInterests }] = await Promise.all([
@@ -193,16 +193,16 @@ export async function POST(request: NextRequest) {
       for (const r of theirInterests ?? []) {
         if (mySet.has(r.interest_slug as string)) {
           shared++;
-          if (shared >= 3) break;
+          if (shared >= 1) break;
         }
       }
-      if (shared < 3) {
+      if (shared < 1) {
         return Response.json(
           {
-            error: 'At least 3 shared interests required to chat from Interested People.',
+            error: 'At least 1 shared interest required to chat from Yaari.',
             code: 'shared_interests_minimum',
             shared_count: shared,
-            required: 3,
+            required: 1,
           },
           { status: 403 },
         );
