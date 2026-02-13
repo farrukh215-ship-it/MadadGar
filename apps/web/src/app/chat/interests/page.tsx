@@ -72,7 +72,6 @@ export default function InterestedPeoplePage() {
   const [grouped, setGrouped] = useState<GroupedInterest[]>([]);
   const [myInterests, setMyInterests] = useState<Set<string>>(new Set());
   const [isPremium, setIsPremium] = useState(false);
-  const [limitError, setLimitError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const [usersByInterest, setUsersByInterest] = useState<Record<string, ChatUser[]>>({});
@@ -86,7 +85,7 @@ export default function InterestedPeoplePage() {
   const [blockedUsers, setBlockedUsers] = useState<Record<string, boolean>>({});
   const [blockingFor, setBlockingFor] = useState<string | null>(null);
   const [reportingFor, setReportingFor] = useState<string | null>(null);
-  const [showRulesModal, setShowRulesModal] = useState(true);
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [topProfiles, setTopProfiles] = useState<{
     male: ChatUser[];
@@ -202,7 +201,6 @@ export default function InterestedPeoplePage() {
   }, [loading, loadTopProfiles]);
 
   const toggleInterest = async (slug: string) => {
-    setLimitError(null);
     const has = myInterests.has(slug);
     try {
       if (has) {
@@ -213,6 +211,10 @@ export default function InterestedPeoplePage() {
           return next;
         });
       } else {
+        if (!isPremium && myInterests.size >= 5) {
+          setShowLimitDialog(true);
+          return;
+        }
         const res = await fetch('/api/interests/my', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -220,7 +222,7 @@ export default function InterestedPeoplePage() {
         });
         const data = await res.json();
         if (res.status === 403 && data.error === 'limit_reached') {
-          setLimitError(data.message ?? 'Interest limit reached. Upgrade to Premium for unlimited.');
+          setShowLimitDialog(true);
           return;
         }
         if (res.ok) {
@@ -408,55 +410,32 @@ export default function InterestedPeoplePage() {
         </div>
       </header>
 
-      {/* Chat Rules Modal */}
-      {showRulesModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowRulesModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] overflow-y-auto border border-stone-200" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-gradient-to-br from-brand-600 to-brand-800 text-white p-5 rounded-t-2xl">
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <span>📋</span> Yaari Chat Rules
-              </h2>
-              <p className="text-brand-100 text-sm mt-1">In rules ko follow karein aur safe chat karein</p>
-            </div>
-            <div className="p-5 space-y-3 text-stone-700 text-sm">
-              <div className="flex gap-3 p-3 rounded-xl bg-brand-50 border border-brand-100">
-                <span className="text-lg shrink-0">1.</span>
-                <p><strong>Minimum 1 shared interest:</strong> Sirf wohi logse chat kar sakte hain jin ke saath kam az kam 1 interest match ho.</p>
-              </div>
-              <div className="flex gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
-                <span className="text-lg shrink-0">2.</span>
-                <p><strong>Profile complete karein:</strong> Chat karne se pehle apni profile zaroor complete karein — name, gender, age, bio, photo sab fill hon.</p>
-              </div>
-              <div className="flex gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
-                <span className="text-lg shrink-0">3.</span>
-                <p><strong>Profile dekh sakte hain:</strong> Kisi bhi user ki full public profile dekh sakte hain — unki posts, recommendations, jo bhi unhone share kiya ho.</p>
-              </div>
-              <div className="flex gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
-                <span className="text-lg shrink-0">4.</span>
-                <p><strong>Respectful behavior:</strong> Sab ke saath adab aur respect se baat karein. Harassment ya abuse allowed nahi hai.</p>
-              </div>
-              <div className="flex gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
-                <span className="text-lg shrink-0">5.</span>
-                <p><strong>No spam:</strong> Faltu messages, links ya promotional content bhejna mana hai. Report kiya ja sakta hai.</p>
-              </div>
-              <div className="flex gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
-                <span className="text-lg shrink-0">6.</span>
-                <p><strong>Privacy:</strong> Apni personal info safe rakhein. Kisi ko bhi apna password ya OTP mat share karein.</p>
-              </div>
-              {profileComplete === false && (
-                <Link href="/profile/edit" className="block p-4 rounded-xl bg-amber-100 border border-amber-200 text-amber-900 font-medium text-center hover:bg-amber-200 transition">
-                  Profile complete karein →
+      {/* Interest limit dialog */}
+      {showLimitDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowLimitDialog(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-stone-200" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="w-14 h-14 mx-auto rounded-full bg-amber-100 flex items-center justify-center text-2xl mb-4">★</div>
+              <h2 className="text-lg font-bold text-stone-900 mb-2">Interest limit reached</h2>
+              <p className="text-sm text-stone-600 mb-6">
+                You reached your 5 interests limit. For more interests to add, become a Premium member.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowLimitDialog(false)}
+                  className="flex-1 py-3 rounded-xl border border-stone-200 text-stone-700 font-medium hover:bg-stone-50 transition"
+                >
+                  Cancel
+                </button>
+                <Link
+                  href="/profile"
+                  onClick={() => setShowLimitDialog(false)}
+                  className="flex-1 py-3 rounded-xl bg-amber-600 text-white font-semibold hover:bg-amber-700 transition text-center"
+                >
+                  Become Premium
                 </Link>
-              )}
-            </div>
-            <div className="p-5 pt-0">
-              <button
-                type="button"
-                onClick={() => setShowRulesModal(false)}
-                className="w-full py-3.5 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition shadow-premium-brand"
-              >
-                Samajh gaya, continue
-              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -793,18 +772,6 @@ export default function InterestedPeoplePage() {
                 </div>
               </section>
             ))}
-          </div>
-        )}
-
-        {limitError && (
-          <div className="mt-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-4">
-            <p className="text-sm text-amber-800">{limitError}</p>
-            <a
-              href="/profile"
-              className="shrink-0 px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 transition"
-            >
-              Upgrade
-            </a>
           </div>
         )}
 
