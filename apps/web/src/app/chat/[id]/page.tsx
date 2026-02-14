@@ -39,7 +39,7 @@ type Message = {
 export default function ChatScreen() {
   const params = useParams();
   const router = useRouter();
-  const threadId = params.id as string;
+  const threadId = (params?.id as string) ?? '';
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
