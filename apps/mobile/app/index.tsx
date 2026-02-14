@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createClient } from '@/lib/supabase';
 
@@ -20,6 +20,7 @@ export default function SplashScreen() {
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fafaf9' }}>
+      <Image source={require('@/assets/logo.png')} style={{ width: 80, height: 80, marginBottom: 12 }} resizeMode="contain" />
       <Text style={{ fontSize: 28, fontWeight: '600', color: '#0d9488' }}>Madadgar</Text>
       <Text style={{ marginTop: 8, fontSize: 16, color: '#57534e' }}>
         Trusted logon ki madad, bilkul qareeb

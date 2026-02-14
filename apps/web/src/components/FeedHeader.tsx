@@ -27,6 +27,7 @@ export function FeedHeader({
   chatButtonRef?: React.RefObject<HTMLButtonElement>;
 }) {
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { city, setCity } = useCity();
   const internalChatRef = useRef<HTMLButtonElement>(null);
   const chatRef = chatButtonRef ?? internalChatRef;
@@ -59,6 +60,27 @@ export function FeedHeader({
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+    fetch('/api/notifications')
+      .then((r) => r.json())
+      .then((d) => {
+        const items = d.items ?? [];
+        setUnreadCount(items.filter((n: { read_at: string | null }) => !n.read_at).length);
+      })
+      .catch(() => {});
+    const interval = setInterval(() => {
+      fetch('/api/notifications')
+        .then((r) => r.json())
+        .then((d) => {
+          const items = d.items ?? [];
+          setUnreadCount(items.filter((n: { read_at: string | null }) => !n.read_at).length);
+        })
+        .catch(() => {});
+    }, 30 * 1000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   return (
     <header className="sticky top-0 z-40 bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900 text-white shadow-[0_4px_24px_-4px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.08)_inset] backdrop-blur-xl border-b border-white/10">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -76,6 +98,13 @@ export function FeedHeader({
                 </svg>
                 <span className="text-sm font-medium text-white/95">Menu</span>
               </button>
+            )}
+            {user && (
+              <span
+                className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse"
+                title={unreadCount > 0 ? `${unreadCount} unread notification(s)` : 'Online'}
+                aria-hidden
+              />
             )}
             <Link href="/" className="flex items-center gap-2.5 group">
               <div className="rounded-lg p-1 bg-white/10 group-hover:bg-white/20 transition shadow-lg">

@@ -37,7 +37,13 @@ export function CityProvider({ children }: { children: ReactNode }) {
   return <CityProviderInner value={{ city, setCity }}>{children}</CityProviderInner>;
 }
 
+const defaultCityValue: CityContextValue = { city: null, setCity: () => {} };
+
 export function useCity() {
-  const ctx = useContext(CityContext);
-  return ctx;
+  try {
+    const ctx = useContext(CityContext);
+    return ctx ?? defaultCityValue;
+  } catch {
+    return defaultCityValue;
+  }
 }
