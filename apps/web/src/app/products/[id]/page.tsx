@@ -31,7 +31,7 @@ type ProductDetail = {
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = (params?.id as string) ?? '';
   const [item, setItem] = useState<ProductDetail | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

@@ -30,7 +30,7 @@ type Listing = {
 export default function EditSalePage() {
   const router = useRouter();
   const params = useParams();
-  const id = params.id as string;
+  const id = (params?.id as string) ?? '';
   const [listing, setListing] = useState<Listing | null>(null);
   const [categories, setCategories] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [subcategories, setSubcategories] = useState<{ id: string; slug: string; name: string }[]>([]);

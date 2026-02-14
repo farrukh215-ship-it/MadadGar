@@ -11,7 +11,7 @@ const MAX_IMAGES = 3;
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
-  const id = params.id as string;
+  const id = (params?.id as string) ?? '';
   const [categories, setCategories] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');

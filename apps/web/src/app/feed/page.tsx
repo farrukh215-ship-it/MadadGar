@@ -119,7 +119,7 @@ const FEED_LIMIT_PER_CATEGORY = 6;
 
 export default function FeedPage() {
   const searchParams = useSearchParams();
-  const catFromUrl = searchParams.get('c');
+  const catFromUrl = searchParams?.get('c');
   const initialFilter = (catFromUrl && CATEGORY_TO_FILTER[catFromUrl]) ? CATEGORY_TO_FILTER[catFromUrl] : 'all';
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>(initialFilter);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -287,8 +287,8 @@ export default function FeedPage() {
     refetchFeed();
   }, [refetchFeed]);
 
-  const categoryFromUrl = searchParams.get('c');
-  const subFromUrl = searchParams.get('sub');
+  const categoryFromUrl = searchParams?.get('c');
+  const subFromUrl = searchParams?.get('sub');
   const isCategoryView = Boolean(categoryFromUrl && CATEGORY_TO_FILTER[categoryFromUrl]);
   const isSubcategoryView = Boolean(subFromUrl);
 

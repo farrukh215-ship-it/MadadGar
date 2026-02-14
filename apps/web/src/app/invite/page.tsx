@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client';
 function InviteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const ref = searchParams.get('ref');
+  const ref = searchParams?.get('ref');
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {

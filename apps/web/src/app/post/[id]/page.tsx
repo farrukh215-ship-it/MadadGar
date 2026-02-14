@@ -58,7 +58,7 @@ type PostDetail = {
 export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const id = (params?.id as string) ?? '';
   const [post, setPost] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -68,7 +68,7 @@ export default function PostDetailPage() {
   const [ratingForm, setRatingForm] = useState({ rating: 0, review_text: '' });
   const [submittingRating, setSubmittingRating] = useState(false);
   const searchParams = useSearchParams();
-  const showRatePrompt = searchParams.get('rate') === '1';
+  const showRatePrompt = searchParams?.get('rate') === '1';
 
   useEffect(() => {
     if (!id) return;

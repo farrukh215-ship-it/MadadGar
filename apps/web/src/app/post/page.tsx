@@ -16,7 +16,7 @@ export default function PostPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const type = searchParams.get('type');
+    const type = searchParams?.get('type');
     if (type === 'food') {
       setPostType('food');
       setPreselectCategory('cook');

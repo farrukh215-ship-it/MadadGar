@@ -30,7 +30,7 @@ type SaleDetail = {
 
 export default function SaleDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = (params?.id as string) ?? '';
   const [item, setItem] = useState<SaleDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);

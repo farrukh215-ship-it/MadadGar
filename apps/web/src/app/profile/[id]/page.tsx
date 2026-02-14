@@ -109,7 +109,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 export default function UserProfilePage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = (params?.id as string) ?? '';
   const [profile, setProfile] = useState<Profile | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [recommendations, setRecommendations] = useState<RecItem[]>([]);
