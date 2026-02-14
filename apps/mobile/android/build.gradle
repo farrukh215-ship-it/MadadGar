@@ -23,7 +23,7 @@ buildscript {
 
 apply plugin: "com.facebook.react.rootproject"
 subprojects { subproject ->
-  subproject.afterEvaluate {
+  subproject.pluginManager.withPlugin('org.jetbrains.kotlin.android') {
     subproject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
       kotlinOptions {
         freeCompilerArgs += [
