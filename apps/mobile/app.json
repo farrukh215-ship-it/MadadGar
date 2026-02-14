@@ -35,7 +35,6 @@
     "extra": {
       "router": { "origin": false },
       "eas": { "projectId": "28415b71-96be-4ede-a965-c77fb79e0e8d" }
-    },
-    "plugins": ["./plugins/withKotlinComposeFix"]
+    }
   }
 }
