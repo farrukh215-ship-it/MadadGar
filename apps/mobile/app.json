@@ -11,7 +11,7 @@
     "newArchEnabled": true,
     "runtimeVersion": { "policy": "sdkVersion" },
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#fafaf9"
     },
@@ -35,6 +35,7 @@
     "extra": {
       "router": { "origin": false },
       "eas": { "projectId": "28415b71-96be-4ede-a965-c77fb79e0e8d" }
-    }
+    },
+    "plugins": ["./plugins/withKotlinComposeFix"]
   }
 }
